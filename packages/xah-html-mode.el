@@ -560,26 +560,28 @@ This command does the inverse of `xhm-htmlize-precode'."
   (define-key xhm-keymap (kbd "<C-right>") 'xhm-skip-tag-forward)
   (define-key xhm-keymap (kbd "<C-left>") 'xhm-skip-tag-backward)
 
-  (define-key xhm-keymap (kbd "<menu> e 0") 'xhm-remove-html-tags)
-  (define-key xhm-keymap (kbd "<menu> e 7") 'xhm-htmlize-or-de-precode)
-  (define-key xhm-keymap (kbd "<menu> e 8") 'xhm-get-precode-make-new-file)
-  (define-key xhm-keymap (kbd "<menu> e c") 'xhm-make-citation)
-  (define-key xhm-keymap (kbd "<menu> e k") 'xhm-htmlize-keyboard-shortcut-notation)
-  (define-key xhm-keymap (kbd "<menu> e l 6") 'xhm-source-url-linkify)
-  (define-key xhm-keymap (kbd "<menu> e l .") 'xhm-lines-to-html-list)
-  (define-key xhm-keymap (kbd "<menu> e l u") 'xhm-wrap-url)
-  (define-key xhm-keymap (kbd "<menu> e l w") 'xhm-wikipedia-linkify)
-  (define-key xhm-keymap (kbd "<menu> e m") 'xhm-pre-source-code)
-  (define-key xhm-keymap (kbd "<menu> e p") 'xhm-wrap-p-tag)
-  (define-key xhm-keymap (kbd "<menu> e r ,") 'xhm-replace-html-chars-to-unicode)
-  (define-key xhm-keymap (kbd "<menu> e r .") 'xhm-replace-html-&<>-to-entities)
-  (define-key xhm-keymap (kbd "<menu> e r 3") 'xhm-update-title)
-  (define-key xhm-keymap (kbd "<menu> e r e") 'xhm-htmlize-elisp-keywords)
-  (define-key xhm-keymap (kbd "<menu> e r k") 'xhm-emacs-to-windows-kbd-notation)
-  (define-key xhm-keymap (kbd "<menu> e r m") 'xhm-make-html-table)
-  (define-key xhm-keymap (kbd "<menu> e t r") 'xhm-rename-html-inline-image)
-  (define-key xhm-keymap (kbd "<menu> e t u") 'xhm-extract-url)
-  (define-key xhm-keymap (kbd "<menu> e u") 'xhm-wrap-html-tag)
+  ;; commands you should give a give to
+  ;; 'xhm-remove-html-tags
+  ;; 'xhm-htmlize-or-de-precode
+  ;; 'xhm-get-precode-make-new-file
+  ;; 'xhm-make-citation
+  ;; 'xhm-htmlize-keyboard-shortcut-notation
+  ;; 'xhm-source-url-linkify
+  ;; 'xhm-lines-to-html-list
+  ;; 'xhm-wrap-url
+  ;; 'xhm-wikipedia-linkify
+  ;; 'xhm-pre-source-code
+  ;; 'xhm-wrap-p-tag
+  ;; 'xhm-replace-html-chars-to-unicode
+  ;; 'xhm-replace-html-&<>-to-entities
+  ;; 'xhm-update-title
+  ;; 'xhm-htmlize-elisp-keywords
+  ;; 'xhm-emacs-to-windows-kbd-notation
+  ;; 'xhm-make-html-table
+  ;; 'xhm-rename-html-inline-image
+  ;; 'xhm-extract-url
+  ;; 'xhm-wrap-html-tag
+
 )
 
 
@@ -1123,7 +1125,7 @@ WARNING: this function extract all text of the form 「<a … href=\"…\" …>�
           ) ) )
     urlList ))
 
-(defun xhm-update-title ( πnewTitle)
+(defun xhm-update-title ( εnewTitle)
   "Update a HTML article's title and h1 tags.
 Update the <title>…</title> and <h1>…</h1> of current buffer."
   (interactive
@@ -1144,7 +1146,7 @@ Update the <title>…</title> and <h1>…</h1> of current buffer."
              (setq p2 (- (point) 1) )
              (delete-region p1 p2 )
              (goto-char p1)
-             (insert πnewTitle ) )
+             (insert εnewTitle ) )
 
       (if (search-forward "<h1>")
           (progn 
@@ -1153,7 +1155,7 @@ Update the <title>…</title> and <h1>…</h1> of current buffer."
             (setq p2 (- (point) 1) )
             (delete-region p1 p2 )
             (goto-char p1)
-            (insert πnewTitle ) )
+            (insert εnewTitle ) )
         (progn
           (message "<h1> tag not found. adding") ) ) ) ))
 
@@ -1589,6 +1591,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["shift" "<kbd>⇧ Shift</kbd>"]
                        ["cmd" "<kbd>⌘ Cmd</kbd>"]
                        ["option" "<kbd>⌥ Opt</kbd>"]
+                       ["opt" "<kbd>⌥ Opt</kbd>"]
                        ["win" "<kbd>❖ Win</kbd>"]
                        ["menu" "<kbd>▤ Menu</kbd>"]
                        ["meta" "<kbd>Meta</kbd>"]

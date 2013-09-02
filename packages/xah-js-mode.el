@@ -9,7 +9,7 @@
 ;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
 
 ;;; Commentary:
-;; Major mode for editing emacs lisp. Beta stage.
+;; Major mode for editing JavaScript code. Beta stage.
 ;; home page:
 
 ;;; HISTORY
@@ -216,14 +216,14 @@
 
 ;; define the mode
 (define-derived-mode xah-js-mode fundamental-mode
-  "ξlisp"
-  "A simple major mode for emacs lisp.
+  "ξXJS"
+  "A simple major mode for JavaScript.
 
-js keywords are colored. Basically that's it.
+JavaScript keywords are colored. Basically that's it.
 
 \\{xjs-keymap}"
-  ;; (emacs-lisp-mode)
-  (setq mode-name "ξlisp")
+  (js-mode)
+  (setq mode-name "ξXJS")
   (setq font-lock-defaults '((xjs-font-lock-keywords)))
 
 (setq comment-start "//")
