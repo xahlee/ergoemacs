@@ -51,25 +51,23 @@
 (require 'find-lisp)
 (require 'xeu_elisp_util)
 
-(defvar xah-context-char-number nil "number of characters to print before and after a search string.")
-(setq xah-context-char-number 50)
+(defcustom xah-context-char-number 50 "number of characters to print before and after a search string."
+:group 'xah_file_util
+)
 
-(defun xah-backup-suffix (s)
+(defun xah-backup-suffix (εs)
   "Return a string of the form 「~‹s›~‹date-time-stamp›~」"
-  (concat "~" s "~" (format-time-string "%Y%m%d_%H%M%S") "~"))
+  (concat "~" εs "~" (format-time-string "%Y%m%d_%H%M%S") "~"))
 
-(defun xah-print-text-block (string9462)
+(defun xah-print-text-block (εstring9462)
   "print string9462"
-  (princ (format "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~「
-%s
-」
-" string9462)))
+  (princ (format "「%s」
+" εstring9462)))
 
 (defun xah-print-file-count (filepath4287 count8086)
   "print file path and count"
   (princ (format "• %d %s\n" count8086 filepath4287 ))
   )
-
 
 (defun xah-find-text (searchStr1 inputDir ξpathRegex ξfixedCaseSearch-p ξprintContext-p)
   "Report files that contain string, similar to Linux 「grep -F」."
@@ -164,7 +162,7 @@ Path Regex 「%s」
              (cond
               ((equal ξprintContextLevel "0") nil)
               ((equal ξprintContextLevel "1") (xah-print-text-block (match-string 0)))
-              ((equal ξprintContextLevel "2") 
+              ((equal ξprintContextLevel "2")
                (progn
                  (setq ξpos1 (max 1 (- (match-beginning 0) xah-context-char-number )))
                  (setq ξpos2 (min (point-max) (+ (match-end 0) xah-context-char-number )))

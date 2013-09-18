@@ -529,12 +529,14 @@ Examples of changes:
                              ["''" "”"]
                              ])
 
-      ;; fix straight double quotes
+      ;; "straight quote" ⇒ “double quotes” 
       (replace-pairs-region (point-min) (point-max)
                             [
+                             ["\n\"" "\n“"]
                              [">\"" ">“"]
                              ["(\"" "(“"]
                              [" \"" " “"]
+
                              ["\" " "” "]
                              ["\"," "”,"]
                              ["\"." "”."]

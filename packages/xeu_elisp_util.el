@@ -154,10 +154,10 @@ The main differences are:
           (let (p0)
             (setq p0 (point))
             ;; chars that are likely to be delimiters of full path, e.g. space, tabs, brakets.
-             (skip-chars-backward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›\\`")
+             (skip-chars-backward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\`")
              (setq p1 (point))
              (goto-char p0)
-             (skip-chars-forward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›\\'")
+             (skip-chars-forward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\'")
              (setq p2 (point)))
           )
 

@@ -258,6 +258,7 @@
            ("java" . ["java-mode" "java"])
            ("js" . ["js-mode" "js"])
            ("lsl" . ["xlsl-mode" "lsl"])
+           ("latex" . ["latex-mode" "txt"])
            ("ocaml" . ["tuareg-mode" "ocaml"])
            ("org" . ["org-mode" "org"])
            ("perl" . ["cperl-mode" "pl"])

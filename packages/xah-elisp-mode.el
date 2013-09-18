@@ -72,6 +72,7 @@
 "let"
 "let*"
 "list"
+"load"
 "make-hash-table"
 "mapc"
 "mapcar"
@@ -250,6 +251,7 @@
 "y-or-n-p"
 "yes-or-no-p"
 
+"setenv"
 "modify-syntax-entry"
 "make-sparse-keymap"
 "standard-syntax-table"
