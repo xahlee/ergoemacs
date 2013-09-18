@@ -1,91 +1,44 @@
-;;; ergoemacs-menus.el --- Turn on and off ergoemacs-style menus
-;; 
-;; Filename: ergoemacs-menus.el
-;; Description: 
-;; Author: Matthew L. Fidler
-;; Maintainer: 
-;; Created: Fri Jun 21 01:05:18 2013 (-0500)
-;; Version: 
-;; Last-Updated: 
-;;           By: 
-;;     Update #: 0
-;; URL: 
-;; Doc URL: 
-;; Keywords: 
-;; Compatibility: 
-;; 
-;; Features that might be required by this library:
-;;
-;;   None
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
-;;; Commentary: 
-;; 
-;; 
-;; 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
-;;; Change Log:
-;; 
-;; 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
-;; This program is free software; you can redistribute it and/or
-;; modify it under the terms of the GNU General Public License as
-;; published by the Free Software Foundation; either version 3, or
-;; (at your option) any later version.
-;; 
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; ergoemacs-menus.el --- toggle ErgoEmacs-style menus
+
+;; Copyright (C) 2013 Matthew L. Fidler
+
+;; Maintainer: Matthew L. Fidler
+;; Keywords: convenience
+
+;; ErgoEmacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation, either version 3 of the License,
+;; or (at your option) any later version.
+
+;; ErgoEmacs is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 ;; General Public License for more details.
-;; 
+
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
+;; along with ErgoEmacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
 ;; 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Todo:
+
 ;; 
+
 ;;; Code:
 
 (defvar ergoemacs-xah-emacs-lisp-tutorial-url
   "http://ergoemacs.org/emacs/elisp.html")
 
 (defvar ergoemacs-mode-web-page-url
-  "http://mlf176f2.github.io/ErgoEmacs/")
+  "http://ergoemacs.github.io/ergoemacs-mode/")
 
 (defun ergoemacs-kbd-to-key (key)
-  "Converts key Emacs key code to ergoemacs-key-code."
-  (let ((case-fold-search nil))
+  "Convert key Emacs key code to ergoemacs-key-code."
+  (let ((ergoemacs-use-unicode-char nil))
     (replace-regexp-in-string
-     " " "  "
-     (replace-regexp-in-string
-      "<" ""
-      (replace-regexp-in-string
-       "?" ""
-       (replace-regexp-in-string
-        "\\bRET\\b" "ENTER"
-        (replace-regexp-in-string
-         "\\bprior\\b" "PgUp"
-         (replace-regexp-in-string
-          "\\bnext\\b" "PgDn"
-          (replace-regexp-in-string
-           "<f\\([0-9]+\\)>" "F\\1"
-           (replace-regexp-in-string
-            "\\b-\\b" "+"
-            (replace-regexp-in-string
-             "\\b[[:lower:]]\\b" 'upcase
-             (replace-regexp-in-string
-              "\\b\\([[:upper:]]\\)\\b" "Shift+\\1"
-              (replace-regexp-in-string
-               "\\bC-" "Ctrl+"
-               (replace-regexp-in-string
-                "\\bS-" "Shift+"
-                (replace-regexp-in-string
-                 "\\bM-" "Alt+"
-                 key t) t) t) t) t) t) t) t) t) t) t) t) t)))
+     "\\(\\[\\|\\]\\)" "" (ergoemacs-pretty-key key))))
 
 (defun ergoemacs-shortcut-for-menu-item (item)
   (if (and (>= (safe-length item) 4)
@@ -130,7 +83,7 @@
 
 (defun ergoemacs-shortcut-for-command (cmd)
   (let ((key (key-description (where-is-internal cmd nil t nil t))))
-    (when ergoemacs-debug (message "Menu KEY Shortcut \"%s\"" key))
+    (ergoemacs-debug "Menu KEY Shortcut \"%s\"" key)
     (ergoemacs-kbd-to-key key)))
 
 
@@ -138,6 +91,32 @@
 
 (defvar ergoemacs-menu-bar-file-menu nil)
 
+
+(defun ergoemacs-get-major-modes ()
+  "Gets a list of language modes known to `ergoemacs-mode'.
+This gets all major modes known from the variables:
+-  `interpreter-mode-alist';
+-  `magic-mode-alist'
+-  `magic-fallback-mode-alist'
+-  `auto-mode-alist'
+
+All other modes are assumed to be minor modes or unimportant.
+"
+  ;; Get known major modes
+  (let ((ret '()))
+    (mapc
+     (lambda(elt)
+       (when (and (functionp (cdr elt))
+                  (string-match "-mode$" (symbol-name (cdr elt))))
+         (add-to-list 'ret (cdr elt))))
+     (append
+      interpreter-mode-alist
+      magic-mode-alist
+      magic-fallback-mode-alist
+      auto-mode-alist))
+    
+    (symbol-value 'ret)))
+
 ;;; `File' menu
 (defun ergoemacs-menu-bar-file-menu ()
   "Creates Ergoemacs File Menu"
@@ -229,7 +208,7 @@
                                   (cdr yank-menu)
                                   (not buffer-read-only))
                          :help "Choose a string from the kill ring and paste it")
-        (clear menu-item "Clear" delete-region 
+        (clear menu-item "Clear" delete-region
                :enable (and mark-active (not buffer-read-only))
                :help "Delete the text in region between mark and current position"
                :keys "Del")
@@ -264,7 +243,7 @@
         (copy-to-clipboard menu-item "Copy File/Path to Clipboard"
                            (keymap
                             (copy-full-path menu-item
-                                            "Current Full File Path to Clipboard" 
+                                            "Current Full File Path to Clipboard"
                                             ergoemacs-copy-full-path
                                             :enable (buffer-file-name))
                             (copy-file-name menu-item
@@ -272,7 +251,7 @@
                                             ergoemacs-copy-file-name
                                             :enable (buffer-file-name))
                             (copy-dir-path menu-item
-                                           "Current Dir. Path to Clipboard" 
+                                           "Current Dir. Path to Clipboard"
                                            ergoemacs-copy-dir-path
                                            :enable (buffer-file-name))))
         (convert-case-to menu-item "Convert Case To"
@@ -416,10 +395,10 @@
         
         ;; (replace menu-item "Replace"
         ;;          (keymap
-        ;;           (query-replace menu-item "Replace String..." query-replace 
+        ;;           (query-replace menu-item "Replace String..." query-replace
         ;;                          :enable (not buffer-read-only)
         ;;                          :help "Replace string interactively, ask about each occurrence")
-        ;;           (query-replace-regexp menu-item "Replace Regexp..." query-replace-regexp 
+        ;;           (query-replace-regexp menu-item "Replace Regexp..." query-replace-regexp
         ;;                                 :enable (not buffer-read-only)
         ;;                                 :help "Replace regular expression interactively, ask about each occurrence")
         ;;           (separator-replace-tags menu-item "--")
@@ -444,7 +423,7 @@
         ;;                           (not
         ;;                            (ring-empty-p tags-location-ring)))
         ;;                  :help "Find next function/variable matching last tag name")
-        ;;        (next-tag-otherw menu-item "Next Tag in Other Window" menu-bar-next-tag-other-window 
+        ;;        (next-tag-otherw menu-item "Next Tag in Other Window" menu-bar-next-tag-other-window
         ;;                         :enable (and
         ;;                                  (boundp 'tags-location-ring)
         ;;                                  (not
@@ -497,10 +476,10 @@
         
         (replace menu-item "Replace"
                  (keymap
-                  (query-replace menu-item "Replace String..." query-replace 
+                  (query-replace menu-item "Replace String..." query-replace
                                  :enable (not buffer-read-only)
                                  :help "Replace string interactively, ask about each occurrence")
-                  (query-replace-regexp menu-item "Replace Regexp..." query-replace-regexp 
+                  (query-replace-regexp menu-item "Replace Regexp..." query-replace-regexp
                                         :enable (not buffer-read-only)
                                         :help "Replace regular expression interactively, ask about each occurrence")
                   (separator-replace-tags menu-item "--")
@@ -532,7 +511,7 @@
                                   (not
                                    (ring-empty-p tags-location-ring)))
                          :help "Find next function/variable matching last tag name")
-               (next-tag-otherw menu-item "Next Tag in Other Window" menu-bar-next-tag-other-window 
+               (next-tag-otherw menu-item "Next Tag in Other Window" menu-bar-next-tag-other-window
                                 :enable (and
                                          (boundp 'tags-location-ring)
                                          (not
@@ -803,7 +782,7 @@
                                :help "Open a list of all the info docs.")
                      (man-dir menu-item "Unix Man Pages..."
                               woman
-                              :help "Unix Manual entries (with WoMan)"))) 
+                              :help "Unix Manual entries (with WoMan)")))
         (separator-2 menu-item "--")
 
         (eroemacs-current-keybindings menu-item
@@ -859,9 +838,13 @@
   (define-key global-map [menu-bar search] nil)
   (define-key global-map [menu-bar view] nil)
   (define-key global-map [menu-bar help-menu]
-    ("Help" ergoemacs-menu-bar-old-help-menu)))
+    ;; FIXME: paren mismatch
+    (cons "Help" ergoemacs-menu-bar-old-help-menu)))
 
 ;;(ergoemacs-menus-on)
 (provide 'ergoemacs-menus)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-menus.el ends here
+;; Local Variables:
+;; coding: utf-8-emacs
+;; End:

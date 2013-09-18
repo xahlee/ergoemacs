@@ -1,10 +1,35 @@
-;;; ergoemacs-functions.el --- Functions for use in ergoemacs -*- coding: utf-8 -*-
-;;; Code:
+;;; ergoemacs-functions.el --- miscellaneous functions for ErgoEmacs
 
+;; Copyright (C) 2013 Matthew L. Fidler
+
+;; Maintainer: Matthew L. Fidler
+;; Keywords: convenience
+
+;; ErgoEmacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation, either version 3 of the License,
+;; or (at your option) any later version.
+
+;; ErgoEmacs is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with ErgoEmacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; 
+
+;; Todo:
+
+;; 
+
+;;; Code:
 
 (require 'redo "redo.elc" t) ; for redo shortcut
 
-(delete-selection-mode 1) ; turn on text selection highlighting and make typing override selected text (Note: when delete-selection-mode is on, then transient-mark-mode is automatically on too.)
 
 (defcustom ergoemacs-isearch-backward-char-to-edit nil
   "Backward char will edit isearch."
@@ -16,36 +41,109 @@
   '(delete-backward-char delete-char kill-word backward-kill-word)
   "Defines deletion functions that ergoemacs is aware of.")
 
+(defcustom ergoemacs-ctl-c-or-ctl-x-delay 0.2
+  "Delay before sending Cut or Copy when using C-c and C-x."
+  :type '(choice (number :tag "Inhibit delay")
+                 (const :tag "No delay" nil))
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-handle-ctl-c-or-ctl-x 'both
+  "Type of C-c and C-x handling for `ergoemacs-mode'"
+  :type '(choice
+          (const :tag "C-c/C-x only copy/cut" 'only-copy-cut)
+          (const :tag "C-c/C-x only Emacs C-c and C-x" 'only-C-c-and-C-x)
+          (const :tag "C-c/C-x copy/paste when region active, Emacs C-c/C-x otherwise." 'both))
+  :group 'ergoemacs-mode)
+
+(defun ergoemacs-ctl-c (&optional arg)
+  "Ergoemacs C-c key."
+  (interactive "P")
+  (ergoemacs-ctl-c-or-ctl-x "C-c" arg))
+
+(defun ergoemacs-ctl-x (&optional arg)
+  "Ergoemacs C-x key."
+  (interactive "P")
+  (ergoemacs-ctl-c-or-ctl-x "C-x" arg))
+
+(defun ergoemacs-ctl-c-or-ctl-x (key &optional arg)
+  "Ergoemacs C-c or C-x defined by KEY."
+  (let (fn-cp fn-cx fn-both)
+    ;; Create the needed functions
+    (setq fn-cx (concat "ergoemacs-shortcut---"
+                        (md5 (format "%s; normal" key))))
+    (unless (intern-soft fn-cx)
+      (eval
+       (macroexpand
+        `(progn
+           (ergoemacs-keyboard-shortcut
+            ,(intern fn-cx) ,key normal)))))
+    (setq fn-cx (intern fn-cx))
+
+    (if (string= "C-c" key)
+        (progn
+          (setq fn-cp 'ergoemacs-copy-line-or-region))
+      (progn
+        (setq fn-cp 'ergoemacs-cut-line-or-region)))
+    (cond
+     ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-copy-cut)
+      (funcall fn-cp arg))
+     ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-C-c-and-C-x)
+      (funcall fn-cx))
+     (this-command-keys-shift-translated
+      ;; Shift translated keys are C-c and C-x only.
+      (funcall fn-cx))
+     ((and ergoemacs-ctl-c-or-ctl-x-delay
+           (or (region-active-p)
+               (and cua--rectangle (boundp 'cua-mode) cua-mode)))
+      (setq ergoemacs-curr-prefix-arg current-prefix-arg)
+      (funcall fn-cx)
+      (setq ergoemacs-push-M-O-timeout t)
+      (setq ergoemacs-M-O-prefix-keys key)
+      (setq ergoemacs-M-O-timer
+            (run-with-timer ergoemacs-ctl-c-or-ctl-x-delay nil
+                            #'ergoemacs-M-O-timeout)))
+     ((or (region-active-p)
+          (and cua--rectangle (boundp 'cua-mode) cua-mode))
+      (funcall fn-cp arg))
+     (t
+      (funcall fn-cx)))))
+
+(defun ergoemacs-clean ()
+  "Run ergoemacs in a bootstrap environment."
+  (interactive)
+  (let ((emacs-exe (ergoemacs-emacs-exe)))
+    (when ergoemacs-keyboard-layout
+      (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
+    (when ergoemacs-theme
+      (setenv "ERGOEMACS_THEME" ergoemacs-theme))
+    (shell-command (format "%s -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
+                           (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
+
 (defun ergoemacs-emacs-exe ()
-  "Get the emacs executable for testing purposes."
+  "Get the Emacs executable for testing purposes."
   (let ((emacs-exe (invocation-name))
         (emacs-dir (invocation-directory))
         (full-exe nil))
+    ;; FIXME: Use `let*'.
     (setq full-exe (expand-file-name emacs-exe emacs-dir))
     (symbol-value 'full-exe)))
 
-(defun ergoemacs-smex-if-exists (&optional prefix-arg)
-  (interactive "p")
-  (if (fboundp 'smex)
-      (smex)
-    (execute-extended-command prefix-arg)))
-
 (defun ergoemacs-cheat-sheet-file ()
-  "Cheet sheet file for ergoemacs"
+  "Cheet sheet file for ergoemacs."
   (let ((var-dir "") extra-dir)
     (setq extra-dir (expand-file-name "ergoemacs-extras" user-emacs-directory))
-    (when ergoemacs-variant
-      (setq var-dir (concat ergoemacs-variant "/"))
-      (setq extra-dir (expand-file-name ergoemacs-variant extra-dir)))
+    (when ergoemacs-theme
+      (setq var-dir (concat ergoemacs-theme "/"))
+      (setq extra-dir (expand-file-name ergoemacs-theme extra-dir)))
     (setq extra-dir (expand-file-name "ergo-layouts" extra-dir))
     (setq extra-dir (expand-file-name (concat "ergoemacs-layout-" ergoemacs-keyboard-layout ".svg")))
     (when (not (file-exists-p extra-dir))
-      (ergoemacs-gen-svg ergoemacs-variant "kbd-ergo.svg" (concat var-dir "ergo-layouts")))
+      (ergoemacs-gen-svg ergoemacs-theme "kbd-ergo.svg" (concat var-dir "ergo-layouts")))
     (symbol-value 'extra-dir)))
 
 ;;; Ido-ergoemacs functional fixes
 (defun ergoemacs-ido-c-o (arg)
-  "Ergoemacs ido C-o command"
+  "Ergoemacs ido C-o command."
   (interactive "P")
   (cond
    ((memq ido-cur-item '(file dir))
@@ -68,11 +166,17 @@
       (ido-next-match-dir)
     (next-history-element 1)))
 
+(defun ergoemacs-next-line ()
+  "Inserts an indented newline after the current line and moves the point to it."
+  (interactive "P")
+  (end-of-line)
+  (newline-and-indent))
+
 (defun ergoemacs-print-buffer-confirm ()
   "Print current buffer, but ask for confirmation first."
   (interactive)
   (when
-      (y-or-n-p "Print current buffer?")
+      (y-or-n-p "Print current buffer? ")
     (print-buffer)))
 
 (defun ergoemacs-call-keyword-completion ()
@@ -80,11 +184,7 @@
   (interactive)
   (call-interactively (key-binding (kbd "M-TAB"))))
 
-(defun ergoemacs-describe-major-mode ()
-  "Show inline doc for current major-mode."
-  ;; code by Kevin Rodgers. 2009-02-25
-  (interactive)
-  (describe-function major-mode))
+
 
 (defun ergoemacs-copy-all ()
   "Put the whole buffer content into the kill-ring.
@@ -100,19 +200,34 @@ If narrow-to-region is in effect, then cut that region only."
   (kill-region (point-min) (point-max))
   (message "Buffer content cut"))
 
-(defun ergoemacs-copy-line-or-region ()
+(defun ergoemacs-copy-line-or-region (&optional arg)
   "Copy current line, or current text selection."
-  (interactive)
-  (if (region-active-p)
-      (kill-ring-save (region-beginning) (region-end))
-    (kill-ring-save (line-beginning-position) (line-beginning-position 2)) ) )
+  (interactive "P")
+  (cond
+   ;;; cua-copy-rectangle
+   ((and cua--rectangle (boundp 'cua-mode) cua-mode)
+    (cua-copy-rectangle arg))
+   ((and (region-active-p) (boundp 'cua-mode) cua-mode)
+    (cua-copy-region arg))
+   ((region-active-p)
+    (kill-ring-save (region-beginning) (region-end)))
+   (t
+    (kill-ring-save (line-beginning-position) (line-beginning-position 2))))
+  (deactivate-mark))
 
-(defun ergoemacs-cut-line-or-region ()
+(defun ergoemacs-cut-line-or-region (&optional arg)
   "Cut the current line, or current text selection."
-  (interactive)
-  (if (region-active-p)
-      (kill-region (region-beginning) (region-end))
-    (kill-region (line-beginning-position) (line-beginning-position 2)) ) )
+  (interactive "P")
+  (cond
+   ((and cua--rectangle (boundp 'cua-mode) cua-mode)
+    (cua-cut-rectangle arg))
+   ((and (region-active-p) (boundp 'cua-mode) cua-mode)
+    (cua-cut-region arg))
+   ((region-active-p)
+    (kill-region (region-beginning) (region-end)))
+   (t
+    (kill-region (line-beginning-position) (line-beginning-position 2))))
+  (deactivate-mark))
 
 ;;; CURSOR MOVEMENT
 
@@ -277,11 +392,9 @@ Subsequent calls expands the selection to larger semantic unit."
   "Kill text between the beginning of the line to the cursor position.
 If there's no text, delete the previous line ending."
   (interactive "p")
-  (if (not number)
-      (if (looking-back "\n")
-          (delete-char -1)
-        (kill-line 0))
-    (kill-line (- 0 number))))
+  (if (and (= number 1) (looking-back "\n"))
+      (delete-char -1)
+    (kill-line (- 1 number))))
 
 (defun ergoemacs-move-cursor-next-pane (&optional number)
   "Move cursor to the next pane."
@@ -403,25 +516,26 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
         (setq p1 (region-beginning) p2 (region-end))
       (let ((bds (bounds-of-thing-at-point 'word) ) )
         (setq p1 (car bds) p2 (cdr bds)) ) )
-    
-    (when (not (eq last-command this-command))
-      (save-excursion
-        (goto-char p1)
-        (cond
-         ((looking-at "[[:lower:]][[:lower:]]") (put this-command 'state "all lower"))
-         ((looking-at "[[:upper:]][[:upper:]]") (put this-command 'state "all caps") )
-         ((looking-at "[[:upper:]][[:lower:]]") (put this-command 'state "init caps") )
-         ((looking-at "[[:lower:]]") (put this-command 'state "all lower"))
-         ((looking-at "[[:upper:]]") (put this-command 'state "all caps") )
-         (t (put this-command 'state "all lower") ) ) ) )
-    
-    (cond
-     ((string= "all lower" (get this-command 'state))
-      (upcase-initials-region p1 p2) (put this-command 'state "init caps"))
-     ((string= "init caps" (get this-command 'state))
-      (upcase-region p1 p2) (put this-command 'state "all caps"))
-     ((string= "all caps" (get this-command 'state))
-      (downcase-region p1 p2) (put this-command 'state "all lower")) )) )
+
+    (when (and p1 p2)
+      (when (not (eq last-command this-command))
+        (save-excursion
+          (goto-char p1)
+          (cond
+           ((looking-at "[[:lower:]][[:lower:]]") (put this-command 'state "all lower"))
+           ((looking-at "[[:upper:]][[:upper:]]") (put this-command 'state "all caps") )
+           ((looking-at "[[:upper:]][[:lower:]]") (put this-command 'state "init caps") )
+           ((looking-at "[[:lower:]]") (put this-command 'state "all lower"))
+           ((looking-at "[[:upper:]]") (put this-command 'state "all caps") )
+           (t (put this-command 'state "all lower") ) ) ) )
+
+      (cond
+       ((string= "all lower" (get this-command 'state))
+        (upcase-initials-region p1 p2) (put this-command 'state "init caps"))
+       ((string= "init caps" (get this-command 'state))
+        (upcase-region p1 p2) (put this-command 'state "all caps"))
+       ((string= "all caps" (get this-command 'state))
+        (downcase-region p1 p2) (put this-command 'state "all lower")) ))) )
 
 ;;; FRAME
 
@@ -503,13 +617,12 @@ Emacs buffers are those whose name starts with *."
     
     (setq doIt (if (<= (length myFileList) 5)
                    t
-                 (y-or-n-p "Open more than 5 files?") ) )
+                 (y-or-n-p "Open more than 5 files? ") ) )
     
     (when doIt
       (cond
        ((string-equal system-type "windows-nt")
-        (mapc (lambda (fPath) (w32-shell-execute "open" (replace-regexp-in-string "/" "\\" fPath t t)) ) myFileList)
-        )
+        (mapc (lambda (fPath) (w32-shell-execute "open" (replace-regexp-in-string "/" "\\" fPath t t)) ) myFileList))
        ((string-equal system-type "darwin")
         (mapc (lambda (fPath) (shell-command (format "open \"%s\"" fPath)) )  myFileList) )
        ((string-equal system-type "gnu/linux")
@@ -527,38 +640,51 @@ Emacs buffers are those whose name starts with *."
     ;; (shell-command "xdg-open .") ;; 2013-02-10 this sometimes froze emacs till the folder is closed. ℯℊ with nautilus
     ) ))
 
-(defvar ergoemacs-recently-closed-buffers (cons nil nil) "A list of recently closed buffers. The max number to track is controlled by the variable recently-closed-buffers-max.")
-(defvar ergoemacs-recently-closed-buffers-max 30 "The maximum length for recently-closed-buffers.")
+(defvar ergoemacs-recently-closed-buffers (cons nil nil) "A list of recently closed buffers. The max number to track is controlled by the variable `ergoemacs-recently-closed-buffers-max'.")
+(defvar ergoemacs-recently-closed-buffers-max 30 "The maximum length for `ergoemacs-recently-closed-buffers'.")
 
 (defun ergoemacs-close-current-buffer ()
   "Close the current buffer.
 
 Similar to (kill-buffer (current-buffer)) with the following addition:
 
-• prompt user to save if the buffer has been modified even if the buffer is not associated with a file.
-• make sure the buffer shown after closing is a user buffer.
-• if the buffer is a file, add the path to the list `recently-closed-buffers'.
+• Prompt user to save if the buffer has been modified even if the buffer is not associated with a file.
+• Make sure the buffer shown after closing is a user buffer.
+• If the buffer is editing a source file in an org-mode file, prompt the user to save before closing.
+• If the buffer is a file, add the path to the list `ergoemacs-recently-closed-buffers'.
+• If it is the minibuffer, exit the minibuffer
 
 A emacs buffer is one who's name starts with *.
 Else it is a user buffer."
   (interactive)
-  (let (emacsBuff-p isEmacsBufferAfter)
+  (let (emacsBuff-p
+        isEmacsBufferAfter
+        (org-p (string-match "^*Org Src" (buffer-name))))
     
     (setq emacsBuff-p (if (string-match "^*" (buffer-name)) t nil) )
     
     (if (string= major-mode "minibuffer-inactive-mode")
-        nil ; if minibuffer, do nothing
-      (progn 
-        ;; offer to save buffers that are non-empty and modified, even for non-file visiting buffer. (because kill-buffer does not offer to save buffers that are not associated with files)
+        (minibuffer-keyboard-quit) ; if the buffer is minibuffer
+      (progn
+        ;; offer to save buffers that are non-empty and modified, even
+        ;; for non-file visiting buffer. (because kill-buffer does not
+        ;; offer to save buffers that are not associated with files)
         (when (and (buffer-modified-p)
                    (not emacsBuff-p)
                    (not (string-equal major-mode "dired-mode"))
-                   (if (equal (buffer-file-name) nil) 
+                   (if (equal (buffer-file-name) nil)
                        (if (string-equal "" (save-restriction (widen) (buffer-string))) nil t)
                      t))
-          (if (y-or-n-p (format "Buffer %s modified; Do you want to save?" (buffer-name)))
+          (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
               (save-buffer)
             (set-buffer-modified-p nil)))
+        ;; 
+        (when (and (buffer-modified-p)
+                   org-p)
+          (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
+              (org-edit-src-save)
+            (set-buffer-modified-p nil)))
+        
         
         ;; save to a list of closed buffer
         (when (not (equal buffer-file-name nil))
@@ -587,6 +713,80 @@ Else it is a user buffer."
   "Set the height of the default face in the current buffer to its default value."
   (interactive)
   (text-scale-increase 0))
+
+;;; org-mode functions.
+(defun ergoemacs-org-mode-ctrl-return (&optional reopen-or-invisible-ok)
+  "When in an `org-mode' table, use `cua-set-rectangle-mark', otherwise use `org-insert-heading-respect-content'"
+  (interactive "P")
+  (cond
+   ((save-excursion (beginning-of-line) (looking-at org-table-any-line-regexp))
+    (setq prefix-arg current-prefix-arg)
+    (cua-set-rectangle-mark reopen-or-invisible-ok))
+   (t
+    (setq prefix-arg current-prefix-arg)
+    (org-insert-heading-respect-content reopen-or-invisible-ok))))
+
+(defun ergoemacs-org-mode-paste (&optional arg)
+  "Ergoemacs org-mode paste."
+  (let ((regtxt (and cua--register (get-register cua--register))))
+    (cond
+     ((and mark-active cua--rectangle)
+      ;; call cua-paste
+      (cua-paste arg))
+     ((and cua--last-killed-rectangle
+           (eq (and kill-ring (car kill-ring)) (car cua--last-killed-rectangle)))
+      ;; Call cua-paste
+      (cua-paste arg))
+     (t
+      ;; Call org-yank.
+      (org-yank arg)))))
+
+(defun ergoemacs-lookup-key-and-run (key)
+  "Looks up KEY in `ergoemacs-map' and runs the function"
+  (let ((fun (lookup-key ergoemacs-keymap (read-kbd-macro key))))
+    (call-interactively fun)))
+
+(defmacro ergoemacs-define-org-meta (direction &optional disable)
+  "Defines org-mode meta-direction keys.
+DIRECTION defines the `org-mode' and `ergoemacs-mode' direction.
+DISABLE defines if the option should be disabled by default."
+  `(progn
+     (defcustom ,(intern (format "ergoemacs-use-ergoemacs-meta%s" direction)) ,(not disable)
+       ,(format "Use ergoemacs-mode defined <M-%s>." direction)
+       :type 'boolean
+       :group 'ergoemacs-mode)
+     (defun ,(intern (format "ergoemacs-org-meta%s" direction))  (&optional arg)
+       ,(format "Run `org-meta%s' in the proper context.
+When `ergoemacs-use-ergoemacs-meta%s' is non-nil use what ergoemacs-mode defines for <M-%s>.
+ARG is the prefix argument for either command." direction direction direction)
+       (interactive "P")
+       (cond
+        ((or
+          (not ,(intern (format "ergoemacs-use-ergoemacs-meta%s" direction)))
+          (org-at-heading-p)
+          (org-at-item-p)
+          (org-at-table-p)
+          (and (org-region-active-p)
+               (save-excursion
+                 (goto-char (region-beginning))
+                 (org-at-item-p)))
+          (org-with-limited-levels
+           (or (org-at-heading-p)
+               (and (org-region-active-p)
+                    (save-excursion
+                      (goto-char (region-beginning))
+                      (org-at-heading-p))))))
+         (setq prefix-arg current-prefix-arg) ;; Send prefix to next function
+         (call-interactively ',(intern (format "org-meta%s" direction))))
+        (t
+         (setq prefix-arg current-prefix-arg) ;; Send prefix to next function
+         (ergoemacs-lookup-key-and-run ,(format "<M-%s>" direction)))))))
+
+(ergoemacs-define-org-meta "left")
+(ergoemacs-define-org-meta "right")
+
+(ergoemacs-define-org-meta "up" t)
+(ergoemacs-define-org-meta "down" t)
 
 ;;; Ergoprog functions
 (defun ergoemacs-is-text-mode ()
@@ -683,74 +883,6 @@ Else it is a user buffer."
   (insert "<?php echo ; ?>")
   (backward-char 4))
 
-;; Help
-
-(defcustom ergoemacs-inkscape (executable-find "inkscape")
-  "Location of inkscape (used to convert svgs to png files)"
-  :type 'string
-  :group 'ergoemacs-mode)
-
-(defcustom ergoemacs-convert (executable-find "convert")
-  "Location of Imagemagick's convert facility (used to concatenate png files)."
-  :type 'string
-  :group 'ergoemacs-mode)
-
-(defun ergoemacs-display-current-svg (&optional arg)
-  "Generates the current ergoemacs layout, unless it already exists and opens it in a browser.
-With a prefix, force regeneration. "
-  (interactive "p")
-  (let ((var ergoemacs-variant)
-        (layout ergoemacs-keyboard-layout)
-        (extra "ergo-layouts")
-        (dir "")
-        (png "")
-        (png-tmp)
-        (png-prefix "")
-        (file-prefix "")
-        (file ""))
-    (when var
-      (setq extra (concat var "/ergo-layouts")))
-    (setq dir (expand-file-name extra
-                                (expand-file-name "ergoemacs-extras" user-emacs-directory)))
-    (setq file (expand-file-name (concat "ergoemacs-layout-" layout ".svg") dir))
-    (setq file-prefix (expand-file-name (concat "ergoemacs-layout-" layout "-prefix.svg") dir))
-    
-    (setq png (expand-file-name (concat "ergoemacs-layout-" layout ".png") dir))
-    (setq png-tmp (expand-file-name (concat "ergoemacs-layout-" layout "-tmp.png") dir))
-    (setq png-prefix (expand-file-name (concat "ergoemacs-layout-" layout "-prefix.png") dir))
-    
-    (unless (and (not arg) (file-exists-p file))
-      (if (called-interactively-p 'any)
-          (let ((temp-file (make-temp-file "ergoemacs-gen" nil ".el")))
-            (with-temp-file temp-file
-              (insert (format "(setq ergoemacs-variant %s)\n(setq ergoemacs-keyboard-layout \"%s\")\n(ergoemacs-mode 1)\n(ergoemacs-display-current-svg 1)"
-                              (if var
-                                  (concat "\"" var "\"")
-                                "nil")
-                              layout)))
-            
-            (shell-command (format "%s -Q --batch -l %s/ergoemacs-mode -l %s &"
-                                   (ergoemacs-emacs-exe)
-                                   ergoemacs-dir temp-file)))
-        (message "Generating SVG file...")
-        (unless (featurep 'ergoemacs-extras)
-          (require 'ergoemacs-extras))
-        (ergoemacs-gen-svg layout "kbd-ergo.svg" extra)
-        (message "Generated!")))
-    
-    (when (file-exists-p png)
-      (setq file png))
-      
-    (if (not(file-exists-p file))
-        (message "Need to generate/download layout.")
-      (when (called-interactively-p 'interactive)
-        (condition-case err
-            (browse-url-of-file file)
-          (error
-           (ergoemacs-open-in-external-app file)))))
-    (symbol-value 'file)))
-
-
 (defun ergoemacs-copy-full-path (&optional arg)
   "Copies full path to clipboard.
 If arg is nil, copy file name only.
@@ -797,6 +929,96 @@ If arg is a negative prefix, copy file path only"
                     (t
                      "unix")) current-coding)))
     (set-buffer-file-coding-system new-coding t)))
+
+;;; ergoemacs help functions.
+(defun ergoemacs-translate-keybindings ()
+  "Fix keybindings"
+  (let ((help (get-buffer "*Help*")))
+    (when help
+      (with-current-buffer help
+        (let ((inhibit-read-only t))
+          (ergoemacs-pretty-key-rep))))))
+
+(defun ergoemacs-help-refactor-keys-hook ()
+  "Changes keys to ergoemacs key descriptions."
+  (when ergoemacs-mode
+    (ergoemacs-translate-keybindings)))
+
+(add-hook 'temp-buffer-show-hook 'ergoemacs-help-refactor-keys-hook)
+
+(defun ergoemacs-describe-major-mode ()
+  "Show inline doc for current major-mode."
+  ;; code by Kevin Rodgers. 2009-02-25.
+  ;; Modified to translate keybindings (2013)
+  (interactive)
+  (describe-function major-mode))
+
+;;; Help
+
+(defcustom ergoemacs-inkscape (executable-find "inkscape")
+  "Location of inkscape (used to convert svgs to png files)"
+  :type 'string
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-convert (executable-find "convert")
+  "Location of Imagemagick's convert facility (used to concatenate png files)."
+  :type 'string
+  :group 'ergoemacs-mode)
+
+(defun ergoemacs-display-current-svg (&optional arg)
+  "Generates the current ergoemacs layout, unless it already exists and opens it in a browser.
+With a prefix, force regeneration. "
+  (interactive "p")
+  (let ((var ergoemacs-theme)
+        (layout ergoemacs-keyboard-layout)
+        (extra "ergo-layouts")
+        (dir "")
+        (png "")
+        (png-tmp)
+        (png-prefix "")
+        (file-prefix "")
+        (file ""))
+    (when var
+      (setq extra (concat var "/ergo-layouts")))
+    (setq dir (expand-file-name extra
+                                (expand-file-name "ergoemacs-extras" user-emacs-directory)))
+    (setq file (expand-file-name (concat "ergoemacs-layout-" layout ".svg") dir))
+    (setq file-prefix (expand-file-name (concat "ergoemacs-layout-" layout "-prefix.svg") dir))
+    
+    (setq png (expand-file-name (concat "ergoemacs-layout-" layout ".png") dir))
+    (setq png-tmp (expand-file-name (concat "ergoemacs-layout-" layout "-tmp.png") dir))
+    (setq png-prefix (expand-file-name (concat "ergoemacs-layout-" layout "-prefix.png") dir))
+    
+    (unless (and (not current-prefix-arg) (file-exists-p file))
+      (if (called-interactively-p 'any)
+          (let ((temp-file (make-temp-file "ergoemacs-gen" nil ".el")))
+            (with-temp-file temp-file
+              (insert (format "(setq ergoemacs-theme %s)\n(setq ergoemacs-keyboard-layout \"%s\")\n(ergoemacs-mode 1)\n(ergoemacs-display-current-svg 1)"
+                              (if var
+                                  (concat "\"" var "\"")
+                                "nil")
+                              layout)))
+            
+            (shell-command (format "%s -Q --batch -l %s/ergoemacs-mode -l %s &"
+                                   (ergoemacs-emacs-exe)
+                                   ergoemacs-dir temp-file)))
+        (message "Generating SVG file...")
+        (unless (featurep 'ergoemacs-extras)
+          (require 'ergoemacs-extras))
+        (ergoemacs-gen-svg layout "kbd-ergo.svg" extra)
+        (message "Generated!")))
+    
+    (when (file-exists-p png)
+      (setq file png))
+    
+    (if (not(file-exists-p file))
+        (message "Need to generate/download layout.")
+      (when (called-interactively-p 'interactive)
+        (condition-case err
+            (browse-url-of-file file)
+          (error
+           (ergoemacs-open-in-external-app file)))))
+    (symbol-value 'file)))
 
 ;;; Unaccent region taken and modified from Drew Adam's unaccent.el
 
@@ -869,7 +1091,7 @@ display in-progress messages."
   "Replace accented char at curser by corresponding unaccented char(s).
 Guillemet -> quote, degree -> @, s-zed -> ss, upside-down ?! -> ?!."
   (interactive)
-  (when (accented-char-p (following-char))
+  (when (ergoemacs-accented-char-p (following-char))
     (let ((sans-accent (assoc (following-char) ergoemacs-reverse-iso-chars-alist)))
       (delete-char 1)
       (insert (cdr sans-accent))
@@ -881,3 +1103,6 @@ Guillemet -> quote, degree -> @, s-zed -> ss, upside-down ?! -> ?!."
 (provide 'ergoemacs-functions)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-functions.el ends here
+;; Local Variables:
+;; coding: utf-8-emacs
+;; End:

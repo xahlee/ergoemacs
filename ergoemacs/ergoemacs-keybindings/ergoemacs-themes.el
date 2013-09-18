@@ -1,5 +1,33 @@
-;;; ergoemacs-variants.el ---  Ergoemacs keybindings and variants -*- coding: utf-8 -*-
+;;; ergoemacs-themes.el --- ErgoEmacs keybindings and themes
+
+;; Copyright (C) 2013 Matthew L. Fidler
+
+;; Maintainer: Matthew L. Fidler
+;; Keywords: convenience
+
+;; ErgoEmacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published
+;; by the Free Software Foundation, either version 3 of the License,
+;; or (at your option) any later version.
+
+;; ErgoEmacs is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;; General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with ErgoEmacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; 
+
+;; Todo:
+
+;; 
+
 ;;; Code:
+
 ;; Ergoemacs keys
 
 ;; F6 is fall back
@@ -13,6 +41,11 @@
     ("M-l" forward-char "→ char")
     ("M-i" previous-line "↑ line")
     ("M-k" next-line "↓ line")
+
+    ("M-C-j" ("<C-left>" nil)  "← char")
+    ("M-C-l" ("<C-right>" nil) "→ char")
+    ("M-C-i" ("<C-up>" nil) "↑ line")
+    ("M-C-k" ("<C-down>" nil) "↓ line")
     
     ;; Move by word
     ("M-u" backward-word "← word")
@@ -92,7 +125,7 @@
     ;; Mark point.
     ("M-SPC" set-mark-command "Set Mark")
     
-    ("M-a" execute-extended-command "M-x")
+    ("M-a" (helm-M-x smex execute-extended-command) "M-x")
     ("M-A" shell-command "shell cmd")
     
     ;; WINDOW SPLITING
@@ -123,19 +156,21 @@
     ("<apps> 3" delete-other-windows "x other pane")
     ("<apps> 4" split-window-vertically "split —")
     ("<apps> 5" query-replace "rep")
-    ("<apps> <return>" ergoemacs-smex-if-exists "M-x")
+    ("<apps> <return>" (helm-M-x smex execute-extended-command) "M-x")
     ("<apps> SPC" set-mark-command "Set Mark")
     ("<apps> a" mark-whole-buffer "Sel All")
-    ("<apps> f" ergoemacs-ctl-x "Ctl-x")
-    ("<apps> h" ergoemacs-ctl-h "Ctl-h")
+    ("<apps> f" ("C-x" ctl-to-alt) "Ctl-x")
+    ("<apps> <apps> f" ("C-x" unchorded) "Ctl-x")
+    ("<apps> h" ("C-h" nil) "Ctl-h")
     ("<apps> i" ergoemacs-alt-shift-keys "Rep Alt+Shift")
-    ("<apps> j" ergoemacs-ctl-c "Ctl-c")
+    ("<apps> j" ("C-c" unchorded) "Ctl-c")
+    ("<apps> <apps> j" ("C-c" ctl-to-alt) "Ctl-c")
     ("<apps> k" ergoemacs-alt-keys "Repeat Alt")
     ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
-    ("<apps> r" ergoemacs-ctl-x-unchorded "Ctl-x*")
-    ("<apps> s" save-buffer "Save")
+    ;; ("<apps> r" ("C-x" unchorded) "Ctl-x*")
+    ("<apps> s" ("C-x C-s" nil) "Save")
     ("<apps> o" find-file "Open")
-    ("<apps> u" ergoemacs-ctl-c-unchorded "Ctl-c*")
+    ;; ("<apps> u" ("C-c" unchorded) "Ctl-c*")
     ("<apps> g" universal-argument "C-u")
     ("<apps> w" ergoemacs-close-current-buffer "Close")
     ;;("<apps> y" ergoemacs-ctl-h-unchorded "Ctl-h*")
@@ -147,6 +182,7 @@
     ("<apps> c" ergoemacs-copy-line-or-region "copy")
     ("<apps> v" yank "paste")
     ("<apps> b" redo "↷ redo")
+    ("<apps> t" (helm-mini ido-switch-buffer switch-to-buffer) "switch buf")
     ("<apps> z" undo "↶ undo")
     ("<apps> n c" calc "calc" t)
     ("<apps> n m" magit-status "magit" t)
@@ -168,7 +204,15 @@
   :type '(repeat
           (list :tag "Keys"
                 (string :tag "QWERTY Kbd Code")
-                (symbol :tag "Function/Keymap")
+                (choice
+                 (list (string :tag "Kbd Code")
+                       (choice
+                        (const :tag "Shortcut" nil)
+                        (const :tag "Unchorded" 'unchorded)
+                        (const :tag "Ctl<->Alt" 'ctl-to-alt)
+                        (const :tag "Normal" 'normal)))
+                 (symbol :tag "Function/Keymap")
+                 (sexp :tag "List of functions/keymaps"))
                 (choice (const :tag "No Label" nil)
                         (string :tag "Label"))
                 (boolean :tag "Translate Only first key?")))
@@ -185,6 +229,7 @@
     
     
     ("C-+" text-scale-increase "+Font Size")
+    ("C-=" text-scale-increase "+Font Size")
     ("C--" text-scale-decrease "-Font Size")
     ("C-0" ergoemacs-text-scale-normal-size)
     ;; --------------------------------------------------
@@ -196,7 +241,7 @@
     ("C-S-o" ergoemacs-open-in-external-app "OS Open")
     ("C-S-t" ergoemacs-open-last-closed "Open Last")
     ("C-w" ergoemacs-close-current-buffer "Close Buf.")
-    ("C-s" save-buffer "Save")
+    ("C-s" ("C-x C-s") "Save")
     ("C-S-s" write-file "Save As")
     ("C-p" ergoemacs-print-buffer-confirm "Print")
     ("C-a" mark-whole-buffer "Select all")
@@ -270,13 +315,32 @@
     
     ("<M-up>" ergoemacs-backward-block) ; Alt+↑
     ("<M-down>" ergoemacs-forward-block) ; Alt+↓
-    )
+
+    ;; Now add copy and paste support
+    ;; Timeout commands to support both
+    ("C-c <timeout>" ergoemacs-copy-line-or-region)
+    ("C-x <timeout>" ergoemacs-cut-line-or-region)
+    ;; Shortcuts
+    ("C-c" ergoemacs-ctl-c "Copy") 
+    ("C-x" ergoemacs-ctl-x "Cut")
+    ("C-S-c" ("C-c" normal) "Copy") 
+    ("C-S-x" ("C-x" normal)  "Cut") 
+    ("C-v" yank "Paste") 
+    ("C-S-v" yank-pop "paste ↑"))
   "Keybinding that are constant regardless of they keyboard used."
   :type '(repeat
           (list :tag "Fixed Key"
                 (choice (string :tag "Kbd code")
                         (sexp :tag "Key"))
-                (symbol :tag "Function/Keymap")
+                (choice
+                 (list (string :tag "Kbd Code")
+                       (choice
+                        (const :tag "Shortcut" nil)
+                        (const :tag "Unchorded" 'unchorded)
+                        (const :tag "Ctl<->Alt" 'ctl-to-alt)
+                        (const :tag "Normal" 'normal)))
+                 (symbol :tag "Function/Keymap")
+                 (sexp :tag "List of functions/keymaps"))
                 (choice (const :tag "No Label" nil)
                         (string :tag "Label"))))
   :set 'ergoemacs-set-default
@@ -284,6 +348,18 @@
 
 (defcustom ergoemacs-minor-mode-layout
   `(;; Key/variable command x-hook
+    (org-mode-hook
+     ((move-beginning-of-line org-beginning-of-line override remap)
+      (move-end-of-line org-end-of-line override remap)
+      (cua-set-rectangle-mark ergoemacs-org-mode-ctrl-return override)
+      (cua-paste ergoemacs-org-mode-paste override)
+      ;;("<C-return>" ergoemacs-org-mode-ctrl-return override)
+      ("<M-down>" ergoemacs-org-metadown override)
+      ("<M-up>" ergoemacs-org-metaup override)
+      ("<M-left>" ergoemacs-org-metaleft override)
+      ("<M-right>" ergoemacs-org-metaright override)))
+    (org-agenda-mode-hook
+     ((undo org-agenda-undo org-agenda-mode-map remap)))
     ;; Minibuffer hook
     (minibuffer-setup-hook
      ((keyboard-quit minibuffer-keyboard-quit minor-mode-overriding-map-alist)
@@ -399,8 +475,17 @@
     ;; Helm mode hooks
     (helm-before-initialize-hook
      (("C-w" helm-keyboard-quit helm-map)
+      ("C-z" nil helm-map)
+      ("M-RET" helm-execute-persistent-action helm-map)
+      ("M-S-RET" "C-u M-RET" helm-map)
+      ("<M-S-return>" "C-u M-RET" helm-map)
+
       (next-line helm-next-line helm-map)
       (previous-line helm-previous-line helm-map)
+
+      (next-history-element helm-next-line helm-map)
+      (previous-history-element helm-previous-line helm-map)
+      
       (forward-char helm-next-source helm-map)
       (backward-char helm-previous-source helm-map)
       (keyboard-quit helm-keyboard-quit helm-map)
@@ -415,7 +500,7 @@
     (auto-complete-mode-hook
      ((isearch-forward ac-isearch ac-completing-map)
       ("C-s" nil ac-completing-map))))
-  "Key bindings that are applied as hooks to specific modes"
+  "Key bindings that are applied as hooks to specific modes."
   :type '(repeat
           (list :tag "Keys for a particular minor/major mode"
                 (symbol :tag "Hook for mode")
@@ -426,9 +511,14 @@
                         (string :tag "Kbd Code"))
                        (choice
                         (symbol :tag "Function to Run")
+                        (string :tag "Translated Kbd Code")
+                        (const :tag "Override by new minor mode" override)
                         (const :tag "Unbind Key" nil))
                        (symbol :tag "Keymap to Modify")
-                       (boolean :tag "Translate key?")))))
+                       (choice
+                        (const :tag "Translate key" t)
+                        (const :tag "Raw key" nil)
+                        (const :tag "Remap key" remap))))))
   :set 'ergoemacs-set-default
   :group 'ergoemacs-standard-layout)
 
@@ -540,49 +630,55 @@ Some exceptions we don't want to unset.
   :group 'ergoemacs-standard-layout)
 
 
-(defcustom ergoemacs-variant nil
-  "Ergoemacs Keyboard Layout Variants"
+(defcustom ergoemacs-theme (if (and (boundp 'ergoemacs-variant) ergoemacs-variant)
+                               ergoemacs-variant
+                             (if (and (boundp 'ergoemacs-theme) ergoemacs-theme)
+                                 ergoemacs-theme
+                               (if (getenv "ERGOEMACS_THEME")
+                                   (getenv "ERGOEMACS_THEME")
+                                 nil)))
+  "Ergoemacs Keyboard Layout Themes"
   :type '(choice
           (const :tag "Standard" :value nil)
           (symbol :tag "Other"))
   :group 'ergoemacs-mode)
 
 
-;;; Variant functions
+;;; Theme functions
 (defun ergoemacs-get-variable-layout (&optional var)
-  "Get Variable Layout for current variant."
+  "Get Variable Layout for current theme."
   (let ((cvar (or var 'ergoemacs-variable-layout)))
-    (if (and ergoemacs-variant
-             (intern-soft (concat (symbol-name cvar) "-" ergoemacs-variant)))
-        (intern (concat (symbol-name cvar) "-" ergoemacs-variant))
+    (if (and ergoemacs-theme
+             (intern-soft (concat (symbol-name cvar) "-" ergoemacs-theme)))
+        (intern (concat (symbol-name cvar) "-" ergoemacs-theme))
       cvar)))
 
 (defun ergoemacs-get-fixed-layout ()
-  "Gets Fixed Layout for current variant."
+  "Gets Fixed Layout for current theme."
   (ergoemacs-get-variable-layout 'ergoemacs-fixed-layout))
 
 (defun ergoemacs-get-minor-mode-layout ()
-  "Get ergoemacs-minor-mode-layout based on current variant."
+  "Get ergoemacs-minor-mode-layout based on current theme."
   (ergoemacs-get-variable-layout 'ergoemacs-minor-mode-layout))
 
 (defun ergoemacs-get-redundant-keys ()
-  "Get redundant keys based on current variant"
+  "Get redundant keys based on current theme"
   (ergoemacs-get-variable-layout 'ergoemacs-redundant-keys))
 
 
-;;; Add the different keyboard variants
+;;; Add the different keyboard themes
 
 
-(defun ergoemacs-get-variants-menu ()
-  "Gets the list of all known variants and the documentation associated with the variants."
-  `("ErgoEmacs Variants"
+(defun ergoemacs-get-themes-menu ()
+  "Gets the list of all known themes and the documentation associated with the themes."
+  `("ErgoEmacs Themes"
     ["Standard" (lambda() (interactive)
-                  (ergoemacs-set-default 'ergoemacs-variant nil))
-     :style radio :selected (not ergoemacs-variant)]
-    ,@(let ((lays (sort (ergoemacs-get-variants) 'string<)))
+                  (ergoemacs-set-default 'ergoemacs-theme nil))
+     :style radio :selected (not ergoemacs-theme)]
+    ,@(let ((lays (sort (ergoemacs-get-themes) 'string<)))
         (mapcar
          (lambda(lay)
-           (let* ((variable (intern (concat "ergoemacs-" lay "-variant")))
+           (let* ((variable (intern (concat "ergoemacs-" lay "-theme")))
                   (alias (condition-case nil
                              (indirect-variable variable)
                            (error variable)))
@@ -594,16 +690,16 @@ Some exceptions we don't want to unset.
                              (documentation-property alias 'group-documentation))))
              `[,(concat lay " -" doc)
                (lambda() (interactive)
-                 (ergoemacs-set-default 'ergoemacs-variant ,lay))
-               :style radio :selected (and ergoemacs-variant (string= ergoemacs-variant ,lay))]))
+                 (ergoemacs-set-default 'ergoemacs-theme ,lay))
+               :style radio :selected (and ergoemacs-theme (string= ergoemacs-theme ,lay))]))
          lays ))))
 
-(defun ergoemacs-get-variants-doc ()
-  "Gets the list of all known variants and the documentation associated with the variants."
-  (let ((lays (sort (ergoemacs-get-variants) 'string<)))
+(defun ergoemacs-get-themes-doc ()
+  "Gets the list of all known themes and the documentation associated with the themes."
+  (let ((lays (sort (ergoemacs-get-themes) 'string<)))
     (mapconcat
      (lambda(lay)
-       (let* ((variable (intern (concat "ergoemacs-" lay "-variant")))
+       (let* ((variable (intern (concat "ergoemacs-" lay "-theme")))
               (alias (condition-case nil
                          (indirect-variable variable)
                        (error variable)))
@@ -616,24 +712,24 @@ Some exceptions we don't want to unset.
          (concat "\""lay "\" (" doc ")" (if is-alias ", alias" ""))))
      lays "\n")))
 
-(defun ergoemacs-get-variants (&optional ob)
-  "Gets the list of all known variants."
+(defun ergoemacs-get-themes (&optional ob)
+  "Gets the list of all known themes."
   (let (ret)
     (mapatoms (lambda(s)
                 (let ((sn (symbol-name s)))
-                  (and (string-match "^ergoemacs-\\(.*?\\)-variant$" sn)
+                  (and (string-match "^ergoemacs-\\(.*?\\)-theme$" sn)
                        (setq ret (cons (match-string 1 sn) ret)))))
               ob)
     ret))
 
-(defun ergoemacs-get-variants-type ()
+(defun ergoemacs-get-themes-type ()
   "Gets the customization types for `ergoemacs-keyboard-layout'"
   `(choice
     (const :tag "Standard" :value nil)
     ,@(mapcar
        (lambda(elt)
          `(const :tag ,elt :value ,elt))
-       (sort (ergoemacs-get-variants) 'string<))
+       (sort (ergoemacs-get-themes) 'string<))
     (symbol :tag "Other")))
 
 ;;;###autoload
@@ -641,11 +737,11 @@ Some exceptions we don't want to unset.
   "Defines KEY in ergoemacs keyboard based on QWERTY and binds to FUNCTION.
 Optionally provides DESC for a description of the key."
   (let* (found
-        (str-key (or
-                    (and (eq (type-of key) 'string) key)
-                    (key-description key)))
-        (cur-key str-key)
-        (no-ergoemacs-advice t))
+         (str-key (or
+                   (and (eq (type-of key) 'string) key)
+                   (key-description key)))
+         (cur-key str-key)
+         (no-ergoemacs-advice t))
     (set (if fixed-key (ergoemacs-get-fixed-layout)
            (ergoemacs-get-variable-layout))
          (mapcar
@@ -666,8 +762,8 @@ Optionally provides DESC for a description of the key."
                    (if fixed-key
                        `(,str-key ,function ,desc)
                      `(,str-key ,function ,desc ,only-first))))
-    (unless (and (boundp 'ergoemacs-variant)
-                 (string= ergoemacs-variant "tmp"))
+    (unless (and (boundp 'ergoemacs-theme)
+                 (string= ergoemacs-theme "tmp"))
       (if fixed-key
           (condition-case err
               (setq cur-key (read-kbd-macro str-key))
@@ -735,17 +831,18 @@ format:
                              key-def))
                          (nth 1 mode-list)))
               (unless found
+		;; FIXME: Use `push' or `cl-pushnew' instead of `add-to-list'.
                 (add-to-list 'lst list))
               `(,(nth 0 mode-list) ,lst))))
         (symbol-value (ergoemacs-get-minor-mode-layout)))))
 
 
-(defmacro ergoemacs-defvariant (name desc based-on &rest differences)
-  "Creates a variant layout for Ergoemacs keybindings
+(defmacro ergoemacs-deftheme (name desc based-on &rest differences)
+  "Creates a theme layout for Ergoemacs keybindings
 
-NAME is the variant name.
-DESC is the variant description
-BASED-ON is the base name variant that the new variant is based on.
+NAME is the theme name.
+DESC is the theme description
+BASED-ON is the base name theme that the new theme is based on.
 
 DIFFERENCES are the differences from the layout based on the functions.  These are based on the following functions:
 
@@ -755,13 +852,13 @@ DIFFERENCES are the differences from the layout based on the functions.  These a
 "
   (declare (indent 1))
   `(progn
-     (let ((last-variant ergoemacs-variant)
+     (let ((last-theme ergoemacs-theme)
            (ergoemacs-needs-translation nil)
            (ergoemacs-fixed-layout-tmp ,(if based-on
                                             `(symbol-value (or (intern-soft ,(format "ergoemacs-fixed-layout-%s" based-on)) 'ergoemacs-fixed-layout))
                                           'ergoemacs-fixed-layout))
            (ergoemacs-variable-layout-tmp ,(if based-on
-                                               `(symbol-value (or (intern-soft ,(format "ergoemacs-variable-layout-%s" based-on)) 'ergoemacs-variable-layout)) 
+                                               `(symbol-value (or (intern-soft ,(format "ergoemacs-variable-layout-%s" based-on)) 'ergoemacs-variable-layout))
                                              'ergoemacs-variable-layout))
            (ergoemacs-minor-mode-layout-tmp ,(if based-on
                                                  `(symbol-value (or (intern-soft ,(format "ergoemacs-minor-mode-layout-%s" based-on)) 'ergoemacs-minor-mode-layout))
@@ -769,10 +866,10 @@ DIFFERENCES are the differences from the layout based on the functions.  These a
            (ergoemacs-redundant-keys-tmp ,(if based-on
                                               `(symbol-value (or (intern-soft ,(format "ergoemacs-redundant-keys-%s" based-on)) 'ergoemacs-redundant-keys))
                                             'ergoemacs-redundant-keys)))
-       (setq ergoemacs-variant "tmp")
+       (setq ergoemacs-theme "tmp")
        ,@differences
-       (setq ergoemacs-variant last-variant)
-       (defgroup ,(intern (format "ergoemacs-%s-variant" name)) nil
+       (setq ergoemacs-theme last-theme)
+       (defgroup ,(intern (format "ergoemacs-%s-theme" name)) nil
          ,desc
          :group 'ergoemacs-mode)
        
@@ -783,25 +880,42 @@ DIFFERENCES are the differences from the layout based on the functions.  These a
                  (list :tag "Keys"
                        (choice (string :tag "QWERTY Kbd Code")
                                (sexp :tag "Key"))
-                       (symbol :tag "Function")
+                       (choice
+                        (list (string :tag "Kbd Code")
+                              (choice
+                               (const :tag "Shortcut" nil)
+                               (const :tag "Unchorded" 'unchorded)
+                               (const :tag "Ctl<->Alt" 'ctl-to-alt)
+                               (const :tag "Normal" 'normal)))
+                        (symbol :tag "Function/Keymap")
+                        (sexp :tag "List of functions/keymaps"))
+                       
                        (choice (const :tag "No Label" nil)
                                (string :tag "Label"))
                        (boolean :tag "Translate Only first key?")))
          :set 'ergoemacs-set-default
-         :group ',(intern (format "ergoemacs-%s-variant" name)))
+         :group ',(intern (format "ergoemacs-%s-theme" name)))
        
        (defcustom ,(intern (format "ergoemacs-fixed-layout-%s" name))
          ergoemacs-fixed-layout-tmp
          "Ergoemacs that are fixed regardless of keyboard types.  By default these keybindings are based on QWERTY."
          :type '(repeat
-                 (list :tag "Keys"
-                       (choice (string :tag "QWERTY Kbd Code")
+                 (list :tag "Fixed Key"
+                       (choice (string :tag "Kbd code")
                                (sexp :tag "Key"))
-                       (symbol :tag "Function")
+                       (choice
+                        (list (string :tag "Kbd Code")
+                              (choice
+                               (const :tag "Shortcut" nil)
+                               (const :tag "Unchorded" 'unchorded)
+                               (const :tag "Ctl<->Alt" 'ctl-to-alt)
+                               (const :tag "Normal" 'normal)))
+                        (symbol :tag "Function/Keymap")
+                        (sexp :tag "List of functions/keymaps"))
                        (choice (const :tag "No Label" nil)
                                (string :tag "Label"))))
          :set 'ergoemacs-set-default
-         :group ',(intern (format "ergoemacs-%s-variant" name)))
+         :group ',(intern (format "ergoemacs-%s-theme" name)))
        
        (defcustom ,(intern (format "ergoemacs-minor-mode-layout-%s" name))
          ergoemacs-minor-mode-layout-tmp
@@ -816,11 +930,16 @@ DIFFERENCES are the differences from the layout based on the functions.  These a
                                (string :tag "Kbd Code"))
                               (choice
                                (symbol :tag "Function to Run")
+                               (string :tag "Translated Kbd Code")
+                               (const :tag "Override by new minor mode" override)
                                (const :tag "Unbind Key" nil))
                               (symbol :tag "Keymap to Modify")
-                              (boolean :tag "Translate key?")))))
+                              (choice
+                               (const :tag "Translate key" t)
+                               (const :tag "Raw key" nil)
+                               (const :tag "Remap key" remap))))))
          :set 'ergoemacs-set-default
-         :group ',(intern (format "ergoemacs-%s-variant" name)))
+         :group ',(intern (format "ergoemacs-%s-theme" name)))
        (defcustom ,(intern (format "ergoemacs-redundant-keys-%s" name))
          ergoemacs-redundant-keys-tmp
          "These are the redundant key bindings in emacs that ErgoEmacs unbinds.  Some exceptions we do not want to unset are:
@@ -839,16 +958,16 @@ Some exceptions we don't want to unset.
 "
          :type '(repeat (string :tag "Kbd code to unset"))
          :set 'ergoemacs-set-default
-         :group ',(intern (format "ergoemacs-%s-variant" name)))
+         :group ',(intern (format "ergoemacs-%s-theme" name)))
        
-       (defcustom ergoemacs-variant nil
-         (concat "Ergoemacs Keyboard Layout variants.\nThere are different layout variants for ergoemacs.  These include:\n" (ergoemacs-get-variants-doc))
-         :type (ergoemacs-get-variants-type)
+       (defcustom ergoemacs-theme (getenv "ERGOEMACS_THEME")
+         (concat "Ergoemacs Keyboard Layout themes.\nThere are different layout themes for ergoemacs.  These include:\n" (ergoemacs-get-themes-doc))
+         :type (ergoemacs-get-themes-type)
          :set 'ergoemacs-set-default
          :group 'ergoemacs-mode))))
 
 
-(ergoemacs-defvariant lvl1
+(ergoemacs-deftheme lvl1
   "Level 1 Ergoemacs, just arrow keys."
   nil
   (setq ergoemacs-fixed-layout-tmp '())
@@ -860,7 +979,7 @@ Some exceptions we don't want to unset.
           ("M-SPC" set-mark-command "Set Mark")))
   (setq ergoemacs-redundant-keys-tmp '("C-b" "C-f" "C-p" "C-n" "C-SPC")))
 
-(ergoemacs-defvariant lvl2
+(ergoemacs-deftheme lvl2
   "Level 2 Ergoemacs, Arrow keys, word movement, and deletion."
   lvl1
   (setq ergoemacs-variable-layout-tmp
@@ -879,13 +998,13 @@ Some exceptions we don't want to unset.
                                              (list "M-f" "M-b" "M-d" "C-<backspace>" "C-d"))))
 
 
-(ergoemacs-defvariant lvl3
+(ergoemacs-deftheme lvl3
   "Level 3 Ergoemacs -- ALL key except <apps> keys."
   nil
   (setq ergoemacs-variable-layout-tmp
-        (remove-if (lambda (x) (string-match "<apps>" (car x))) ergoemacs-variable-layout)))
+        (remove-if (lambda (x) (string-match "<\\(apps\\|menu\\)>" (car x))) ergoemacs-variable-layout)))
 
-(ergoemacs-defvariant guru
+(ergoemacs-deftheme guru
   "Unbind some commonly used keys such as <left> and <right> to get in the habit of using ergoemacs keybindings."
   nil
   (setq ergoemacs-redundant-keys-tmp `(,@ergoemacs-redundant-keys-tmp
@@ -905,15 +1024,15 @@ Some exceptions we don't want to unset.
                                        "<C-delete>"
                                        "<M-delete>"
                                        "<next>"
-                                       "<C-next>" 
+                                       "<C-next>"
                                        "<prior>"
-                                       "<C-prior>" 
+                                       "<C-prior>"
                                        "<home>"
                                        "<C-home>"
                                        "<end>"
                                        "<C-end>")))
 
-(ergoemacs-defvariant 5.7.5
+(ergoemacs-deftheme 5.7.5
   "Old ergoemacs layout.  Uses M-0 for close pane. Does not have beginning/end of buffer."
   nil
   (ergoemacs-replace-key 'delete-window "M-0" "x pane")
@@ -921,15 +1040,15 @@ Some exceptions we don't want to unset.
         (remove-if (lambda (x) (or (string= "M-n" (car x))
                               (string= "M-N" (car x)))) ergoemacs-variable-layout-tmp)))
 
-(ergoemacs-defvariant 5.3.7
+(ergoemacs-deftheme 5.3.7
   "Old Ergoemacs layout.  Uses M-; and M-: for isearch.  Uses M-n for cancel."
   5.7.5
   (ergoemacs-replace-key 'isearch-forward "M-;" "→ isearch")
   (ergoemacs-replace-key 'isearch-backward "M-:" "← isearch")
   (ergoemacs-replace-key 'keyboard-quit "M-n" "Cancel"))
 
-(ergoemacs-defvariant prog
-  "David Capellos ergoprog variant"
+(ergoemacs-deftheme prog
+  "David Capellos ergoprog theme"
   5.3.7
   (ergoemacs-replace-key 'split-window-vertically "M-@" "split |")
   (ergoemacs-replace-key 'split-window-horizontally "M-4")
@@ -985,6 +1104,200 @@ Some exceptions we don't want to unset.
   (ergoemacs-key "M-m b b" 'bookmark-bmenu-list "" t) ;; b = Switch Buffer = List Bookmarks
   )
 
-(provide 'ergoemacs-variants)
+(ergoemacs-deftheme cabbage
+  "Cabbage theme."
+  lvl1
+  ;;(ergoemacs-key "M-j" 'backward-char)
+  ;;(ergoemacs-key "M-l" 'forward-char)
+  ;;(ergoemacs-key "M-i" 'previous-line)
+  ;;(ergoemacs-key "M-k" 'next-line)
+  
+  (ergoemacs-key "M-I" 'scroll-down)
+  (ergoemacs-key "M-C-i" 'scroll-down "↓ page")
+  
+  (ergoemacs-key "M-K" 'scroll-up )
+  (ergoemacs-key "M-C-k" 'scroll-up "↑ page")
+  (ergoemacs-key "M-L" 'end-of-line "→ line")
+  (ergoemacs-key "M-C-l" 'end-of-line "→ line")
+  (ergoemacs-key "M-J" 'beginning-of-line "← line")
+  (ergoemacs-key "M-C-j" 'beginning-of-line "← line")
+
+  ;; (ergoemacs-key "M-u" 'backward-word)
+  ;; (ergoemacs-key "M-o" 'forward-word)
+  (ergoemacs-key "M-U" 'backward-paragraph "← ¶" )
+  (ergoemacs-key "M-O" 'forward-paragraph "→ ¶")
+  (ergoemacs-key "M-C-o" 'forward-paragraph "← ¶")
+  (ergoemacs-key "M-C-u" 'backward-paragraph "→ ¶")
+  (ergoemacs-key "M-b" 'pop-to-mark-command)
+
+  (ergoemacs-key "M-z" 'undo "undo")
+
+  (ergoemacs-fixed-key "M-SPC" 'set-mark-command)
+  (ergoemacs-fixed-key "M-S-SPC" 'mark-paragraph)
+
+  
+  ;; (ergoemacs-key "M-s" 'move-cursor-next-pane)
+  ;; (ergoemacs-key "M-S" 'move-cursor-previous-pane)
+
+  (ergoemacs-key "M-d" 'delete-backward-char "⌫ char")
+  (ergoemacs-key "M-f" 'delete-char "⌦ char")
+  (ergoemacs-key "M-D" 'backward-kill-word "⌫ word")
+  (ergoemacs-key "M-F" 'kill-word "⌦ word")
+  (ergoemacs-fixed-key "<delete>" 'delete-char)
+
+  (ergoemacs-key "M-h" 'beginning-of-buffer "↑ buffer")
+  (ergoemacs-key "M-H" 'end-of-buffer "↓ buffer")
+  (ergoemacs-key "M-RET" '(cabbage-next-line ergoemacs-next-line) "Next Line")
+
+  (ergoemacs-key "M-1" 'cabbage-enlargement-enlarge)
+  (ergoemacs-key "M-C-1" 'cabbage-enlargement-restore)
+  (ergoemacs-key "M-0" 'delete-window)
+  (ergoemacs-key "M-2" 'split-window-vertically "split |")
+  (ergoemacs-key "M-3" 'split-window-horizontally "split -")
+  (ergoemacs-key "M-4" 'balance-windows "balance")
+  (ergoemacs-key "M-5" 'delete-other-windows "x other")
+  (ergoemacs-key "M-+" 'balance-windows "balance")
+
+  (ergoemacs-key "M-a" '(smex execute-extended-command) "M-x")
+  (ergoemacs-key "M-q" 'shell-command "shell cmd")
+  (ergoemacs-key "M-e" 'cabbage-testing-execute-test)
+  
+  (ergoemacs-fixed-key "C-d" 'windmove-right "→pane")
+  (ergoemacs-fixed-key "C-s" 'windmove-down "↓pane")
+  (ergoemacs-fixed-key "C-a" 'windmove-left "←pane")
+  (ergoemacs-fixed-key "C-w" 'windmove-up "↑pane")
+
+  ;; Allow semi-ergonomic locations
+  (ergoemacs-key "C-M-d" 'windmove-right "→pane")
+  (ergoemacs-key "C-M-s" 'windmove-down "↓pane")
+  (ergoemacs-key "C-M-a" 'windmove-left "←pane")
+  (ergoemacs-key "C-M-w" 'windmove-up "↑pane")
+  
+  (ergoemacs-key "M-x" '(cabbage-kill-region-or-rm-kill-region-executor kill-region) "M-x")
+  (ergoemacs-key "M-c" '(cabbage-kill-ring-save-or-rm-kill-ring-save-executor kill-ring-save) "Copy")
+  (ergoemacs-key "M-v" 'yank "paste")
+  (ergoemacs-key "M-V" 'yank-pop "paste ↑")
+  (ergoemacs-fixed-key "C-r d" 'kill-rectangle "Cut rect")
+
+  (ergoemacs-fixed-key "C-o" 'find-file "Edit File")
+  (ergoemacs-fixed-key "C-S-n" 'write-file "Save As")
+  (ergoemacs-fixed-key "C-S-a" 'mark-whole-buffer "Select All")
+
+  ;; Help should search more than just commands
+  (ergoemacs-fixed-key "C-h a" 'apropos "Apropos")
+
+  ;; general
+  (ergoemacs-fixed-key "C-c e" 'eval-and-replace)
+  (ergoemacs-fixed-key "C-x C-m" 'execute-extended-command)
+  (ergoemacs-fixed-key "C-c C-m" 'execute-extended-command)
+  (ergoemacs-key "M-r" 'replace-string "Replace")
+  (ergoemacs-fixed-key "<C-return>" 'cabbage-duplicate-line)
+  (ergoemacs-fixed-key "C-$" 'cabbage-kill-buffer)
+  (ergoemacs-fixed-key "C-c i" 'indent-buffer)
+  (ergoemacs-fixed-key "C-c n" 'cabbage-cleanup-buffer)
+  (ergoemacs-fixed-key "C-x C-b" 'ibuffer)
+
+  (ergoemacs-fixed-key "C-c C-k" '(cabbage-comment-or-uncomment-region-or-line comment-dwim))
+  (ergoemacs-fixed-key "C-c k" 'kill-compilation)
+  (ergoemacs-fixed-key "C-c w" 'remove-trailing-whitespace-mode)
+
+  ;; Use regex searches by default.
+  (ergoemacs-fixed-key "C-f" 'isearch-forward-regexp "→ reg isearch")
+  (ergoemacs-fixed-key "C-*" 'isearch-forward-at-point "→ isearch")
+
+  ;; File finding
+  (ergoemacs-fixed-key "C-x M-f" 'ido-find-file-other-window)
+  
+  
+  (ergoemacs-fixed-key "C-x f" 'recentf-ido-find-file)
+  (ergoemacs-fixed-key "C-c r" 'revert-buffer)
+
+  ;; Need to figure out if any of these are missing...
+  ;; (define-key isearch-mode-map "M-s" 'move-cursor-next-pane)
+  ;; (define-key isearch-mode-map "M-v" 'isearch-yank-kill)
+  ;; (define-key isearch-mode-map "M-w" 'isearch-query-replace)
+  ;; (define-key isearch-mode-map "M-o" 'isearch-yank-word)
+  ;; (define-key isearch-mode-map "M-l" 'isearch-yank-char)
+  ;; (define-key isearch-mode-map "M-j" 'isearch-delete-char)
+  ;; (define-key isearch-mode-map "M-u" 'isearch-delete-char)
+  ;; (define-key isearch-mode-map "C-f" 'isearch-repeat-forward)
+  
+  ;; TODO: find a suitable binding to use the search ring
+  ;; (define-key isearch-mode-map "C-i" 'isearch-ring-retreat)
+  ;; (define-key isearch-mode-map "C-k" 'isearch-ring-advance)
+
+;;;; Global bindings for cabbage bundles
+
+  ;; rect-mark bundle bindings
+  (ergoemacs-fixed-key "C-x r M-SPC" 'rm-set-mark)
+  
+  
+  (ergoemacs-fixed-key "C-x r M-r" 'cabbage-replace-replace-string)
+  (ergoemacs-fixed-key "C-x r s" 'string-rectangle)
+  (ergoemacs-fixed-key "C-x r <down-mouse-1>" 'rm-mouse-drag-region)
+
+  ;; irc bundle bindings
+  (ergoemacs-fixed-key "C-p i" 'cabbage-erc)
+
+  ;; jabber bundle bindings
+  (ergoemacs-fixed-key "C-p j" 'cabbage-jabber)
+
+  ;; plone bundle bindings
+  (ergoemacs-key "M-T" 'cabbage-plone-find-file-in-package)
+  (ergoemacs-fixed-key "C-c f c" 'cabbage-plone-find-changelog-make-entry)
+  (ergoemacs-fixed-key "C-p b" 'cabbage-plone-ido-find-buildout)
+  (ergoemacs-fixed-key "C-c f r" 'cabbage-plone-reload-code)
+  (ergoemacs-fixed-key "C-c f f" 'cabbage-plone-run)
+  (ergoemacs-fixed-key "C-c f t" 'cabbage-plone-tests)
+  (ergoemacs-fixed-key "C-c f p" 'cabbage-plone--pep8-package)
+  (ergoemacs-fixed-key "C-c f a" 'cabbage-plone-find-adapter-by-name)
+  (ergoemacs-fixed-key "C-c f A" 'cabbage-plone-find-adapter-by-providing-interface)
+  (ergoemacs-fixed-key "C-c f u" 'cabbage-plone-find-utility-by-name)
+  (ergoemacs-fixed-key "C-c f U" 'cabbage-plone-find-utility-by-providing-interface)
+
+  ;; cabbage-developer bundle bindings
+  (ergoemacs-fixed-key "C-c p" 'cabbage-emdeveloper-find-cabbage-config)
+  (ergoemacs-fixed-key "C-p e" 'cabbage-emdeveloper-emacs-persp)
+
+  ;; power-edit bundle bindings
+  (ergoemacs-key "C-M-i" 'move-text-up)
+  (ergoemacs-key "C-M-k" 'move-text-down)
+  (ergoemacs-key "C-M-l"  'textmate-shift-right)
+  (ergoemacs-key "C-M-j" 'textmate-shift-left)
+
+  (ergoemacs-fixed-key "C-c SPC" 'ace-jump-mode)
+  (ergoemacs-fixed-key "M-<up>" 'move-text-up)
+  (ergoemacs-fixed-key "M-<down>" 'move-text-down)
+  (ergoemacs-fixed-key "M-<right>"  'textmate-shift-right)
+  (ergoemacs-fixed-key "M-<left>" 'textmate-shift-left)
+  (ergoemacs-fixed-key "<f5>" 'ns-toggle-fullscreen)
+  (ergoemacs-fixed-key "C-+" 'increase-font-size)
+  (ergoemacs-fixed-key "C--" 'decrease-font-size)
+  (ergoemacs-fixed-key "C-c C-w" 'whitespace-mode)
+
+;; project bundle bindings
+  
+  (ergoemacs-key "M-t" 'textmate-goto-file)
+  (ergoemacs-key "M-w" 'textmate-goto-symbol)
+  (ergoemacs-fixed-key "C-x p" 'cabbage-project-ido-find-project)
+  (ergoemacs-fixed-key "C-S-c C-S-c" 'mc/edit-lines)
+  (ergoemacs-fixed-key "C->" 'mc/mark-next-like-this)
+  (ergoemacs-fixed-key "C-<" 'mc/mark-previous-like-this)
+  (ergoemacs-fixed-key "C-c C-<" 'mc/mark-all-like-this)
+
+;; org bundle bindings
+  (ergoemacs-fixed-key "C-p o" 'cabbage-org-emacs-persp)
+
+;; git bundle bindings
+  (ergoemacs-fixed-key "C-x g" 'magit-status)
+)
+
+(make-obsolete-variable 'ergoemacs-variant 'ergoemacs-theme
+                        "ergoemacs-mode 5.8.0.1")
+
+(provide 'ergoemacs-themes)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; ergoemacs-variants.el ends here
+;;; ergoemacs-themes.el ends here
+;; Local Variables:
+;; coding: utf-8-emacs
+;; End:
