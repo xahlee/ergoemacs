@@ -128,7 +128,7 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
  )
 
 ;; make 【Ctrl+c】 for copy, 【Ctrl+x】 for cut, etc.
-(cua-mode 1)
+;; (cua-mode 1) ; now part of ergoemacs-mode
 
 ;; Alt+y is not cua-repeat-replace-region
 (define-key cua--cua-keys-keymap [(meta v)] 'nil)
