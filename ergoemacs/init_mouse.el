@@ -8,6 +8,9 @@
 ;; automatically copy text when mouse drag. Similar to Linux X11 behavior
 (setq mouse-drag-copy-region t)
 
+;; when pasting with linux x11 middle click, set to paste at cursor position, not at click position
+(setq mouse-yank-at-point t)
+
 ;; Right-click opens the context menu
 (global-set-key [mouse-3] 'ergoemacs-context-menu)
 
