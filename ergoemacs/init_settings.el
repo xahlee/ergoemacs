@@ -131,7 +131,7 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 ;; (cua-mode 1) ; now part of ergoemacs-mode
 
 ;; Alt+y is not cua-repeat-replace-region
-(define-key cua--cua-keys-keymap [(meta v)] 'nil)
+;; (define-key cua--cua-keys-keymap [(meta v)] 'nil)
 
 ;; make buffer switch command do suggestions
 (ido-mode 1)
