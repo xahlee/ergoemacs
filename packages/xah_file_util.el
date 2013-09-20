@@ -23,6 +23,15 @@
 ;; xah-find-replace-text       → sed
 ;; xah-find-replace-text-regex → sed
 
+;; Note: the commands here is not exactly modeled on unix grep.
+;; in unix grep, it's based on lines. If a string happens twice in a line, that line will be reported only once (with the occurences highlighted).
+;; the output of commands of this package is not based on lines.
+;; there will be 50 chars showing before and after the searched text or pattern.
+;; the number of chars to show is defined by `xah-context-char-number'
+;; each “block of text” in output is one occurrence.
+;; for example, if a line in a file has 2 occurrences, then the same line will be reported twice, as 2 “blocks”.
+;; so, the number of blocks corresponds exactly to the number of occurrences.
+
 ;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
 
 ;;; INSTALL
