@@ -230,8 +230,7 @@ remove the keymap depends on user input and KEEP-PRED:
 - otherwise, KEEP-PRED must be a 0-arguments predicate that will
   decide if the keymap should be removed (if predicate returns
   nil) or kept (otherwise). The predicate will be called after
-  each key sequence."
-    
+  each key sequence."    
     (let* ((clearfunsym (make-symbol "clear-temporary-overlay-map"))
            (overlaysym (make-symbol "t"))
            (alist (list (cons overlaysym map)))
@@ -325,574 +324,13 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
    (eval `(ergoemacs-create-movement-commands ,x)))
  ergoemacs-movement-functions)
 
-
-(defvar ergoemacs-M-O-trans
-  '(
-    ("2 A" [S-up])        ; xterm.el
-    ("2 B" [S-down])      ; xterm.el
-    ("2 C" [S-right])     ; xterm.el
-    ("2 D" [S-left])      ; xterm.el
-    ("2 F" [S-end])       ; xterm.el
-    ("2 H" [S-home])      ; xterm.el
-    ("2 P" [S-f1])        ; xterm.el
-    ("2 Q" [S-f2])        ; xterm.el
-    ("2 R" [S-f3])        ; xterm.el
-    ("2 S" [S-f4])        ; xterm.el
-    ("3 P" [M-f1])        ; xterm.el
-    ("3 Q" [M-f2])        ; xterm.el
-    ("3 R" [M-f3])        ; xterm.el
-    ("3 S" [M-f4])        ; xterm.el
-    ("4 P" [M-S-f1])      ; xterm.el
-    ("4 Q" [M-S-f2])      ; xterm.el
-    ("4 R" [M-S-f3])      ; xterm.el
-    ("4 S" [M-S-f4])      ; xterm.el
-    ("5 A" [C-up])        ; xterm.el
-    ("5 B" [C-down])      ; xterm.el
-    ("5 C" [C-right])     ; xterm.el
-    ("5 D" [C-left])      ; xterm.el
-    ("5 F" [C-end])       ; xterm.el
-    ("5 H" [C-home])      ; xterm.el
-    ("5 P" [C-f1])        ; xterm.el
-    ("5 Q" [C-f2])        ; xterm.el
-    ("5 R" [C-f3])        ; xterm.el
-    ("5 S" [C-f4])        ; xterm.el
-    ("6 P" [C-S-f1])      ; xterm.el
-    ("6 Q" [C-S-f2])      ; xterm.el
-    ("6 R" [C-S-f3])      ; xterm.el
-    ("6 S" [C-S-f4])      ; xterm.el
-    ("A" up)             ; xterm.el
-    ("B" down)           ; xterm.el
-    ("C" right)          ; xterm.el
-    ("D" left)           ; xterm.el
-    ("E" begin)          ; xterm.el
-    ("F" end)            ; xterm.el
-    ("H" home)           ; xterm.el
-    ("I" [kp-tab])       ; lk201.el
-    ("M" kp-enter)       ; xterm.el
-    ("P" f1)             ; xterm.el
-    ("Q" f2)             ; xterm.el
-    ("R" f3)             ; xterm.el
-    ("S" f4)             ; xterm.el
-    ("a" [C-up])         ; rxvt.el
-    ("b" [C-down])       ; rxvt.el
-    ("c" [C-right])      ; rxvt.el
-    ("d" [C-left])       ; rxvt.el
-    ("j" [kp-multiply])  ; xterm.el
-    ("k" [kp-add])       ; xterm.el
-    ("l" [kp-separator]) ; xterm.el
-    ("m" [kp-subtract])  ; xterm.el
-    ("n" [kp-decimal])   ; lk201.el
-    ("o" [kp-divide])    ; xterm.el
-    ("p" [kp-0])         ; xterm.el
-    ("q" [kp-1])         ; xterm.el
-    ("r" [kp-2])         ; xterm.el
-    ("s" [kp-3])         ; xterm.el
-    ("t" [kp-4])         ; xterm.el
-    ("u" [kp-5])         ; xterm.el
-    ("v" [kp-6])         ; xterm.el
-    ("w" [kp-7])         ; xterm.el
-    ("x" [kp-8])         ; xterm.el
-    ("y" [kp-9])         ; xterm.el
-    )
-  "Terminal Translations.")
-
-(defvar ergoemacs-M-b-translations
-  '(
-    ("0 0 0 q" [begin]) ; iris-ansi
-    ("0 0 1 q" [f1]) ; iris-ansi
-    ("0 0 2 q" [f2]) ; iris-ansi
-    ("0 0 3 q" [f3]) ; iris-ansi
-    ("0 0 4 q" [f4]) ; iris-ansi
-    ("0 0 5 q" [f5]) ; iris-ansi
-    ("0 0 6 q" [f6]) ; iris-ansi
-    ("0 0 7 q" [f7]) ; iris-ansi
-    ("0 0 8 q" [f8]) ; iris-ansi
-    ("0 0 9 q" [f9]) ; iris-ansi
-    ("0 1 0 q" [f10]) ; iris-ansi
-    ("0 1 1 q" [f11]) ; iris-ansi
-    ("0 1 2 q" [f12]) ; iris-ansi
-    ("0 1 3 q" [S-f1]) ; iris-ansi
-    ("0 1 4 q" [S-f2]) ; iris-ansi
-    ("0 1 5 q" [S-f3]) ; iris-ansi
-    ("0 1 6 q" [S-f4]) ; iris-ansi
-    ("0 1 7 q" [S-f5]) ; iris-ansi
-    ("0 1 8 q" [S-f6]) ; iris-ansi
-    ("0 1 9 q" [S-f7]) ; iris-ansi
-    ("0 2 0 q" [S-f8]) ; iris-ansi
-    ("0 2 1 q" [S-f9]) ; iris-ansi
-    ("0 2 2 q" [S-f10]) ; iris-ansi
-    ("0 2 3 q" [S-f11]) ; iris-ansi
-    ("0 2 4 q" [S-f12]) ; iris-ansi
-    ("0 2 5 q" [C-f1]) ; iris-ansi
-    ("0 2 6 q" [C-f2]) ; iris-ansi
-    ("0 2 7 q" [C-f3]) ; iris-ansi
-    ("0 2 8 q" [C-f4]) ; iris-ansi
-    ("0 2 9 q" [C-f5]) ; iris-ansi
-    ("0 3 0 q" [C-f6]) ; iris-ansi
-    ("0 3 1 q" [C-f7]) ; iris-ansi
-    ("0 3 2 q" [C-f8]) ; iris-ansi
-    ("0 3 3 q" [C-f9]) ; iris-ansi
-    ("0 3 4 q" [C-f10]) ; iris-ansi
-    ("0 3 5 q" [C-f11]) ; iris-ansi
-    ("0 3 6 q" [C-f12]) ; iris-ansi
-    ("0 3 8 q" [M-f2]) ; iris-ansi
-    ("0 4 7 q" [M-f11]) ; iris-ansi
-    ("0 4 8 q" [M-f12]) ; iris-ansi
-    ("0 4 9 q" [?\C-1]) ; iris-ansi
-    ("0 5 0 q" [?\C-3]) ; iris-ansi
-    ("0 5 1 q" [?\C-4]) ; iris-ansi
-    ("0 5 2 q" [?\C-5]) ; iris-ansi
-    ("0 5 3 q" [?\C-7]) ; iris-ansi
-    ("0 5 4 q" [?\C-8]) ; iris-ansi
-    ("0 5 5 q" [?\C-9]) ; iris-ansi
-    ("0 5 6 q" [?\C-0]) ; iris-ansi
-    ("0 5 7 q" [?\C-`]) ; iris-ansi
-    ("0 5 8 q" [?\M-1]) ; iris-ansi
-    ("0 5 9 q" [?\M-2]) ; iris-ansi
-    ("0 6 0 q" [?\M-3]) ; iris-ansi
-    ("0 6 1 q" [?\M-4]) ; iris-ansi
-    ("0 6 2 q" [?\M-5]) ; iris-ansi
-    ("0 6 3 q" [?\M-6]) ; iris-ansi
-    ("0 6 4 q" [?\M-7]) ; iris-ansi
-    ("0 6 5 q" [?\M-8]) ; iris-ansi
-    ("0 6 6 q" [?\M-9]) ; iris-ansi
-    ("0 6 7 q" [?\M-0]) ; iris-ansi
-    ("0 6 8 q" [?\M--]) ; iris-ansi
-    ("0 6 9 q" [?\C-=]) ; iris-ansi
-    ("0 7 0 q" [?\M-=]) ; iris-ansi
-    ("0 7 2 q" [?\C-\t]) ; iris-ansi
-    ("0 7 3 q" [?\M-\t]) ; iris-ansi
-    ("0 7 4 q" [?\M-q]) ; iris-ansi
-    ("0 7 5 q" [?\M-w]) ; iris-ansi
-    ("0 7 6 q" [?\M-e]) ; iris-ansi
-    ("0 7 7 q" [?\M-r]) ; iris-ansi
-    ("0 7 8 q" [?\M-t]) ; iris-ansi
-    ("0 7 9 q" [?\M-y]) ; iris-ansi
-    ("0 8 0 q" [?\M-u]) ; iris-ansi
-    ("0 8 1 q" [?\M-i]) ; iris-ansi
-    ("0 8 2 q" [?\M-o]) ; iris-ansi
-    ("0 8 3 q" [?\M-p]) ; iris-ansi
-    ("0 8 4 q" [?\M-\[]) ; iris-ansi
-    ("0 8 5 q" [?\M-\]]) ; iris-ansi
-    ("0 8 6 q" [?\M-\\]) ; iris-ansi
-    ("0 8 7 q" [?\M-a]) ; iris-ansi
-    ("0 8 8 q" [?\M-s]) ; iris-ansi
-    ("0 8 9 q" [?\M-d]) ; iris-ansi
-    ("0 9 0 q" [?\M-f]) ; iris-ansi
-    ("0 9 1 q" [?\M-g]) ; iris-ansi
-    ("0 9 2 q" [?\M-h]) ; iris-ansi
-    ("0 9 3 q" [?\M-j]) ; iris-ansi
-    ("0 9 4 q" [?\M-k]) ; iris-ansi
-    ("0 9 5 q" [?\M-l]) ; iris-ansi
-    ("0 9 6 q" [?\C-\;]) ; iris-ansi
-    ("0 9 7 q" [?\M-:]) ; iris-ansi
-    ("0 9 8 q" [?\C-']) ; iris-ansi
-    ("0 9 9 q" [?\M-']) ; iris-ansi
-    ("1 0 0 q" [?\M-\n]) ; iris-ansi
-    ("1 0 0 q" [M-enter]) ; iris-ansi
-    ("1 0 1 q" [?\M-z]) ; iris-ansi
-    ("1 0 2 q" [?\M-x]) ; iris-ansi
-    ("1 0 3 q" [?\M-c]) ; iris-ansi
-    ("1 0 4 q" [?\M-v]) ; iris-ansi
-    ("1 0 5 q" [?\M-b]) ; iris-ansi
-    ("1 0 6 q" [M-n]) ; iris-ansi
-    ("1 0 7 q" [M-m]) ; iris-ansi
-    ("1 0 8 q" [?\C-,]) ; iris-ansi
-    ("1 0 9 q" [?\M-,]) ; iris-ansi
-    ("1 1 0 q" [?\C-.]) ; iris-ansi
-    ("1 1 1 q" [?\M-.]) ; iris-ansi
-    ("1 1 2 q" [?\C-/]) ; iris-ansi
-    ("1 1 3 q" [?\M-/]) ; iris-ansi
-    ("1 1 5 q" [?\M-`]) ; iris-ansi
-    ("1 1 ^" [C-f1]) ; rxvt
-    ("1 1 ~" [f1])
-    ("1 2 0 q" [S-escape]) ; iris-ansi
-    ("1 2 1 q" [C-escape]) ; iris-ansi
-    ("1 2 ^" [C-f2]) ; rxvt
-    ("1 2 ~" [f2])
-    ("1 3 9 q" [insert]) ; iris-ansi ;; Not sure 
-    ("1 3 ^" [C-f3]) ; rxvt
-    ("1 3 ~" [f3])
-    ("1 4 0 q" [C-insert]) ; iris-ansi
-    ("1 4 1 q" [M-insert]) ; iris-ansi
-    ("1 4 2 q" [C-delete]) ; iris-ansi
-    ("1 4 3 q" [S-home]) ; iris-ansi
-    ("1 4 4 q" [C-home]) ; iris-ansi
-    ("1 4 6 q" [end]) ; iris-ansi
-    ("1 4 7 q" [S-end]) ; Those don't seem to generate anything. ; iris-ansi
-    ("1 4 8 q" [C-end]) ; iris-ansi
-    ("1 4 ^" [C-f4]) ; rxvt
-    ("1 4 ~" [f4])
-    ("1 4 ~" [f4]) ; lk201
-    ("1 4 ~" [f4]) ; rxvt
-    ("1 5 0 q" [prior]) ; iris-ansi
-    ("1 5 1 q" [S-prior]) ;Those don't seem to generate anything. ; iris-ansi
-    ("1 5 2 q" [C-prior]) ; iris-ansi
-    ("1 5 4 q" [next]) ; iris-ansi
-    ("1 5 5 q" [S-next]) ; iris-ansi
-    ("1 5 6 q" [C-next]) ; iris-ansi
-    ("1 5 8 q" [S-left]) ; iris-ansi
-    ("1 5 9 q" [C-left]) ; iris-ansi
-    ("1 5 ; 2 ~" [S-f5])
-    ("1 5 ; 3 ~" [M-f5])
-    ("1 5 ; 4 ~" [M-S-f5])
-    ("1 5 ; 6 ~" [C-S-f5])
-    ("1 5 ^" [C-f5]) ; rxvt
-    ("1 5 ~" [f5])
-    ("1 6 0 q" [M-left]) ; iris-ansi
-    ("1 6 1 q" [S-up]) ; iris-ansi
-    ("1 6 2 q" [C-up]) ; iris-ansi
-    ("1 6 3 q" [M-up]) ; iris-ansi
-    ("1 6 4 q" [S-down]) ; iris-ansi
-    ("1 6 5 q" [C-down]) ; iris-ansi
-    ("1 6 6 q" [M-down]) ; iris-ansi
-    ("1 6 7 q" [S-right]) ; iris-ansi
-    ("1 6 8 q" [C-right]) ; iris-ansi
-    ("1 6 9 q" [M-right]) ; iris-ansi
-    ("1 7 2 q" [C-home]) ; iris-ansi
-    ("1 7 4 q" [C-left]) ; iris-ansi
-    ("1 7 6 q" [C-end]) ; iris-ansi
-    ("1 7 8 q" [C-inset]) ; iris-ansi
-    ("1 7 9 q" [?\C-/]) ; iris-ansi
-    ("1 7 ; 2 ~" [S-f6])
-    ("1 7 ; 3 ~" [M-f6])
-    ("1 7 ; 4 ~" [M-S-f6])
-    ("1 7 ; 6 ~" [C-S-f6])
-    ("1 7 ^" [C-f6]) ; rxvt
-    ("1 7 ~" [f6])
-    ("1 7 ~" [f6]) ; lk201
-    ("1 7 ~" [f6]) ; rxvt
-    ("1 8 0 q" [?\M-/]) ; iris-ansi
-    ("1 8 2 q" [C-up]) ; iris-ansi
-    ("1 8 4 q" [C-begin]) ; iris-ansi
-    ("1 8 6 q" [C-down]) ; iris-ansi
-    ("1 8 7 q" [?\C-*]) ; iris-ansi
-    ("1 8 8 q" [?\M-*]) ; iris-ansi
-    ("1 8 ; 3 ~" [M-f7])
-    ("1 8 ; 4 ~" [M-S-f7])
-    ("1 8 ; 6 ~" [C-S-f7])
-    ("1 8 ^" [C-f7]) ; rxvt
-    ("1 8 ~" [f7])
-    ("1 8 ~" [f7]) ; lk201
-    ("1 8 ~" [f7]) ; rxvt
-    ("1 9 0 q" [C-prior]) ; iris-ansi
-    ("1 9 2 q" [C-right]) ; iris-ansi
-    ("1 9 4 q" [C-next]) ; iris-ansi
-    ("1 9 6 q" [C-delete]) ; iris-ansi
-    ("1 9 7 q" [M-delete]) ; iris-ansi    
-    ("1 9 8 q" [?\C--]) ; iris-ansi
-    ("1 9 9 q" [?\M--]) ; iris-ansi
-    ("1 9 ; 3 ~" [M-f8])
-    ("1 9 ; 4 ~" [M-S-f8])
-    ("1 9 ; 6 ~" [C-S-f8])
-    ("1 9 ^" [C-f8]) ; rxvt
-    ("1 9 h" [S-erasepage]) ;; Not an X keysym ; tvi
-    ("1 9 l" [key_seol])   ;; Not an X keysym ; tvi
-    ("1 9 ~" [f8])
-    ("1 ; 2 A" [S-up])
-    ("1 ; 2 B" [S-down])
-    ("1 ; 2 C" [S-right])
-    ("1 ; 2 D" [S-left])
-    ("1 ; 2 F" [S-end])
-    ("1 ; 2 H" [S-home])
-    ("1 ; 2 P" [S-f1])
-    ("1 ; 2 Q" [S-f2])
-    ("1 ; 2 R" [S-f3])
-    ("1 ; 2 S" [S-f4])
-    ("1 ; 3 A" [M-up])
-    ("1 ; 3 B" [M-down])
-    ("1 ; 3 C" [M-right])
-    ("1 ; 3 D" [M-left])
-    ("1 ; 3 F" [M-end])
-    ("1 ; 3 H" [M-home])
-    ("1 ; 4 A" [M-S-up])
-    ("1 ; 4 B" [M-S-down])
-    ("1 ; 4 C" [M-S-right])
-    ("1 ; 4 D" [M-S-left])
-    ("1 ; 4 F" [M-S-end])
-    ("1 ; 4 H" [M-S-home])
-    ("1 ; 5 A" [C-up])
-    ("1 ; 5 B" [C-down])
-    ("1 ; 5 C" [C-right])
-    ("1 ; 5 D" [C-left])
-    ("1 ; 5 F" [C-end])
-    ("1 ; 5 H" [C-home])
-    ("1 ; 6 A" [C-S-up])
-    ("1 ; 6 B" [C-S-down])
-    ("1 ; 6 C" [C-S-right])
-    ("1 ; 6 D" [C-S-left])
-    ("1 ; 6 F" [C-S-end])
-    ("1 ; 6 H" [C-S-home])
-    ("1 ; 7 A" [C-M-up])
-    ("1 ; 7 B" [C-M-down])
-    ("1 ; 7 C" [C-M-right])
-    ("1 ; 7 D" [C-M-left])
-    ("1 ; 7 F" [C-M-end])
-    ("1 ; 7 H" [C-M-home])
-    ("1 ; 8 A" [C-M-S-up])
-    ("1 ; 8 B" [C-M-S-down])
-    ("1 ; 8 C" [C-M-S-right])
-    ("1 ; 8 D" [C-M-S-left])
-    ("1 ; 8 F" [C-M-S-end])
-    ("1 ; 8 H" [C-M-S-home])
-    ("1 ~" [home])
-    ("2 0 0 q" [?\C-+]) ; iris-ansi
-    ("2 0 1 q" [?\M-+]) ; iris-ansi
-    ("2 0 ; 3 ~" [M-f9])
-    ("2 0 ; 4 ~" [M-S-f9])
-    ("2 0 ; 6 ~" [C-S-f9])
-    ("2 0 ^" [C-f9]) ; rxvt
-    ("2 0 ~" [f9])
-    ("2 1 ; 3 ~" [M-f10])
-    ("2 1 ; 4 ~" [M-S-f10])
-    ("2 1 ; 6 ~" [C-S-f10])
-    ("2 1 ^" [C-f10]) ; rxvt
-    ("2 1 ~" [f10])
-    ("2 3 ; 3 ~" [M-f11])
-    ("2 3 ; 4 ~" [M-S-f11])
-    ("2 3 ; 6 ~" [C-S-f11])
-    ("2 3 ^" [C-S-f1]) ; rxvt
-    ("2 4 ; 3 ~" [M-f12])
-    ("2 4 ; 4 ~" [M-S-f12])
-    ("2 4 ; 5 ~" [C-f12])
-    ("2 4 ; 6 ~" [C-S-f12])
-    ("2 4 ^" [C-S-f2]) ; rxvt
-    ("2 5 ^" [C-S-f3]) ; rxvt
-    ("2 5 ~" [S-f3]) ; rxvt
-    ("2 6 ^" [C-S-f4]) ; rxvt
-    ("2 6 ~" [S-f4]) ; rxvt
-    ("2 7 ; 1 3 ; 1 3~" [C-M-return])
-    ("2 7 ; 1 3 ; 3 9~" [?\C-\M-\'])
-    ("2 7 ; 1 3 ; 4 4~" [?\C-\M-,])
-    ("2 7 ; 1 3 ; 4 5~" [?\C-\M--])
-    ("2 7 ; 1 3 ; 4 6~" [?\C-\M-.])
-    ("2 7 ; 1 3 ; 4 7~" [?\C-\M-/])
-    ("2 7 ; 1 3 ; 4 8~" [?\C-\M-0])
-    ("2 7 ; 1 3 ; 4 9~" [?\C-\M-1])
-    ("2 7 ; 1 3 ; 5 0~" [?\C-\M-2])
-    ("2 7 ; 1 3 ; 5 1~" [?\C-\M-3])
-    ("2 7 ; 1 3 ; 5 2~" [?\C-\M-4])
-    ("2 7 ; 1 3 ; 5 3~" [?\C-\M-5])
-    ("2 7 ; 1 3 ; 5 4~" [?\C-\M-6])
-    ("2 7 ; 1 3 ; 5 5~" [?\C-\M-7])
-    ("2 7 ; 1 3 ; 5 6~" [?\C-\M-8])
-    ("2 7 ; 1 3 ; 5 7~" [?\C-\M-9])
-    ("2 7 ; 1 3 ; 5 9~" [?\C-\M-\;])
-    ("2 7 ; 1 3 ; 6 1~" [?\C-\M-=])
-    ("2 7 ; 1 3 ; 9 2~" [?\C-\M-\\])
-    ("2 7 ; 1 3 ; 9 ~"  [C-M-tab])
-    ("2 7 ; 1 4 ; 3 3~"  [?\C-\M-!])
-    ("2 7 ; 1 4 ; 3 4~"  [?\C-\M-\"])
-    ("2 7 ; 1 4 ; 3 5~"  [?\C-\M-#])
-    ("2 7 ; 1 4 ; 3 6~"  [?\C-\M-$])
-    ("2 7 ; 1 4 ; 3 7~"  [?\C-\M-%])
-    ("2 7 ; 1 4 ; 3 8~"  [?\C-\M-&])
-    ("2 7 ; 1 4 ; 4 0~"  [?\C-\M-\(])
-    ("2 7 ; 1 4 ; 4 1~"  [?\C-\M-\)])
-    ("2 7 ; 1 4 ; 4 2~"  [?\C-\M-*])
-    ("2 7 ; 1 4 ; 4 3~"  [?\C-\M-+])
-    ("2 7 ; 1 4 ; 5 8~"  [?\C-\M-:])
-    ("2 7 ; 1 4 ; 6 0~"  [?\C-\M-<])
-    ("2 7 ; 1 4 ; 6 2~"  [?\C-\M->])
-    ("2 7 ; 1 4 ; 6 3~"  [(control meta ??)])
-    ("2 7 ; 2 ; 1 3 ~"  [S-return])
-    ("2 7 ; 2 ; 9 ~"   [S-tab])
-    ("2 7 ; 5 ; 1 3 ~"  [C-return])
-    ("2 7 ; 5 ; 3 9 ~"  [?\C-\'])
-    ("2 7 ; 5 ; 4 4 ~"  [?\C-,])
-    ("2 7 ; 5 ; 4 5 ~"  [?\C--])
-    ("2 7 ; 5 ; 4 6 ~"  [?\C-.])
-    ("2 7 ; 5 ; 4 7 ~"  [?\C-/])
-    ("2 7 ; 5 ; 4 8 ~"  [?\C-0])
-    ("2 7 ; 5 ; 4 9 ~"  [?\C-1])
-    ("2 7 ; 5 ; 5 7 ~"  [?\C-9])
-    ("2 7 ; 5 ; 5 9 ~"  [?\C-\;])
-    ("2 7 ; 5 ; 6 1 ~"  [?\C-=])
-    ("2 7 ; 5 ; 9 2 ~"  [?\C-\\])
-    ("2 7 ; 5 ; 9 ~"   [C-tab])
-    ("2 7 ; 6 ; 1 3 ~"  [C-S-return])
-    ("2 7 ; 6 ; 3 3 ~"  [?\C-!])
-    ("2 7 ; 6 ; 3 4 ~"  [?\C-\"])
-    ("2 7 ; 6 ; 3 5 ~"  [?\C-#])
-    ("2 7 ; 6 ; 3 6 ~"  [?\C-$])
-    ("2 7 ; 6 ; 3 7 ~"  [?\C-%])
-    ("2 7 ; 6 ; 3 8 ~"  [?\C-&])
-    ("2 7 ; 6 ; 4 0 ~"  [?\C-(])
-     ("2 7 ; 6 ; 4 1 ~"  [?\C-)])
-    ("2 7 ; 6 ; 4 2 ~"  [?\C-*])
-    ("2 7 ; 6 ; 4 3 ~"  [?\C-+])
-    ("2 7 ; 6 ; 5 8 ~"  [?\C-:])
-    ("2 7 ; 6 ; 6 0 ~"  [?\C-<])
-    ("2 7 ; 6 ; 6 2 ~"  [?\C->])
-    ("2 7 ; 6 ; 6 3 ~"  [(control ??)])
-    ("2 7 ; 6 ; 9 ~"   [C-S-tab])
-    ("2 7 ; 7 ; 1 3 ~" [C-M-return])
-    ("2 7 ; 7 ; 3 2 ~" [?\C-\M-\s])
-    ("2 7 ; 7 ; 3 9 ~" [?\C-\M-\'])
-    ("2 7 ; 7 ; 4 4 ~" [?\C-\M-,])
-    ("2 7 ; 7 ; 4 5 ~" [?\C-\M--])
-    ("2 7 ; 7 ; 4 6 ~" [?\C-\M-.])
-    ("2 7 ; 7 ; 4 7 ~" [?\C-\M-/])
-    ("2 7 ; 7 ; 4 8 ~" [?\C-\M-0])
-    ("2 7 ; 7 ; 4 9 ~" [?\C-\M-1])
-    ("2 7 ; 7 ; 5 0 ~" [?\C-\M-2])
-    ("2 7 ; 7 ; 5 1 ~" [?\C-\M-3])
-    ("2 7 ; 7 ; 5 2 ~" [?\C-\M-4])
-    ("2 7 ; 7 ; 5 3 ~" [?\C-\M-5])
-    ("2 7 ; 7 ; 5 4 ~" [?\C-\M-6])
-    ("2 7 ; 7 ; 5 5 ~" [?\C-\M-7])
-    ("2 7 ; 7 ; 5 6 ~" [?\C-\M-8])
-    ("2 7 ; 7 ; 5 7 ~" [?\C-\M-9])
-    ("2 7 ; 7 ; 5 9 ~" [?\C-\M-\;])
-    ("2 7 ; 7 ; 6 1 ~" [?\C-\M-=])
-    ("2 7 ; 7 ; 9 2 ~" [?\C-\M-\\])
-    ("2 7 ; 7 ; 9 ~"  [C-M-tab])
-    ("2 7 ; 8 ; 3 3 ~"  [?\C-\M-!])
-    ("2 7 ; 8 ; 3 4 ~"  [?\C-\M-\"])
-    ("2 7 ; 8 ; 3 5 ~"  [?\C-\M-#])
-    ("2 7 ; 8 ; 3 6 ~"  [?\C-\M-$])
-    ("2 7 ; 8 ; 3 7 ~"  [?\C-\M-%])
-    ("2 7 ; 8 ; 3 8 ~"  [?\C-\M-&])
-    ("2 7 ; 8 ; 4 0 ~"  [?\C-\M-\(])
-    ("2 7 ; 8 ; 4 1 ~"  [?\C-\M-\)])
-    ("2 7 ; 8 ; 4 2 ~"  [?\C-\M-*])
-    ("2 7 ; 8 ; 4 3 ~"  [?\C-\M-+])
-    ("2 7 ; 8 ; 5 8 ~"  [?\C-\M-:])
-    ("2 7 ; 8 ; 6 0 ~"  [?\C-\M-<])
-    ("2 7 ; 8 ; 6 2 ~"  [?\C-\M->])
-    ("2 7 ; 8 ; 6 3 ~"  [(control meta ??)])
-    ("2 8 ^" [C-S-f5]) ; rxvt
-    ("2 8 ~" [S-f5]) ; rxvt
-    ("2 9 ^" [C-S-f6]) ; rxvt
-    ("2 9 ~" [S-f6]) ; rxvt
-    ("2 ; 2 ~" [S-insert])
-    ("2 ; 2 ~" [S-insert]) ; rxvt
-    ("2 ; 3 ~" [M-insert])
-    ("2 ; 4 ~" [M-S-insert])
-    ("2 ; 5 ~" [C-insert])
-    ("2 ; 6 ~" [C-S-insert])
-    ("2 ; 7 ~" [C-M-insert])
-    ("2 ; 8 ~" [C-M-S-insert])
-    ("2 J" [key_clear])    ;; Not an X keysym ; tvi
-    ("2 K" [S-clearentry]) ;; Not an X keysym ; tvi
-    ("2 N" [clearentry])   ;; Not an X keysym ; tvi
-    ("2 ^" [C-insert]) ; rxvt
-    ("2 ~" [insert])
-    ("3 $" [S-delete]) ; rxvt
-    ("3 1 ^" [C-S-f7]) ; rxvt
-    ("3 1 ~" [S-f7]) ; rxvt
-    ("3 2 ^" [C-S-f8]) ; rxvt
-    ("3 2 ~" [S-f8]) ; rxvt
-    ("3 3 ^" [C-S-f9]) ; rxvt
-    ("3 3 ~" [S-f9]) ; rxvt
-    ("3 4 ^" [C-S-f10]) ; rxvt
-    ("3 4 ~" [S-f10]) ; rxvt
-    ("3 ; 2 ~" [S-delete])
-    ("3 ; 3 ~" [M-delete])
-    ("3 ; 4 ~" [M-S-delete])
-    ("3 ; 5 ~" [C-delete])
-    ("3 ; 6 ~" [C-S-delete])
-    ("3 ; 7 ~" [C-M-delete])
-    ("3 ; 8 ~" [C-M-S-delete])
-    ("3 ^" [C-delete]) ; rxvt
-    ("3 ~" [delete])
-    ("4 h" [key_sic])            ;; Not an X
-    ("4 l" [S-delete])           ;; Not an X
-    ("4 ~" [select])
-    ("5 $" [S-prior]) ; rxvt
-    ("5 ; 2 ~" [S-prior])
-    ("5 ; 3 ~" [M-prior])
-    ("5 ; 4 ~" [M-S-prior])
-    ("5 ; 5 ~" [C-prior])
-    ("5 ; 6 ~" [C-S-prior])
-    ("5 ; 7 ~" [C-M-prior])
-    ("5 ; 8 ~" [C-M-S-prior])
-    ("5 ^" [C-prior]) ; rxvt
-    ("5 ~" [prior])
-    ("6 $" [S-next]) ; rxvt
-    ("6 ; 2 ~" [S-next])
-    ("6 ; 3 ~" [M-next])
-    ("6 ; 4 ~" [M-S-next])
-    ("6 ; 5 ~" [C-next])
-    ("6 ; 6 ~" [C-S-next])
-    ("6 ; 7 ~" [C-M-next])
-    ("6 ; 8 ~" [C-M-S-next])
-    ("6 ^" [C-next]) ; rxvt
-    ("6 ~" [next])
-    ("7 $" [S-home]) ; rxvt
-    ("7 ^" [C-home]) ; rxvt
-    ("7 ~" [home]) ; rxvt
-    ("8 $" [S-end]) ; rxvt
-    ("8 ^" [C-end]) ; rxvt
-    ("8 ~" [end]) ; rxvt
-    ("? 1 i" [key_sprint]) ;; Not an X keysym ; tvi
-    ("@" [insert]) ; tvi
-    ("A" [up])
-    ("A" [up]) ; rxvt
-    ("B" [down])
-    ("B" [down]) ; rxvt
-    ("C" [right])
-    ("C" [right]) ; rxvt
-    ("D" [left])
-    ("D" [left]) ; rxvt
-    ("E" [?\C-j])        ;; Not an X keysym ; tvi
-    ("H" [home]) ; iris-ansi
-    ("H" [home]) ; tvi
-    ("J" [key_eos])      ;; Not an X keysym ; tvi
-    ("K" [key_eol])      ;; Not an X keysym ; tvi
-    ("L" [insertline]) ; tvi
-    ("M" [M-delete]) ; iris-ansi
-    ("P" [key_dc])       ;; Not an X keysym ; tvi
-    ("Q" [S-insertline])       ;; Not an X keysym ; tvi
-    ("U" [next]) ;; actually the `page' key ; tvi
-    ("V" [S-page])              ;; Not an X keysym ; tvi8
-    ("Z" [?\S-\t]) ; iris-ansi
-    ("a" [S-up]) ; rxvt
-    ("b" [S-down]) ; rxvt
-    ("c" [S-right]) ; rxvt
-    ("d" [S-left]) ; rxvt
-    ("e 1 5 ; 5 ~" [C-f5])
-    ("e 1 7 ; 5 ~" [C-f6])
-    ("e 1 8 ; 2 ~" [S-f7])
-    ("e 1 8 ; 5 ~" [C-f7])
-    ("e 1 9 ; 2 ~" [S-f8])
-    ("e 1 9 ; 5 ~" [C-f8])
-    ("e 2 0 ; 2 ~" [S-f9])
-    ("e 2 0 ; 5 ~" [C-f9])
-    ("e 2 1 ; 2 ~" [S-f10])
-    ("e 2 1 ; 5 ~" [C-f10])
-    ("e 2 3 ; 2 ~" [S-f11])
-    ("e 2 3 ; 5 ~" [C-f11])
-    ("e 2 4 ; 2 ~" [S-f12])
-    ("g" [S-tab])        ;; Not an X keysym ; tvi
-    )
-  "Ergoemacs terminal ESC [ translations.")
-
-(defvar ergoemacs-esc-translations
-  '(("5" [S-send]) 
-    ("E" [insertline])
-    ("I" [key-stab])  ;; Not an X keysym
-    ("J" [key-snext]) ;; Not an X keysym
-    ("K" [next])
-    ("N" [ALT])
-    ("P" [print])
-    ("Q" [insert])
-    ("R" [deleteline])
-    ("S" [send])
-    ("T" [clearline])
-    ("W" [?\C-?])                ;; Not an X keysym
-    ("Y" [key-clear]) ;; Not an X keysym
-    ("r" [replace]))
-  "Ergoemacs terminal extra translations."
-  )
-
-
-
 (defvar ergoemacs-M-O-keymap (make-keymap)
   "M-O translation map.")
+(define-key ergoemacs-M-O-keymap [exit] 'ignore)
 
 (defvar ergoemacs-M-o-keymap (make-keymap)
   "M-o translation map.")
+(define-key ergoemacs-M-o-keymap [exit] 'ignore)
 
 (defun ergoemacs-cancel-M-O ()
   "Cancels M-O [timeout] key."
@@ -905,31 +343,10 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
 
 (defvar ergoemacs-curr-prefix-arg nil)
 
-(mapc
- (lambda(x)
-   (define-key ergoemacs-M-o-keymap
-     (read-kbd-macro (nth 0 x))
-     `(lambda(&optional arg) (interactive "P")
-        (setq ergoemacs-push-M-O-timeout nil)
-        (when (timerp ergoemacs-M-O-timer)
-          (cancel-timer ergoemacs-M-O-timer))
-        (setq prefix-arg ergoemacs-curr-prefix-arg)
-        (setq unread-command-events (cons ',(nth 1 x) unread-command-events))))
-   (define-key ergoemacs-M-O-keymap
-     (read-kbd-macro (nth 0 x))
-     `(lambda(&optional arg) (interactive "P")
-        (setq ergoemacs-push-M-O-timeout nil)
-        (when (timerp ergoemacs-M-O-timer)
-          (cancel-timer ergoemacs-M-O-timer))
-        (setq prefix-arg ergoemacs-curr-prefix-arg)
-        (setq unread-command-events (cons ',(nth 1 x) unread-command-events)))))
- ergoemacs-M-O-trans)
-
-
 (defvar ergoemacs-fix-M-O t
   "Fixes the ergoemacs M-O console translation.")
 
-(defvar ergoemacs-M-O-delay 0.05
+(defvar ergoemacs-M-O-delay 0.01
   "Number of seconds before sending the M-O event instead of sending the terminal's arrow key equivalent.")
 
 (defvar ergoemacs-M-O-timer nil
@@ -948,6 +365,7 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
 (defun ergoemacs-M-O-timeout ()
   "Push timeout on unread command events."
   (when ergoemacs-push-M-O-timeout
+    (setq ergoemacs-push-M-O-timeout nil)
     (if ergoemacs-M-O-prefix-keys
         (let (fn)
           (let (ergoemacs-shortcut-mode)
@@ -957,13 +375,13 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
                                ergoemacs-M-O-prefix-keys)))))
           ;; Lookup keys, and then send <exit> event.
           (setq prefix-arg ergoemacs-curr-prefix-arg)
+          (setq this-command fn)
           (call-interactively fn t)
           (reset-this-command-lengths)
           (setq unread-command-events (cons 'exit unread-command-events)))
       (setq prefix-arg ergoemacs-curr-prefix-arg)
       (reset-this-command-lengths)
-      (setq unread-command-events (cons 'timeout unread-command-events))
-      (call-interactively fn))
+      (setq unread-command-events (cons 'timeout unread-command-events)))
     (setq ergoemacs-M-O-prefix-keys nil)))
 
 (defun ergoemacs-M-o (&optional arg use-map)
@@ -972,7 +390,8 @@ Allows arrow keys and the to work in the terminal. Call the true
 function immediately when `window-system' is true."
   (interactive "P")
   (setq ergoemacs-curr-prefix-arg current-prefix-arg)
-  (let ((map (or use-map ergoemacs-M-o-keymap)))
+  (let ((map (or use-map ergoemacs-M-o-keymap))
+        (prefix-keys (if use-map "M-O" "M-o")))
     (if window-system
         (let ((fn (lookup-key map [timeout] t)))
           (call-interactively fn t))
@@ -982,6 +401,7 @@ function immediately when `window-system' is true."
         (let ((window-system t))
           (ergoemacs-M-o arg use-map)))
       (setq ergoemacs-push-M-O-timeout t)
+      (setq ergoemacs-M-O-prefix-keys prefix-keys)
       (set-temporary-overlay-map map 'ergoemacs-exit-M-O-keymap)
       (setq ergoemacs-M-O-timer (run-with-timer ergoemacs-M-O-delay nil #'ergoemacs-M-O-timeout)))))
 
@@ -1018,6 +438,9 @@ work in the terminal."
 
 (defvar ergoemacs-shortcut-keymap (make-sparse-keymap)
   "ErgoEmacs minor mode shortcut keymap")
+
+(defvar ergoemacs-shortcut-override-keymap (make-sparse-keymap)
+  "Keymap for overriding keymap.")
 
 (defvar ergoemacs-full-fast-keys-keymap (make-sparse-keymap)
   "Ergoemacs full fast keys keymap")
@@ -1177,9 +600,7 @@ necessary.  Unshifted keys are changed to shifted keys.")
                       (regexp-opt (mapcar (lambda(x) (nth 0 x))
                                           ergoemacs-translation-assoc) nil)))))))
 
-(defvar ergoemacs-kbd-hash nil)
-
-(setq ergoemacs-kbd-hash (make-hash-table :test 'equal))
+(defvar ergoemacs-kbd-hash (make-hash-table :test 'equal))
 ;; This is called so frequently make a hash-table of the results.
 
 (defun ergoemacs-kbd (key &optional just-translate only-first)
@@ -1272,6 +693,9 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
 (defvar ergoemacs-prefer-shortcuts nil ;; Prefer shortcuts.
   "Prefer shortcuts")
 
+(defvar ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal)
+  "List of command shortcuts.")
+
 (defun ergoemacs-setup-keys-for-keymap---internal (keymap key def)
   "Defines KEY in KEYMAP to be DEF"
   (cond
@@ -1280,19 +704,19 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
       (if (condition-case err
               (stringp (nth 0 def))
             (error nil))
-          (progn
-            (eval
-             (macroexpand
-              `(progn
-                 (ergoemacs-keyboard-shortcut
-                  ,(intern (concat "ergoemacs-shortcut---"
-                                   (md5 (format "%s; %s" (nth 0 def)
-                                                (nth 1 def))))) ,(nth 0 def)
-                                                ,(nth 1 def))
-                 (define-key ergoemacs-shortcut-keymap key
-                   ',(intern (concat "ergoemacs-shortcut---"
-                                     (md5 (format "%s; %s" (nth 0 def)
-                                                  (nth 1 def))))))))))
+          (if (and (boundp 'setup-ergoemacs-keymap) setup-ergoemacs-keymap)
+              (progn
+                (puthash (read-kbd-macro (key-description key) t)
+                     `(,(nth 0 def) ,(nth 1 def))
+                     ergoemacs-command-shortcuts-hash)
+                (define-key ergoemacs-shortcut-keymap key
+                  'ergoemacs-shortcut))
+            (define-key keymap key
+              `(lambda(&optional arg)
+                 (interactive "P")
+                 (setq this-command last-command) ; Don't record this command.
+                 (setq prefix-arg current-prefix-arg)
+                 (ergoemacs-shortcut-internal ,(nth 0 def) ',(nth 1 def)))))
         (mapc
          (lambda(new-def)
            (unless found
@@ -1301,32 +725,22 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
          def))
       (symbol-value 'found)))
    ((condition-case err
-        (fboundp def)
+        (interactive-form def)
       (error nil))
     (cond
      ((memq def '(ergoemacs-ctl-c ergoemacs-ctl-x))
       (define-key ergoemacs-shortcut-keymap key def))
      ((and ergoemacs-prefer-shortcuts
-           (boundp 'setup-ergoemacs-keymap) setup-ergoemacs-keymap)
-      (let (shortcut-key)
-        (setq shortcut-key (where-is-internal def (current-global-map)))
-        (if (not shortcut-key)
-            (define-key keymap key def)
-          ;; The shortcut key is the first-one that matches
-          (ergoemacs-debug "\tShortcut %s for %s"
-                           (key-description (nth 0 shortcut-key))
-                           def)
-          (setq shortcut-key (key-description (nth 0 shortcut-key)))
-          (eval
-           (macroexpand
-            `(progn
-               (ergoemacs-keyboard-shortcut
-                ,(intern (concat "ergoemacs-shortcut---"
-                                 (md5 (format "%s; global" shortcut-key)))) ,shortcut-key global)
-               (define-key ergoemacs-shortcut-keymap key
-                 ',(intern (concat "ergoemacs-shortcut---"
-                                   (md5 (format "%s; global" shortcut-key))))))))
-          )))
+           (boundp 'setup-ergoemacs-keymap) setup-ergoemacs-keymap
+           (or (remove-if '(lambda(x) (eq 'menu-bar (elt x 0))) ; Ignore
+                                                           ; menu-bar
+                                                           ; functions
+                          (where-is-internal def (current-global-map)))
+               (gethash def ergoemacs-where-is-global-hash)))
+      
+      (puthash (read-kbd-macro (key-description key) t)
+               (list def 'global) ergoemacs-command-shortcuts-hash)
+      (define-key ergoemacs-shortcut-keymap key 'ergoemacs-shortcut))
      (t
       (define-key keymap key def)))
     t)
@@ -1338,13 +752,19 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
    ((condition-case err
 	(stringp def)
       (error nil))
-    (eval (macroexpand `(progn
-                          (ergoemacs-keyboard-shortcut
-                           ,(intern (concat "ergoemacs-shortcut---"
-                                            (md5 (format "%s; nil" def)))) ,def)
-                          (define-key ergoemacs-shortcut-keymap key
-                            ',(intern (concat "ergoemacs-shortcut---"
-                                              (md5 (format "%s; nil" def))))))))
+    (if (and (boundp 'setup-ergoemacs-keymap) setup-ergoemacs-keymap)
+        (progn
+          (puthash (read-kbd-macro (key-description key) t)
+                   `(,def nil)
+                   ergoemacs-command-shortcuts-hash)
+          (define-key ergoemacs-shortcut-keymap key 'ergoemacs-shortcut))
+      (define-key keymap key
+        `(lambda(&optional arg)
+           (interactive "P")
+           (setq this-command last-command) ; Don't record this command.
+           (setq prefix-arg current-prefix-arg)
+           (ergoemacs-shortcut-internal ,def))))
+    
     t)
    (t nil)))
 
@@ -1438,6 +858,8 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
   "Setup keys based on a particular LAYOUT. All the keys are based on QWERTY layout."
   (ergoemacs-setup-translation layout base-layout)
   (ergoemacs-setup-fast-keys)
+  ;; Reset shortcuts layer.
+  (setq ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal))
   (let ((setup-ergoemacs-keymap t))
     (ergoemacs-setup-keys-for-keymap ergoemacs-keymap))
   
@@ -1560,12 +982,11 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
           (not key-def)) nil
     (let ((fn definition))
       (when (stringp definition)
-        (eval (macroexpand `(progn
-                              (ergoemacs-keyboard-shortcut
-                               ,(intern (concat "ergoemacs-shortcut---"
-                                                (md5 (format "%s" definition)))) ,definition)
-                              (setq fn ',(intern (concat "ergoemacs-shortcut---"
-                                                         (md5 (format "%s" definition)))))))))
+        (setq fn `(lambda(&optional arg)
+                    (interactive "P")
+                    (setq this-command last-command) ; Don't record this command.
+                    (setq prefix-arg current-prefix-arg)
+                    (ergoemacs-shortcut-internal ,definition))))
       (if (and (eq translate 'remap)
                (functionp key-def)
                (functionp fn))
@@ -1817,39 +1238,46 @@ the best match."
        (ergoemacs-debug "Extracting maps for %s" cur-prefix)
        (ergoemacs-debug (make-string 80 ?=))
        (with-temp-buffer
-         (let (ergoemacs-shortcut-mode
-               ergoemacs-unbind-mode)
+         (let (ergoemacs-shortcut-mode)
            (describe-buffer-bindings buf (read-kbd-macro cur-prefix)))
          (goto-char (point-min))
          (while (re-search-forward (format "%s \\(.*?\\)[ \t]\\{2,\\}\\(.+\\)$" cur-prefix) nil t)
            (setq new-key (match-string 1))
            (setq fn (match-string 2))
            (unless (string-match " " new-key)
-             (if (string-match "Prefix Command$" (match-string 0))
-                 (unless (string-match "ESC" new-key)
-                   (ergoemacs-debug "Prefix: %s" new-key)
-                   (add-to-list 'prefixes new-key))
-               (unless (string-match "ergoemacs-old-key---" fn)
-                 (condition-case err
-                     (with-temp-buffer
-                       (insert "(if (keymapp '" fn
-                               ") (unless (string-match \"ESC\" \"" new-key
-                               "\") (add-to-list 'prefixes \"" new-key
-                               "\") (ergoemacs-debug \"Prefix (keymap): %s\" new-key)) (add-to-list 'normal '(\""
-                               new-key "\" " fn ")) (ergoemacs-debug \"Normal: %s -> %s\" new-key fn))")
-                       (eval-buffer)
-                       (when ergoemacs-translate-keys
-                         (cond
-                          ((string-match "\\( \\|^\\)C-\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
-                           (add-to-list 'translations
-                                        (list (replace-match "\\1\\2" t nil new-key)
-                                              fn)))
-                          ((string-match "\\( \\|^\\)\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
-                           (add-to-list 'translations
-                                        (list (replace-match "\\1C-\\2" t nil new-key)
-                                              fn))))))
-                   (error
-                    (setq fn nil))))))))
+             (cond
+              ((save-match-data
+                 (string-match "[ \t]+[?][?]$" (match-string 0)))
+               (ergoemacs-debug "Anonymous function for %s" new-key)
+               (let (ergoemacs-shortcut-mode)
+                 (setq fn (key-binding (read-kbd-macro new-key)))
+                 (add-to-list 'normal (list new-key fn))))
+              ((save-match-data
+                 (string-match "Prefix Command$" (match-string 0)))
+               (unless (string-match "ESC" new-key)
+                 (ergoemacs-debug "Prefix: %s" new-key)
+                 (add-to-list 'prefixes new-key)))
+              (t
+               (condition-case err
+                   (with-temp-buffer
+                     (insert "(if (keymapp '" fn
+                             ") (unless (string-match \"ESC\" \"" new-key
+                             "\") (add-to-list 'prefixes \"" new-key
+                             "\") (ergoemacs-debug \"Prefix (keymap): %s\" new-key)) (add-to-list 'normal '(\""
+                             new-key "\" " fn ")) (ergoemacs-debug \"Normal: %s -> %s\" new-key fn))")
+                     (eval-buffer)
+                     (when ergoemacs-translate-keys
+                       (cond
+                        ((string-match "\\( \\|^\\)C-\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
+                         (add-to-list 'translations
+                                      (list (replace-match "\\1\\2" t nil new-key)
+                                            fn)))
+                        ((string-match "\\( \\|^\\)\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
+                         (add-to-list 'translations
+                                      (list (replace-match "\\1C-\\2" t nil new-key)
+                                            fn))))))
+                 (error
+                  (setq fn nil))))))))
 
        (ergoemacs-debug (make-string 80 ?=))
        (ergoemacs-debug "Finished (%1f sec); Building keymap" (- (float-time) start-time))
@@ -2100,7 +1528,6 @@ the best match."
                 (format "<Unchorded> %s <exit>"
                         cur-prefix)) `ignore)
            (error nil))
-         
          (puthash hashkey ,keymap ergoemacs-extract-map-hash))
        (ergoemacs-debug (make-string 80 ?=))
        (ergoemacs-debug-flush))))
@@ -2134,15 +1561,7 @@ the best match."
   "Extracts maps for PREFIX-KEY UNTRANSLATED-KEY of TYPE."
   (setq this-command last-command) ; Don't record this command.
   (setq prefix-arg current-prefix-arg)
-  (let ((fn (concat "ergoemacs-shortcut---"
-                    (md5 (format "%s %s; %s" prefix-key untranslated-key
-                                 type)))))
-    (eval
-     (macroexpand
-      `(progn
-         (ergoemacs-keyboard-shortcut
-          ,(intern fn) ,(format "%s %s" prefix-key untranslated-key) ,type))))
-    (call-interactively (intern fn))))
+  (ergoemacs-shortcut-internal (format "%s %s" prefix-key untranslated-key) type))
 
 (defun ergoemacs-menu-swap (prefix-key untranslated-key type)
   "Swaps what <menu> key translation is in effect"
@@ -2206,7 +1625,7 @@ the best match."
                                                    (ergoemacs-pretty-key (match-string 2 kbd-code)))))))))
 
 
-(defvar ergoemacs-repeat-shortcut-keymap (make-keymap)
+(defvar ergoemacs-repeat-shortcut-keymap (make-sparse-keymap)
   "Keymap for repeating often used shortcuts like C-c C-c.")
 
 (defvar ergoemacs-repeat-shortcut-msg ""
@@ -2217,15 +1636,55 @@ the best match."
   (set-temporary-overlay-map ergoemacs-repeat-shortcut-keymap))
 
 (defvar ergoemacs-current-extracted-map nil
-  "Current extracted map for `ergoemacs-keyboard-shortcut' defined functions")
+  "Current extracted map for `ergoemacs-shortcut' defined functions")
 
 (defvar ergoemacs-first-extracted-variant nil
   "Current extracted variant")
 
-(defun ergoemacs-shortcut (&optional arg key chorded repeat)
-  "Ergoemacs Shortcut.
+(defcustom ergoemacs-shortcut-ignored-functions
+  '(undo-tree-visualize)
+  "Ignored functions for `ergoemacs-shortcut'."
+  :group 'ergoemacs-mode
+  :type '(repeat
+          (symbol :tag "Function to ignore:")))
 
-ARG is the prefix arg that was called.
+(defun ergoemacs-shortcut (&optional arg)
+  "Shortcut for other key/function.
+Calls the function shortcut key defined in
+`ergoemacs-command-shortcuts-hash' for `this-command-keys-vector'.  The
+workhorse of this function is in `ergoemacs-shortcut-internal'."
+  (interactive "P")
+  (let ((args (gethash (this-command-keys-vector)
+                       ergoemacs-command-shortcuts-hash)))
+    (unless args
+      (gethash (read-kbd-macro (key-description (this-command-keys)) t)))
+    (if (not args)
+        (progn
+          ;; Remove reference to `ergoemacs-shortcut'
+          (when (featurep 'keyfreq)
+            (when keyfreq-mode
+              (let ((command 'ergoemacs-shortcut) count)
+                (setq count (gethash (cons major-mode command) keyfreq-table))
+                (remhash (cons major-mode command) keyfreq-table)
+                ;; Add `ergoemacs-undefined' to counter.
+                (setq command 'ergoemacs-undefined)
+                (setq count (gethash (cons major-mode command) keyfreq-table))
+                (puthash (cons major-mode command) (if count (+ count 1) 1)
+                         keyfreq-table))))
+          (ergoemacs-undefined))
+      (when (featurep 'keyfreq)
+        (when keyfreq-mode
+          (let ((command 'ergoemacs-shortcut) count)
+            (setq count (gethash (cons major-mode command) keyfreq-table))
+            (remhash (cons major-mode command) keyfreq-table))))
+      (setq this-command last-command)
+      (setq prefix-arg current-prefix-arg)
+      (if (interactive-form (nth 0 args))
+          (eval (macroexpand `(ergoemacs-shortcut-internal ',(nth 0 args) ',(nth 1 args))))
+        (eval (macroexpand `(ergoemacs-shortcut-internal ,(nth 0 args) ',(nth 1 args))))))))
+
+(defun ergoemacs-shortcut-internal (key &optional chorded repeat keymap-key)
+  "Ergoemacs Shortcut.
 
 KEY is the keyboard shortcut.
 
@@ -2249,7 +1708,7 @@ C-k S-a     -> k S-a           not defined
 If CHORDED is 'ctl-to-alt or the NAME command will translate the control
 bindings to be unchorded.  For example:
 
-C-k C-n     -> M-k M-n             (kmacro-cycle-ring-next)
+C-k C-n     -> M-k M-n         (kmacro-cycle-ring-next)
 C-k a       -> M-k a           (kmacro-add-counter)
 C-k M-a     -> k C-a           not defined
 C-k S-a     -> k S-a           not defined
@@ -2257,149 +1716,182 @@ C-k S-a     -> k S-a           not defined
 When REPEAT is a variable name, then an easy repeat is setup for the command.
 
 For example if you bind <apps> m to Ctrl+c Ctrl+c, this allows Ctrl+c Ctrl+c to be repeated by m.
+
+When KEYMAP-KEY is non-nil, define the KEYMAP-KEY on the `ergoemacs-shortcut-override-keymap'
 "
+  (cond
+   ((or (not chorded)
+        (condition-case err
+            (functionp key)
+          (error nil))
+        (memq chorded '(repeat repeat-global global-repeat global)))
+    ;; A single function for the key shortcut.
+    (let ((ctl-c-keys (key-description (this-command-keys))))
+      (let (ergoemacs-shortcut-mode
+            ergoemacs-unbind-mode
+            (minor (intern-soft (format "ergoemacs-%s-hook-mode" major-mode)))
+            old-minor
+            ;; if chorded is undefined, shortcut is to ergoemacs-keys
+            ;; if chorded doesn't have global in it it acts on
+            ;; ergoemacs-keys.
+            ;; otherwise the shortcut is acting on non-ergoemacs keys.
+            (ergoemacs-mode
+             (or (eq chorded 'repeat)
+                 (not chorded)))
+            fn fn-lst new-fn fn-override)
+        (setq ergoemacs-unbind-mode ergoemacs-mode)
+        ;; Temporarily unbind ergoemacs-major-mode-hook-mode
+        (when minor
+          (setq old-minor (symbol-value minor))
+          (set minor nil))
+        (cond
+         ((condition-case err
+              (interactive-form key)
+            (error nil))
+          ;; FIXME:  Overlays that are installed/removed based on
+          ;; pre-command-hook status can be disrupted.  This is the
+          ;; case in `auto-complete-mode'.  Therefore,
+          ;; `ergoemacs-mode' currently does not translate these keys
+          ;; correctly :(
+
+          ;; I tried a post-command-hook setting up a temporary
+          ;; overlay map with the actual command.  It was too slow...
+
+          ;; Currently fixed by a hook :)
+          
+          ;; Lookup function on non-ergoemacs keymaps.
+          (setq ergoemacs-mode nil)
+          (setq ergoemacs-unbind-mode nil)
+          (mapc
+           (lambda(cur-key)
+             (let ((binding (key-binding cur-key t nil (point))))
+               (setq new-fn (intern-soft (format "erogemacs-%s" binding)))
+               (when (and new-fn (interactive-form new-fn))
+                 ;; When a lookup finds org-metadown and there is a
+                 ;; function ergoemacs-org-metadown, use the
+                 ;; ergoemacs-org-metadown instead.
+                 (setq fn-override new-fn))
+               (unless (or (eq binding key)
+                           (memq binding ergoemacs-shortcut-ignored-functions))
+                 (add-to-list 'fn-lst binding))))
+           (or (remove-if '(lambda(x) (eq 'menu-bar (elt x 0))) ; Ignore
+                                                           ; menu-bar
+                                                           ; functions
+                          (where-is-internal key (current-global-map)))
+               (gethash key ergoemacs-where-is-global-hash)))
+          (cond
+           (fn-override
+            (set fn fn-override))
+           (fn-lst
+            ;; FIXME: If new functions exist, have user option to use
+            ;; these functions
+
+            ;; For now, just use the first function.
+            (setq fn (nth 0 fn-lst)))
+           (t  ; Could not find another function, just use the
+               ; function passed to `ergoemacs-shortcut'
+            (setq fn key))))
+         (t ;; lookup keybinding for the function keys.          
+          (setq fn (key-binding (read-kbd-macro key)))))
+        (if (not fn)
+            (unless keymap-key
+              (message "%s is not defined." (ergoemacs-pretty-key key)))
+          (unless keymap-key
+            (setq this-command fn) ; Don't record this command.
+            (setq prefix-arg current-prefix-arg))
+          (if (condition-case err
+                  (interactive-form fn)
+                (error nil))
+              (if keymap-key
+                  (progn
+                    (define-key ergoemacs-shortcut-override-keymap
+                      keymap-key fn))
+                (when (featurep 'keyfreq)
+                  (when keyfreq-mode
+                    (let ((command fn) count)
+                      ;; Add function name to to counter.
+                      (setq count (gethash (cons major-mode command)
+                                           keyfreq-table))
+                      (puthash (cons major-mode command) (if count (+ count 1) 1)
+                               keyfreq-table))))
+                (call-interactively fn)
+                ;; repeat only works with a function.
+                (when (and repeat
+                           (or (not chorded)
+                               (not (eq chorded 'global))))
+                  (when  (string-match "[A-Za-z]$" ctl-c-keys)
+                    (setq ctl-c-keys (match-string 0 ctl-c-keys))
+                    (setq ergoemacs-repeat-shortcut-keymap (make-keymap))
+                    (define-key ergoemacs-repeat-shortcut-keymap (read-kbd-macro ctl-c-keys) fn)
+                    (setq ergoemacs-repeat-shortcut-msg
+                          (format  "Repeat %s with %s"
+                                   (ergoemacs-pretty-key key)
+                                   (ergoemacs-pretty-key ctl-c-keys)))
+                    ;; Allow time to process the unread command events before
+                    ;; installing temporary keymap
+                    (setq ergoemacs-M-O-timer
+                          (run-with-timer ergoemacs-M-O-delay nil
+                                          #'ergoemacs-shortcut-timeout)))))
+            ;; Not a function, probably a keymap
+            (if keymap-key
+                (progn
+                  ;; (define-key ergoemacs-repeat-shortcut-keymap (read-kbd-macro ctl-c-keys) (symbol-value fn))
+                  )
+              (setq prefix-arg current-prefix-arg)
+              (setq unread-command-events
+                    (append
+                     (listify-key-sequence (read-kbd-macro key))
+                     unread-command-events))
+              (reset-this-command-lengths))))
+        (when minor
+          (set minor old-minor)))))
+   (keymap-key ;; extract key prefixes.
+    )
+   (t ;; key prefix
+    (setq ergoemacs-push-M-O-timeout nil) ;; Cancel timeouts
+    (setq this-command last-command) ; Don't record this command.
+    (setq prefix-arg current-prefix-arg)
+    (let (key-seq
+          (key-type
+           (cond
+            ((eq chorded 'unchorded)
+             "Unchorded")
+            ((eq chorded 'ctl-to-alt)
+             (format "Ctl%sAlt"
+                     (ergoemacs-unicode-char "↔" " to ")))
+            (t "Normal")))
+          deactivate-mark)
+      (eval (macroexpand '(ergoemacs-extract-maps ergoemacs-current-extracted-map key)))
+      (set-temporary-overlay-map ergoemacs-current-extracted-map)
+      (setq ergoemacs-first-extracted-variant chorded)
+      (setq key-seq
+            (read-kbd-macro
+             (format "<%s> %s" key-type key)))
+      (setq key-seq (listify-key-sequence key-seq))
+      (reset-this-command-lengths)
+      (setq unread-command-events
+            (append key-seq unread-command-events))
+      (setq key-type (concat "<" key-type "> "))
+      (when (string= key-type "<Normal> ")
+        (setq key-type ""))
+      (princ (concat
+              (if current-prefix-arg
+                  (format "%s " current-prefix-arg)
+                "")
+              (format "%s%s " key-type
+                      (ergoemacs-pretty-key key))))))))
+
+(defcustom ergoemacs-repeat-ctl-c-ctl-c t
+  "Repeat C-c C-c"
+  :group 'ergoemacs-mode
+  :type 'boolean)
+
+(defun ergoemacs-ctl-c-ctl-c (&optional arg)
+  "Ergoemacs C-c C-c. If `ergoemacs-repeat-ctl-c-ctl-c', repeat the command"
   (interactive "P")
-  (when key
-    ))
-
-;;;###autoload
-(defmacro ergoemacs-keyboard-shortcut (name key &optional chorded repeat)
-  "Creates a function NAME that issues a keyboard shortcut for KEY.
-CHORDED is a variable that alters to keymap to allow unchorded
-key sequences.
-
-If CHORDED is nil, the NAME command will just issue the KEY sequence.
-
-If CHORDED is 'unchorded or the NAME command will translate the control
-bindings to be unchorded.  For example:
-
-For example for the C-x map,
-
-Original Key   Translated Key  Function
-C-k C-n     -> k n             (kmacro-cycle-ring-next)
-C-k a       -> k M-a           (kmacro-add-counter)
-C-k M-a     -> k C-a           not defined
-C-k S-a     -> k S-a           not defined
-
-If CHORDED is 'ctl-to-alt or the NAME command will translate the control
-bindings to be unchorded.  For example:
-
-C-k C-n     -> M-k M-n             (kmacro-cycle-ring-next)
-C-k a       -> M-k a           (kmacro-add-counter)
-C-k M-a     -> k C-a           not defined
-C-k S-a     -> k S-a           not defined
-
-When REPEAT is a variable name, then an easy repeat is setup for the command.
-
-For example if you bind <apps> m to Ctrl+c Ctrl+c, this allows Ctrl+c Ctrl+c to be repeated by m.
-"
-  `(progn
-     ,(cond
-       ((eq chorded 'unchorded))
-       ((eq chorded 'ctl-to-alt))
-       (t
-        (when repeat
-          `(defcustom ,(intern (symbol-name repeat)) t
-             ,(format "Allow %s to be repeated." (ergoemacs-pretty-key key))
-             :group 'ergoemacs-mode
-             :type 'boolean))))
-     (defun ,(intern (symbol-name name)) (&optional arg)
-       ,(cond
-         ((eq chorded 'unchorded)
-          (format "Creates a keymap that extracts the unchorded %s combinations and then issues %s.  Also allows unbound or normal variants by pressing the <menu> key." key key))
-         ((eq chorded 'ctl-to-alt)
-          (format "Creates a keymap that extracts the %s combinations and translates Ctl+ to Alt+. Also allows the unbound or Ctl to alt variants by pressing the <menu>" key))
-         ((eq chorded 'normal)
-          (format "Creates a keymap that extracts the %s keymap. Also allows the unbound or Ctl+ to Alt+ and unbound variants by pressing the <menu>" key))
-         (t
-          (format "A shortcut to %s." (ergoemacs-pretty-key key))))
-       (interactive "P")
-       (setq ergoemacs-push-M-O-timeout nil) ;; Cancel timeouts
-       (setq this-command last-command) ; Don't record this command.
-       (setq prefix-arg current-prefix-arg)
-       (let (key-seq (key ,key) deactivate-mark)
-         (eval (macroexpand '(ergoemacs-extract-maps ergoemacs-current-extracted-map key)))
-         ,(cond
-           ((eq chorded 'unchorded)
-            `(progn
-               (setq ergoemacs-first-extracted-variant 'unchorded)
-               (setq key-seq  (read-kbd-macro (format "<Unchorded> %s" ,key)))
-               (set-temporary-overlay-map ergoemacs-current-extracted-map)
-               (setq key-seq (listify-key-sequence key-seq))
-               (reset-this-command-lengths)
-               (setq unread-command-events
-                     (append key-seq unread-command-events))
-               (princ (concat (if current-prefix-arg
-                                  (format "%s " current-prefix-arg)
-                                "")
-                              ,(format "<Unchorded> %s "
-                                       (ergoemacs-pretty-key key))))))
-           ((eq chorded 'normal)
-            `(progn
-               (setq ergoemacs-first-extracted-variant 'normal)
-               (setq key-seq  (read-kbd-macro (format "<Normal> %s" ,key)))
-               (set-temporary-overlay-map ergoemacs-current-extracted-map)
-               (setq key-seq (listify-key-sequence key-seq))
-               (setq unread-command-events
-                     (append key-seq unread-command-events))
-               (reset-this-command-lengths)
-               (princ (concat (if current-prefix-arg
-                                  (format "%s " current-prefix-arg)
-                                "")
-                              ,(format "%s "
-                                       (ergoemacs-pretty-key key))))))
-           ((eq chorded 'ctl-to-alt)
-            `(progn
-               (setq ergoemacs-first-extracted-variant 'ctl-to-alt)
-               (setq key-seq (read-kbd-macro (format "<Ctl%sAlt> %s" 
-                                                     (ergoemacs-unicode-char "↔" " to ")
-                                                     ,key)))
-               (setq key-seq (listify-key-sequence key-seq))
-               (set-temporary-overlay-map ergoemacs-current-extracted-map)
-               (setq unread-command-events
-                     (append key-seq unread-command-events))
-               (reset-this-command-lengths)
-               (princ (concat (if current-prefix-arg
-                                  (format "%s " current-prefix-arg)
-                                "")
-                              ,(format "<Ctl%sAlt> %s "
-                                       (ergoemacs-unicode-char "↔" " to ") (ergoemacs-pretty-key key))))))
-           (t
-            `(let ((ctl-c-keys (key-description (this-command-keys))))
-               (let (ergoemacs-shortcut-mode
-                     ergoemacs-unbind-mode
-                     (ergoemacs-mode ,(not (eq chorded 'global)))
-                     fn)
-                 (setq fn (key-binding (read-kbd-macro ,key)))
-                 (if (not fn)
-                     (message "%s is not defined." (ergoemacs-pretty-key ,key))
-                   (setq this-command last-command) ; Don't record this command.
-                   (setq prefix-arg current-prefix-arg)
-                   (if (condition-case err
-                           (functionp fn)
-                         (error nil))
-                       (call-interactively fn)
-                     (setq prefix-arg current-prefix-arg)
-                     (setq unread-command-events
-                           (append
-                            (listify-key-sequence (read-kbd-macro ,key))
-                            unread-command-events))
-                     (reset-this-command-lengths))
-                   ,(when repeat
-                      `(when ,(intern (symbol-name repeat))
-                         (when  (string-match "[A-Za-z]$" ctl-c-keys)
-                           (setq ctl-c-keys (match-string 0 ctl-c-keys))
-                           (setq ergoemacs-repeat-shortcut-keymap (make-keymap))
-                           (define-key ergoemacs-repeat-shortcut-keymap (read-kbd-macro ctl-c-keys) fn)
-                           (setq ergoemacs-repeat-shortcut-msg
-                                 (format ,(format "Repeat %s with %%s" (ergoemacs-pretty-key key))
-                                         (ergoemacs-pretty-key ctl-c-keys)))
-                           ;; Allow time to process the unread command events before
-                           ;; installing temporary keymap
-                           (setq ergoemacs-M-O-timer (run-with-timer ergoemacs-M-O-delay nil #'ergoemacs-shortcut-timeout))))))))))))))
-
-
-(ergoemacs-keyboard-shortcut ergoemacs-ctl-c-ctl-c "C-c C-c" nil ergoemacs-repeat-ctl-c-ctl-c)
+  (setq this-command last-command) ; Don't record this command.
+  (setq prefix-arg current-prefix-arg)
+  (ergoemacs-shortcut-internal "C-c C-c" 'repeat-global ergoemacs-repeat-ctl-c-ctl-c))
 
 
 (require 'cus-edit)
@@ -2608,6 +2100,45 @@ The shortcuts defined are:
     (ergoemacs-debug "Ergoemacs Shortcut Keys have loaded been turned off."))
   (ergoemacs-debug-flush))
 
+(define-minor-mode ergoemacs-shortcut-override-mode
+  "Lookup the functions for `ergoemacs-mode' shortcut keys."
+  nil
+  :lighter ""
+  :global t
+  :group 'ergoemacs-mode
+  (if ergoemacs-shortcut-override-mode
+      (progn
+        (ergoemacs-debug "Ergoemacs Shortcut Override have loaded been turned on.")
+        (let ((x (assq 'ergoemacs-shortcut-override-mode
+                       minor-mode-map-alist)))
+          (when x
+            (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
+          ;; Create keymap
+          (setq ergoemacs-shortcut-override-keymap (make-sparse-keymap))
+          ;; Add M-O and M-o key-bindings; Pretend they are the actual
+          ;; bindings instead of the M-O and M-o work-rounds.
+          (when (eq (key-binding (read-kbd-macro "M-O"))
+                    'ergoemacs-M-O)
+            (define-key ergoemacs-shortcut-override-keymap
+              (read-kbd-macro "M-O")
+              (lookup-key ergoemacs-M-O-keymap [timeout])))
+          (when (eq (key-binding (read-kbd-macro "M-o"))
+                    'ergoemacs-M-o)
+            (define-key ergoemacs-shortcut-override-keymap
+              (read-kbd-macro "M-o")
+              (lookup-key ergoemacs-M-o-keymap [timeout])))
+          (maphash
+           (lambda(key args)
+             (if (interactive-form (nth 0 args))
+                 (eval (macroexpand `(ergoemacs-shortcut-internal ',(nth 0 args) ',(nth 1 args) nil ,key)))
+               (eval (macroexpand `(ergoemacs-shortcut-internal ,(nth 0 args) ',(nth 1 args) nil ,key)))))
+           ergoemacs-command-shortcuts-hash)
+          (push (cons 'ergoemacs-shortcut-override-mode
+                      ergoemacs-shortcut-override-keymap)
+                minor-mode-map-alist)))
+    (ergoemacs-debug "Ergoemacs Shortcut Keys have loaded been turned off."))
+  (ergoemacs-debug-flush))
+
 (defvar ergoemacs-unbind-keymap (make-sparse-keymap)
   "Keymap for `ergoemacs-unbind-mode'")
 
@@ -2635,7 +2166,7 @@ The shortcuts defined are:
                                        (read-kbd-macro key)))
           (setq local-fn (lookup-key (current-local-map)
                                      (read-kbd-macro key))))
-        local-fn)
+        (functionp local-fn))
       (setq this-command last-command) ; Don't record this
                                         ; command.
       (setq prefix-arg current-prefix-arg)
@@ -2725,8 +2256,11 @@ If these keys exist, execute what was bound to them.
   :type 'boolean
   :group 'ergoemacs-mode)
 
-(when ergoemacs-ignore-prev-global
-  (ergoemacs-ignore-prev-global))
+(if ergoemacs-ignore-prev-global
+    (ergoemacs-ignore-prev-global)
+  (ergoemacs-reset-global-where-is))
+
+
 
 ;;; Frequently used commands as aliases
 
@@ -2790,25 +2324,22 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
     describe-key-briefly
     describe-function
     describe-variable
-    ergoemacs-describe-major-mode
-    helm-M-x)
+    ergoemacs-describe-major-mode)
   "Functions that describe keys.
 Setup C-c and C-x keys to be described properly.")
 
+(defvar ergoemacs-show-true-bindings nil
+  "Show the true bindings.  Otherwise, show what the bindings translate to...")
+
 (defun ergoemacs-pre-command-hook ()
-  "Ergoemacs pre-command-hook"
+  "Ergoemacs pre-command-hook."
   (let (deactivate-mark)
     (condition-case err
         (when ergoemacs-mode
-          (cond
-           ((memq this-command ergoemacs-describe-keybindings-functions)
-            ;; Turn off shortcut mode for describing bindings. 
-            (ergoemacs-shortcut-mode -1))
-           ((not (eq 'ergoemacs-ctl-c (key-binding (read-kbd-macro "C-c"))))
-            ;; Promote shortcut mode if overwritten somehow.
-            (when ergoemacs-shortcut-mode
-              (ergoemacs-shortcut-mode -1))
-            (ergoemacs-shortcut-mode 1))))
+          (when (and (not ergoemacs-show-true-bindings)
+                     (memq this-command ergoemacs-describe-keybindings-functions))
+            (ergoemacs-shortcut-mode -1)
+            (ergoemacs-shortcut-override-mode 1)))
       (error nil)))
   t)
 
@@ -2817,8 +2348,13 @@ Setup C-c and C-x keys to be described properly.")
   (let (deactivate-mark)
     (condition-case err
         (when ergoemacs-mode
-          ;; Promote/activate shortcut mode if overwritten/disabled somehow.
-          (unless (eq 'ergoemacs-ctl-c (key-binding (read-kbd-macro "C-c")))
+          (when (and (not ergoemacs-show-true-bindings)
+                     (memq this-command ergoemacs-describe-keybindings-functions))
+            (ergoemacs-shortcut-mode 1)
+            (ergoemacs-shortcut-override-mode -1))
+          (unless (and ergoemacs-shortcut-mode
+                       (eq 'ergoemacs-ctl-c
+                           (key-binding (read-kbd-macro "C-c"))))
             (when ergoemacs-shortcut-mode
               (ergoemacs-shortcut-mode -1))
             (ergoemacs-shortcut-mode 1)))

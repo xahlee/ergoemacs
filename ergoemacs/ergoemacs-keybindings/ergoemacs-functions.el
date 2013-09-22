@@ -69,15 +69,6 @@
   "Ergoemacs C-c or C-x defined by KEY."
   (let (fn-cp fn-cx fn-both)
     ;; Create the needed functions
-    (setq fn-cx (concat "ergoemacs-shortcut---"
-                        (md5 (format "%s; normal" key))))
-    (unless (intern-soft fn-cx)
-      (eval
-       (macroexpand
-        `(progn
-           (ergoemacs-keyboard-shortcut
-            ,(intern fn-cx) ,key normal)))))
-    (setq fn-cx (intern fn-cx))
 
     (if (string= "C-c" key)
         (progn
@@ -88,15 +79,15 @@
      ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-copy-cut)
       (funcall fn-cp arg))
      ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-C-c-and-C-x)
-      (funcall fn-cx))
+      (ergoemacs-shortcut-internal key 'normal))
      (this-command-keys-shift-translated
       ;; Shift translated keys are C-c and C-x only.
-      (funcall fn-cx))
+      (ergoemacs-shortcut-internal key 'normal))
      ((and ergoemacs-ctl-c-or-ctl-x-delay
            (or (region-active-p)
                (and cua--rectangle (boundp 'cua-mode) cua-mode)))
       (setq ergoemacs-curr-prefix-arg current-prefix-arg)
-      (funcall fn-cx)
+      (ergoemacs-shortcut-internal key 'normal)
       (setq ergoemacs-push-M-O-timeout t)
       (setq ergoemacs-M-O-prefix-keys key)
       (setq ergoemacs-M-O-timer
@@ -106,7 +97,7 @@
           (and cua--rectangle (boundp 'cua-mode) cua-mode))
       (funcall fn-cp arg))
      (t
-      (funcall fn-cx)))))
+      (ergoemacs-shortcut-internal key 'normal)))))
 
 (defun ergoemacs-clean ()
   "Run ergoemacs in a bootstrap environment."
@@ -316,6 +307,58 @@ See: `ergoemacs-forward-block'"
           (skip-chars-backward "\n\t ")
           (forward-char 1))
       (progn (goto-char (point-min))))))
+
+(defcustom ergoemacs-back-to-indentation t
+  "Allow `ergoemacs-beginning-of-line-or-block' to move cursor back to the beginning of the indentation.  Otherwise, it is always beginning of line."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+;; Extends behavior of http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/
+(defun ergoemacs-beginning-of-line-or-block (&optional N)
+  "Move cursor to beginning of indentation, line, or text block.
+ (a text block is separated by empty lines).
+
+Move cursor to the first non-whitespace character of a line. If
+already there move the cursor to the beginning of the line. If at
+the beginning of the line, move to the end of previous text
+block.
+
+With argument N not nil or 1, and not at the beginning of
+the line move forward N - 1 lines first If point reaches the
+beginning or end of buffer, it stops there.
+ (Similar to `beginning-of-line' arguments)
+
+If argument N not nil or 1, and at the beginning of the line,
+move N blocks backward.
+
+Back to indentation can be turned off with `ergoemacs-back-to-indentation'.
+"
+  (interactive "^p")
+  (setq N (or N 1))
+  (if (= (point) (point-at-bol))
+      (progn
+        (ergoemacs-backward-block N))
+    
+    (if ergoemacs-back-to-indentation
+        (progn
+          (when (not (= 1 N))
+            (let ((line-move-visual nil))
+              (forward-line (- N 1))))
+          
+          (let ((orig-point (point)))
+            (back-to-indentation)
+            (when (= orig-point (point))
+              (move-beginning-of-line 1))))
+      (move-beginning-of-line 1))))
+
+(defun ergoemacs-end-of-line-or-block (&optional N )
+  "Move cursor to end of line, or end of current or next text block.
+ (a text block is separated by empty lines)"
+  (interactive "^p")
+  (setq N (or N 1))
+  (if (= (point) (point-at-eol))
+      (ergoemacs-forward-block N)
+    (end-of-line N)))
 
 ;;; TEXT SELECTION RELATED
 
@@ -715,7 +758,7 @@ Else it is a user buffer."
   (text-scale-increase 0))
 
 ;;; org-mode functions.
-(defun ergoemacs-org-mode-ctrl-return (&optional reopen-or-invisible-ok)
+(defun ergoemacs-org-insert-heading-respect-content (&optional reopen-or-invisible-ok)
   "When in an `org-mode' table, use `cua-set-rectangle-mark', otherwise use `org-insert-heading-respect-content'"
   (interactive "P")
   (cond
@@ -726,7 +769,7 @@ Else it is a user buffer."
     (setq prefix-arg current-prefix-arg)
     (org-insert-heading-respect-content reopen-or-invisible-ok))))
 
-(defun ergoemacs-org-mode-paste (&optional arg)
+(defun ergoemacs-org-yank (&optional arg)
   "Ergoemacs org-mode paste."
   (let ((regtxt (and cua--register (get-register cua--register))))
     (cond

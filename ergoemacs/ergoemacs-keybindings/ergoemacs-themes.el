@@ -42,10 +42,10 @@
     ("M-i" previous-line "↑ line")
     ("M-k" next-line "↓ line")
 
-    ("M-C-j" ("<C-left>" nil)  "← char")
-    ("M-C-l" ("<C-right>" nil) "→ char")
-    ("M-C-i" ("<C-up>" nil) "↑ line")
-    ("M-C-k" ("<C-down>" nil) "↓ line")
+    ("M-C-j" left-word  "← char")
+    ("M-C-l" right-word "→ char")
+    ("M-C-i" backward-paragraph "↑ line")
+    ("M-C-k" forward-paragraph "↓ line")
     
     ;; Move by word
     ("M-u" backward-word "← word")
@@ -56,8 +56,8 @@
     ("M-O" ergoemacs-forward-block  "→ ¶")
     
     ;; Move to beginning/ending of line
-    ("M-h" move-beginning-of-line "← line")
-    ("M-H" move-end-of-line "→ line")
+    ("M-h" ergoemacs-beginning-of-line-or-block "← line/¶")
+    ("M-H" ergoemacs-end-of-line-or-block "→ line/¶")
     
     ;; Move by screen (page up/down)
     ("M-I" scroll-down "↑ page")
@@ -162,13 +162,13 @@
     ("<apps> f" ("C-x" ctl-to-alt) "Ctl-x")
     ("<apps> <apps> f" ("C-x" unchorded) "Ctl-x")
     ("<apps> h" ("C-h" nil) "Ctl-h")
-    ("<apps> i" ergoemacs-alt-shift-keys "Rep Alt+Shift")
+    ("<apps> i" ergoemeracs-alt-shift-keys "Rep Alt+Shift")
     ("<apps> j" ("C-c" unchorded) "Ctl-c")
     ("<apps> <apps> j" ("C-c" ctl-to-alt) "Ctl-c")
     ("<apps> k" ergoemacs-alt-keys "Repeat Alt")
     ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
     ;; ("<apps> r" ("C-x" unchorded) "Ctl-x*")
-    ("<apps> s" ("C-x C-s" nil) "Save")
+    ("<apps> s" save-buffer "Save")
     ("<apps> o" find-file "Open")
     ;; ("<apps> u" ("C-c" unchorded) "Ctl-c*")
     ("<apps> g" universal-argument "C-u")
@@ -241,7 +241,7 @@
     ("C-S-o" ergoemacs-open-in-external-app "OS Open")
     ("C-S-t" ergoemacs-open-last-closed "Open Last")
     ("C-w" ergoemacs-close-current-buffer "Close Buf.")
-    ("C-s" ("C-x C-s") "Save")
+    ("C-s" save-buffer "Save")
     ("C-S-s" write-file "Save As")
     ("C-p" ergoemacs-print-buffer-confirm "Print")
     ("C-a" mark-whole-buffer "Select all")
@@ -360,6 +360,8 @@
       ("<M-right>" ergoemacs-org-metaright override)))
     (org-agenda-mode-hook
      ((undo org-agenda-undo org-agenda-mode-map remap)))
+    (org-src-mode-hook
+     ((save-buffer org-edit-src-save org-src-mode-map remap)))
     ;; Minibuffer hook
     (minibuffer-setup-hook
      ((keyboard-quit minibuffer-keyboard-quit minor-mode-overriding-map-alist)
