@@ -6,7 +6,7 @@
 ;; Created: 2010-12-08
 ;; Keywords: math symbols, unicode, input
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2.
+;; You can redistribute this program and/or modify it under the terms of the GNU General Public License version 2.
 
 ;;; DESCRIPTION
 
@@ -51,10 +51,11 @@
 ;; To see the inline documentation, call “describe-function”, then type “xmsi-mode”.
 ;; (if you have not load the mode yet, first load it by calling “xmsi-mode”.)
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
 
+;; v1.5.6, 2013-09-26 • added complete Double struck letters. "AA→𝔸, BB→𝔹, …
 ;; v1.5.5, 2013-09-09 • removed abbrevs for full width letters and digits. Rational: they are rarely used.
 ;; v1.5.4, 2013-08-21 • fixed a h→η
 ;; v1.5.3, 2013-08-15 • added Chinese pinyin for first tone ⁖ ā → ā, and also for all tones of ü, ⁖ {v1 → ǖ, v2 → ǘ, …}. Thanks to Lew Perin 〔 http://babelcarp.org/babelcarp/ 〕
@@ -119,7 +120,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.5.5")
+(setq xmsi-version "v1.5.6")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
@@ -371,23 +372,37 @@
 
 (progn
   ;; Double struck letter forms (aka Double struck; double stroke) Others are outside of the BMP (Unicode's Basic Multilingual Plane). Almost no font supports it.
-  (puthash "dsC" "ℂ" xmsi-abrvs)
-  (puthash "dsH" "ℍ" xmsi-abrvs)
-  (puthash "dsN" "ℕ" xmsi-abrvs)
-  (puthash "dsP" "ℙ" xmsi-abrvs)
-  (puthash "dsQ" "ℚ" xmsi-abrvs)
-  (puthash "dsR" "ℝ" xmsi-abrvs)
-  (puthash "dsZ" "ℤ" xmsi-abrvs)
+  (puthash "AA" "𝔸" xmsi-abrvs)
+  (puthash "BB" "𝔹" xmsi-abrvs)
+  (puthash "CC" "ℂ" xmsi-abrvs) ; complex number
+  (puthash "DD" "𝔻" xmsi-abrvs)
+  (puthash "EE" "𝔼" xmsi-abrvs)
+  (puthash "FF" "𝔽" xmsi-abrvs)
+  (puthash "GG" "𝔾" xmsi-abrvs)
+  (puthash "HH" "ℍ" xmsi-abrvs) ; quaternion
+  (puthash "II" "𝕀" xmsi-abrvs)
+  (puthash "JJ" "𝕁" xmsi-abrvs)
+  (puthash "KK" "𝕂" xmsi-abrvs)
+  (puthash "LL" "𝕃" xmsi-abrvs)
+  (puthash "MM" "𝕄" xmsi-abrvs)
+  (puthash "NN" "ℕ" xmsi-abrvs) ; natural number
+  (puthash "OO" "𝕆" xmsi-abrvs)
+  (puthash "PP" "ℙ" xmsi-abrvs)
+  (puthash "QQ" "ℚ" xmsi-abrvs) ; rational
+  (puthash "RR" "ℝ" xmsi-abrvs) ; real
+  (puthash "SS" "𝕊" xmsi-abrvs)
+  (puthash "TT" "𝕋" xmsi-abrvs)
+  (puthash "UU" "𝕌" xmsi-abrvs)
+  (puthash "VV" "𝕍" xmsi-abrvs)
+  (puthash "WW" "𝕎" xmsi-abrvs)
+  (puthash "XX" "𝕏" xmsi-abrvs)
+  (puthash "YY" "𝕐" xmsi-abrvs)
+  (puthash "ZZ" "ℤ" xmsi-abrvs) ; integer
 
   (puthash "dd" "ⅆ" xmsi-abrvs)
   (puthash "ee" "ⅇ" xmsi-abrvs)
   (puthash "ii" "ⅈ" xmsi-abrvs)
   (puthash "jj" "ⅉ" xmsi-abrvs)
-
-  (puthash "dsd" "ⅆ" xmsi-abrvs)
-  (puthash "dse" "ⅇ" xmsi-abrvs)
-  (puthash "dsi" "ⅈ" xmsi-abrvs)
-  (puthash "dsj" "ⅉ" xmsi-abrvs)
 )
 
 (progn
