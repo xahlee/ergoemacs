@@ -6,7 +6,7 @@
 ;; Created: 2011-03-02
 ;; Keywords: emacs lisp, utility, file
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -35,7 +35,7 @@
 ;; The most used two are “unit-at-cursor” and “get-selection-or-unit”. They are intended as improvemnt of “thing-at-point”. For detailed discussion, see:〈Emacs Lisp: get-selection-or-unit〉 @ http://ergoemacs.org/emacs/elisp_get-selection-or-unit.html
 
 ;; This package requires 〔xfrp_find_replace_pairs.el〕
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; INSTALL
 

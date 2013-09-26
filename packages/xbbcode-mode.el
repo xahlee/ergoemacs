@@ -6,7 +6,7 @@
 ;; Created: 2009-12-09
 ;; Keywords: bbcode, php, lightweight markup
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -52,7 +52,7 @@
 ;; (describe-mode). (if you have not load the mode, first type
 ;; Alt+x xbbcode-mode)
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
 

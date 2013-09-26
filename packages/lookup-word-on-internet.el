@@ -5,7 +5,7 @@
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -56,7 +56,7 @@
 ;; Just some simple useful commands
 ;; For detail, see http://ergoemacs.org/emacs/emacs_lookup_ref.html
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
 

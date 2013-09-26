@@ -6,7 +6,7 @@
 ;; Created: 2012-04-02
 ;; Keywords: emacs lisp, utility, file
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -32,7 +32,7 @@
 ;; for example, if a line in a file has 2 occurrences, then the same line will be reported twice, as 2 “blocks”.
 ;; so, the number of blocks corresponds exactly to the number of occurrences.
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; INSTALL
 

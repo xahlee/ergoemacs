@@ -6,7 +6,7 @@
 ;; Created: 2012-05-12
 ;; Keywords: languages, convenience
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; Commentary:
 ;; Major mode for editing pure HTML5 files.
@@ -275,6 +275,7 @@
            ("vbs" . ["visual-basic-mode" "vbs"])
            ("visualbasic" . ["visual-basic-mode" "vbs"])
            ("mathematica" . ["fundamental-mode" "m"])
+           ("math" . ["fundamental-mode" "txt"])
 
            ("slim" . ["slim-mode" "slim"])
            ("yaml" . ["yaml-mode" "yaml"])
@@ -1686,7 +1687,12 @@ Case shouldn't matter, except when it's emacs's key notation.
          [
           ["\+\\([^<]\\) \\(.\\) \\(.\\)\\'" "+<kbd>\\1</kbd> <kbd>\\2</kbd> <kbd>\\3</kbd>"]
           ["\+\\([^<]\\) \\([A-Za-z0-0]\\)\\'" "+<kbd>\\1</kbd> <kbd>\\2</kbd>"]
+
           ["\+\\([^<]\\)" "+<kbd>\\1</kbd>"]
+          ["\+\\(.\\)】" "+<kbd>\\1</kbd>】"]
+
+          [" \\(.\\) " " <kbd>\\1</kbd> "]
+          [" \\(.\\)】" " <kbd>\\1</kbd>】"]
           ])
         ) ) )
 

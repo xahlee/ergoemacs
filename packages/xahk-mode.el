@@ -6,7 +6,7 @@
 ;; Created: 2010-01-09
 ;; Keywords: ahk, AutoHotkey, hotkey, keyboard shortcut, automation
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -14,7 +14,7 @@
 ;; for download location and documentation, see:
 ;; http://xahlee.info/mswin/emacs_autohotkey_mode.html
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; INSTALL
 

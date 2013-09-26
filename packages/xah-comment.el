@@ -6,7 +6,7 @@
 ;; Created: 2012
 ;; Keywords: comment TODO add proper keywords here
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -30,16 +30,15 @@
 
 ;; Then, restart emacs.
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
-
 
 ;; v1.1, 2013-04-27 improved xc-comment-smart. When a region is selected, ignore blank lines in the beginning when determining whether to comment or uncomment
 ;; v1.0, 2013-01-24 First working prototype. Currently only works for language that has a line syntax.
 
 ;;; TODO
-; • need to add dealing with block comments 
+; • need to add dealing with block comments
 ; • need smart behavior when adding/removing line comment, whether to add space as padding
 ; • need smart behavior when you have a region of commented out lines. Whether to remove just one comment char (as in one level) or all. Need to find the minimum level to remove.
 
@@ -114,7 +113,7 @@ e.g. “#”, “//”, “;”."
     ))
 
 
-   
+
 (defun xc-whole-line-is-line-comment-p ()
 "Return true if entire line is a commented out as line comment
 This command may move `point'."

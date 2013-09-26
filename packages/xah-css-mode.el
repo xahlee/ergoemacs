@@ -6,7 +6,7 @@
 ;; Created: 2013-04-18
 ;; Keywords: languages, convenience
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; Commentary:
 ;; Major mode for editing CSS code. Beta stage.
@@ -100,23 +100,21 @@ Return value is float.
   "Remove unnecessary whitespaces of CSS source code in region.
 WARNING: not robust."
   (interactive "r")
-  (progn
-    (save-restriction
-      (narrow-to-region p1 p2)
-      (replace-regexp-pairs-region (point-min) (point-max) '(["  +" " "]))
-      (replace-pairs-region (point-min) (point-max)
-                            '(
-                              ["\n" ""]
-                              [" /* " "/*"]
-                              [" */ " "*/"]
-                              [" {" "{"]
-                              ["{ " "{"]
-                              ["; " ";"]
-                              [": " ":"]
-
-                              [";}" "}"]
-                              ["}" "}\n"]
-                              )) ) ) )
+  (save-restriction
+    (narrow-to-region p1 p2)
+    (replace-regexp-pairs-region (point-min) (point-max) '(["  +" " "]))
+    (replace-pairs-region (point-min) (point-max)
+                          '(
+                            ["\n" ""]
+                            [" /* " "/*"]
+                            [" */ " "*/"]
+                            [" {" "{"]
+                            ["{ " "{"]
+                            ["; " ";"]
+                            [": " ":"]
+                            [";}" "}"]
+                            ["}" "}\n"]
+                            )) ) )
 
 
 (defvar xcm-html-tag-names nil "a list of HTML5 tag names.")

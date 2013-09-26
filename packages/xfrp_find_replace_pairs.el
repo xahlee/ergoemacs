@@ -6,7 +6,7 @@
 ;; Created: 2010-08-17
 ;; Keywords: emacs lisp, string, find replace
 
-;; You can redistribute this program and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either GPL version 2 or 3.
+;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
@@ -24,7 +24,7 @@
 ;; For explanation of the need for these functions, see:
 ;;  http://ergoemacs.org/emacs/elisp_replace_string_region.html
 
-;; Donation of $3 is appreciated. Paypal to 〔xah@xahlee.org〕
+;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; INSTALL
 

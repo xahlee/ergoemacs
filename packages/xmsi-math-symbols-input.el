@@ -55,7 +55,7 @@
 
 ;;; HISTORY
 
-;; v1.5.6, 2013-09-26 • added complete Double struck letters. "AA→𝔸, BB→𝔹, …
+;; v1.5.6, 2013-09-26 • added complete Double struck letters. AA→𝔸, BB→𝔹, …
 ;; v1.5.5, 2013-09-09 • removed abbrevs for full width letters and digits. Rational: they are rarely used.
 ;; v1.5.4, 2013-08-21 • fixed a h→η
 ;; v1.5.3, 2013-08-15 • added Chinese pinyin for first tone ⁖ ā → ā, and also for all tones of ü, ⁖ {v1 → ǖ, v2 → ǘ, …}. Thanks to Lew Perin 〔 http://babelcarp.org/babelcarp/ 〕
