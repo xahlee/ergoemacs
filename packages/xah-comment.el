@@ -53,7 +53,6 @@
 (setq xc-line-comment-syntax-table
       ;; first element is the value of `major-mode' variable. second element is a string
 '(
-
            (ahk-mode . ";")
            (xahk-mode . ";")            ; doesn't work. when xc-use-comment-dwim-p is true. need to set comment to dwim.
            (c++-mode . "//")
@@ -91,13 +90,11 @@
 ;;           (dos-mode . "#")
 
            (css-mode . nil)   ; /* … */
-
            (html-mode . nil)
            (sql-mode . "#") ;; mysql, 「#」 or 「-- 」 or 「/* … */」. postgresql, 「--」 or 「/*…*/」
            (sgml-mode . nil)
            (html6-mode . nil)
            (tuareg-mode . nil) ; ocaml (* … *)
-
            (shen-mode . "#")
            (snippet-mode . "#")
            ) )

@@ -4,14 +4,13 @@
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
 ;; Created: 2013-07-24
-;; Keywords: 
+;; Keywords:
 
 ;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; DESCRIPTION
 
 ;; misc intercative commands
-
 
 ;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
@@ -127,8 +126,7 @@ When called repeatedly, this command cycles the {“ ”, “_”, “-”} char
 
     ) )
 
-
-;; (defun xah-convert-chinese-numeral (p1 p2 &optional ξ-to-direction)
+;; (defun xah-convert-chinese-numeral (p1 p2 &optional ε-to-direction)
 ;;   "Replace punctuation from/to Chinese/English numeral.
 
 ;; When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
@@ -139,7 +137,7 @@ When called repeatedly, this command cycles the {“ ”, “_”, “-”} char
 ;;  C-u 1 → to English
 ;;  C-u 2 → to Chinese
 
-;; When called in lisp code, p1 p2 are region begin/end positions. ξ-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
+;; When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
 ;; See also: `xah-remove-punctuation-trailing-redundant-space'."
 ;;   (interactive
@@ -170,9 +168,9 @@ When called repeatedly, this command cycles the {“ ”, “_”, “-”} char
 ;; ;;        (result (make-vector (length chinese-numeral-simple) nil))
 ;; ;;        )
 ;; ;;   (dotimes (ii (- (length chinese-numeral-simple) 1) )
-;; ;;     (aset result ii 
-;; ;;           (vector 
-;; ;;            (char-to-string (elt chinese-numeral-simple ii )) 
+;; ;;     (aset result ii
+;; ;;           (vector
+;; ;;            (char-to-string (elt chinese-numeral-simple ii ))
 ;; ;;            (char-to-string (elt english-numeral ii )) ))
 ;; ;;     )
 ;; ;;   result
@@ -182,19 +180,17 @@ When called repeatedly, this command cycles the {“ ”, “_”, “-”} char
 
 ;;     (replace-pairs-region p1 p2
 ;;                               (cond
-;;                                ((string= ξ-to-direction "chinese") ξ-english-chinese-punctuation-map)
-;;                                ((string= ξ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-;;                                ((string= ξ-to-direction "auto")
+;;                                ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
+;;                                ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+;;                                ((string= ε-to-direction "auto")
 ;;                                 (if (string-match ",\\|. " inputStr)
 ;;                                   ξ-english-chinese-punctuation-map
 ;;                                   (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map)
 ;;                                   ))
 
-;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" ξ-to-direction)) ) ) ) )
+;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) ) ) )
 
-
-
-(defun xah-convert-english-chinese-punctuation (p1 p2 &optional ξ-to-direction)
+(defun xah-convert-english-chinese-punctuation (p1 p2 &optional ε-to-direction)
   "Replace punctuation from/to English/Chinese Unicode symbols.
 
 When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
@@ -206,7 +202,9 @@ If `universal-argument' is called:
  C-u 1 → to English
  C-u 2 → to Chinese
 
-When called in lisp code, p1 p2 are region begin/end positions. ξ-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
+“Automatic” is based on whether the text contains the English comma followed by a space 「, 」. If so, then English to Chinese.
+
+When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
 See also: `xah-remove-punctuation-trailing-redundant-space'."
   (interactive
@@ -226,7 +224,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
          [
           [". " "。"]
           [".\n" "。\n"]
-          ["," "，"]
+          [", " "，"]
           [": " "："]
           ["; " "；"]
           ["?" "？"] ; no space after
@@ -241,15 +239,15 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
 
     (replace-pairs-region p1 p2
                               (cond
-                               ((string= ξ-to-direction "chinese") ξ-english-chinese-punctuation-map)
-                               ((string= ξ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-                               ((string= ξ-to-direction "auto")
-                                (if (string-match ",\\|. " inputStr)
+                               ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
+                               ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+                               ((string= ε-to-direction "auto")
+                                (if (string-match ", " inputStr)
                                   ξ-english-chinese-punctuation-map
                                   (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map)
                                   ))
 
-                               (t (user-error "Your 3rd argument 「%s」 isn't valid" ξ-to-direction)) ) ) ) )
+                               (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) ) ) )
 
 (defun xah-convert-asian/ascii-space (p1 p2)
   "Change all space characters between Asian Ideographic one to ASCII one.
@@ -306,7 +304,7 @@ See also `xah-convert-english-chinese-punctuation'."
                                 ]
                                "FIXEDCASE" "LITERAL") )
 
-(defun xah-convert-fullwidth-chars (p1 p2 &optional ξ-to-direction)
+(defun xah-convert-fullwidth-chars (p1 p2 &optional ε-to-direction)
   "Convert ASCII chars to/from Unicode fullwidth version.
 
 When called interactively, do text selection or text block (paragraph).
@@ -320,7 +318,7 @@ If `universal-argument' is called:
  C-u 1 → to ASCII
  C-u 2 → to Unicode
 
-When called in lisp code, p1 p2 are region begin/end positions. ξ-to-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
+When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
 
 See also: `xah-remove-punctuation-trailing-redundant-space'."
   (interactive
@@ -355,7 +353,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
 
 ;(message "before %s" stateBefore)
 ;(message "after %s" stateAfter)
-;(message "ξ-to-direction %s" ξ-to-direction)
+;(message "ε-to-direction %s" ε-to-direction)
 ;(message "real-this-command  %s" this-command)
 ;(message "real-last-command %s" last-command)
 
@@ -363,9 +361,9 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
  (replace-pairs-region
  p1 p2
  (cond
-  ((string= ξ-to-direction "unicode") ξ-ascii-unicode-map)
-  ((string= ξ-to-direction "ascii") ξ-reverse-map)
-  ((string= ξ-to-direction "auto")
+  ((string= ε-to-direction "unicode") ξ-ascii-unicode-map)
+  ((string= ε-to-direction "ascii") ξ-reverse-map)
+  ((string= ε-to-direction "auto")
    (if (equal this-command last-command)
        (if (eq stateBefore 0)
            ξ-ascii-unicode-map
@@ -373,7 +371,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
          )
      ξ-ascii-unicode-map
      ))
-      (t (user-error "Your 3rd argument 「%s」 isn't valid" ξ-to-direction)) ) )
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) )
 )
 (put 'xah-convert-fullwidth-chars 'state stateAfter)
  ) )
@@ -409,7 +407,7 @@ When called in elisp, the p1 and p2 are region begin/end positions to work on."
 
 (defvar xah-bracketsList nil "a list of bracket pairs. ⁖ () {} [] “” ‘’ ‹› «» 「」 『』 ….")
 (setq xah-bracketsList '( "()" "{}" "[]" "<>" "“”" "‘’" "‹›" "«»" "「」" "『』" "【】" "〖〗" "〈〉" "《》" "〔〕" "⦅⦆" "〚〛" "⦃⦄"
-"〈〉" "⦑⦒" "⧼⧽" 
+"〈〉" "⦑⦒" "⧼⧽"
 "⟦⟧" "⟨⟩" "⟪⟫" "⟮⟯" "⟬⟭" "❛❜" "❝❞" "❨❩" "❪❫" "❴❵" "❬❭" "❮❯" "❰❱"
 ))
 
@@ -425,7 +423,7 @@ Works on current block or text selection.
          (p2 (elt bds 2))
          )
     (replace-regexp-pairs-region p1 p2
-                                 (vector 
+                                 (vector
                                   (vector (substring bracketType 0 1) "")
                                   (vector (substring bracketType 1 2) "")
                                   )
@@ -452,7 +450,6 @@ When called in lisp program, fromType and toType is a string of a bracket pair. 
                  ))
          )
     (replace-pairs-region p1 p2 changePairs) ) )
-
 
 (defun xah-replace-slanted-apostrophe ()
   "Replace some single curly apostrophe to straight version,
@@ -529,7 +526,7 @@ Examples of changes:
                              ["''" "”"]
                              ])
 
-      ;; "straight quote" ⇒ “double quotes” 
+      ;; "straight quote" ⇒ “double quotes”
       (replace-pairs-region (point-min) (point-max)
                             [
                              ["\n\"" "\n“"]
@@ -620,7 +617,7 @@ Examples of changes:
   "Replace 「\"」 by 「\\\"」 in current line or text selection."
   (interactive)
   (let* ((bds (get-selection-or-unit 'line))
-         (p1 (elt bds 1)) 
+         (p1 (elt bds 1))
          (p2 (elt bds 2)))
     (replace-pairs-region p1 p2 '(["\"" "\\\""])) ) )
 
@@ -628,7 +625,7 @@ Examples of changes:
   "Replace  「\\\"」 by 「\"」 in current line or text selection."
   (interactive)
   (let* ((bds (get-selection-or-unit 'line))
-        (p1 (elt bds 1)) 
+        (p1 (elt bds 1))
         (p2 (elt bds 2)))
     (replace-pairs-region p1 p2 '(["\\\"" "\""])) ) )
 
