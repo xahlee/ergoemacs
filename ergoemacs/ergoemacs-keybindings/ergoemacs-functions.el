@@ -55,6 +55,47 @@
           (const :tag "C-c/C-x copy/paste when region active, Emacs C-c/C-x otherwise." 'both))
   :group 'ergoemacs-mode)
 
+(defun ergoemacs-major-mode-p (value)
+  "Return t if VALUE is a major mode function."
+  ;; Taken from http://bazaar.launchpad.net/~nxhtml/nxhtml/main/view/head:/util/ourcomments-util.el
+  (let ((sym-name (symbol-name value)))
+    ;; Do some reasonable test to find out if it is a major mode.
+    ;; Load autoloaded mode functions.
+    ;;
+    ;; Fix-me: Maybe test for minor modes? How was that done?
+    (when (and (fboundp value)
+               (commandp value)
+               (not (memq value '(flyspell-mode
+                                  isearch-mode
+                                  savehist-mode
+                                  )))
+               (< 5 (length sym-name))
+               (string= "-mode" (substring sym-name (- (length sym-name) 5)))
+               (if (and (listp (symbol-function value))
+                        (eq 'autoload (car (symbol-function value))))
+                   (progn
+                     (message "loading ")
+                     (load (cadr (symbol-function value)) t t))
+                 t)
+               (or (memq value
+                         ;; Fix-me: Complement this table of known major modes:
+                         '(fundamental-mode
+                           xml-mode
+                           nxml-mode
+                           nxhtml-mode
+                           css-mode
+                           javascript-mode
+                           espresso-mode
+                           php-mode
+                           ))
+                   (and (intern-soft (concat sym-name "-hook"))
+                        ;; This fits `define-derived-mode'
+                        (get (intern-soft (concat sym-name "-hook")) 'variable-documentation))
+                   (progn (message "Not a major mode: %s" value)
+                          ;;(sit-for 4)
+                          nil)))
+      t)))
+
 (defun ergoemacs-ctl-c (&optional arg)
   "Ergoemacs C-c key."
   (interactive "P")
@@ -107,16 +148,14 @@
       (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
     (when ergoemacs-theme
       (setenv "ERGOEMACS_THEME" ergoemacs-theme))
-    (shell-command (format "%s -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
+    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
                            (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
 
 (defun ergoemacs-emacs-exe ()
   "Get the Emacs executable for testing purposes."
-  (let ((emacs-exe (invocation-name))
+  (let* ((emacs-exe (invocation-name))
         (emacs-dir (invocation-directory))
-        (full-exe nil))
-    ;; FIXME: Use `let*'.
-    (setq full-exe (expand-file-name emacs-exe emacs-dir))
+        (full-exe (expand-file-name emacs-exe emacs-dir)))
     (symbol-value 'full-exe)))
 
 (defun ergoemacs-cheat-sheet-file ()
@@ -313,15 +352,27 @@ See: `ergoemacs-forward-block'"
   :type 'boolean
   :group 'ergoemacs-mode)
 
-;; Extends behavior of http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/
+(defcustom ergoemacs-use-beginning-or-end-of-line-only 'on-repeat 
+  "Allow `ergoemacs-beginning-of-line-or-block' and `ergoemacs-end-of-line-or-block' to only go to the beginning/end of a line."
+  :type '(choice
+          (const t :tag "Only go to the beginning or end of a line")
+          (const nil :tag "Goto beginning/end of block whenever at beginning/end of line")
+          (const on-repeat :tag "Goto beginning/end of block when at beginining/end of line and have already pressed the key."))
+  :group 'ergoemacs-mode)
+
+;; Extends behavior of
+;; http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/
+
+(defvar ergoemacs-beginning-of-line-or-block-last-command nil)
 (defun ergoemacs-beginning-of-line-or-block (&optional N)
   "Move cursor to beginning of indentation, line, or text block.
  (a text block is separated by empty lines).
 
-Move cursor to the first non-whitespace character of a line. If
-already there move the cursor to the beginning of the line. If at
-the beginning of the line, move to the end of previous text
-block.
+Move cursor to the first non-whitespace character of a line.  If
+already there move the cursor to the beginning of the line.  If
+at the beginning of the line, move to the last block.  Moving to
+the last block can be toggled with
+`ergoemacs-use-beginning-or-end-of-line-only'.  Also 
 
 With argument N not nil or 1, and not at the beginning of
 the line move forward N - 1 lines first If point reaches the
@@ -332,10 +383,16 @@ If argument N not nil or 1, and at the beginning of the line,
 move N blocks backward.
 
 Back to indentation can be turned off with `ergoemacs-back-to-indentation'.
+
+Also this function tries to use whatever the specific mode bound
+to beginning of line by using `ergoemacs-shortcut-internal'
 "
   (interactive "^p")
   (setq N (or N 1))
-  (if (= (point) (point-at-bol))
+  (if (and (or (not ergoemacs-use-beginning-or-end-of-line-only)
+               (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
+                    (eq last-command ergoemacs-beginning-of-line-or-block-last-command)))
+           (= (point) (point-at-bol)))
       (progn
         (ergoemacs-backward-block N))
     
@@ -345,20 +402,61 @@ Back to indentation can be turned off with `ergoemacs-back-to-indentation'.
             (let ((line-move-visual nil))
               (forward-line (- N 1))))
           
-          (let ((orig-point (point)))
-            (back-to-indentation)
-            (when (= orig-point (point))
-              (move-beginning-of-line 1))))
-      (move-beginning-of-line 1))))
+          (let ((orig-point (point))
+                ind-point bol-point)
+            
+	    (save-excursion
+              (setq prefix-arg nil)
+              (setq current-prefix-arg nil)
+              (ergoemacs-shortcut-internal 'move-beginning-of-line)
+              (setq bol-point (point)))
+            
+	    (save-excursion
+              (back-to-indentation)
+              (setq ind-point (point)))
+	    
+            (cond
+             ((and (< ind-point orig-point)
+		   (< bol-point orig-point)
+		   (= ind-point (max ind-point bol-point)))
+	      (goto-char ind-point))
+	     ((and (< ind-point orig-point)
+                   (< bol-point orig-point)
+                   (= bol-point (max ind-point bol-point)))
+              (goto-char bol-point))
+	     ((and (< bol-point orig-point)
+                   (>= ind-point orig-point))
+              (goto-char bol-point))
+	     ((and (< ind-point orig-point)
+		   (>= bol-point orig-point))
+	      (goto-char ind-point))
+	     (t
+	      (goto-char bol-point)))))
+      (ergoemacs-shortcut-internal 'move-beginning-of-line)))
+  ;; ergoemacs shortcut changes this-command
+  (setq ergoemacs-beginning-of-line-or-block-last-command this-command))
 
 (defun ergoemacs-end-of-line-or-block (&optional N )
   "Move cursor to end of line, or end of current or next text block.
- (a text block is separated by empty lines)"
+ (a text block is separated by empty lines).
+
+You can make this only go to the end of the line by toggling `ergoemacs-use-beginning-or-end-of-line-only'.
+
+Attempt to honor each modes modification of beginning and end of
+line functions by using `ergoemacs-shortcut-internal'."
   (interactive "^p")
   (setq N (or N 1))
-  (if (= (point) (point-at-eol))
+  (if (and (or (not ergoemacs-use-beginning-or-end-of-line-only)
+               (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
+                    (eq last-command ergoemacs-beginning-of-line-or-block-last-command)))
+           (= (point) (point-at-eol)))
       (ergoemacs-forward-block N)
-    (end-of-line N)))
+    (setq N (if (= N 1) nil N))
+    (setq prefix-arg N)
+    (setq current-prefix-arg N)
+    ;; (ergoemacs-shortcut-internal 'move-end-of-line)
+    (call-interactively 'move-end-of-line))
+  (setq ergoemacs-beginning-of-line-or-block-last-command this-command))
 
 ;;; TEXT SELECTION RELATED
 
@@ -375,13 +473,13 @@ Back to indentation can be turned off with `ergoemacs-back-to-indentation'.
     (progn
       (if (re-search-backward "\n[ \t]*\n" nil "move")
           (progn (re-search-forward "\n[ \t]*\n")
-                 (setq p1 (point) ) )
+                 (setq p1 (point)))
         (setq p1 (point)))
       (if (re-search-forward "\n[ \t]*\n" nil "move")
           (progn (re-search-backward "\n[ \t]*\n")
-                 (setq p2 (point) ))
-        (setq p2 (point) ) ) )
-    (set-mark p1) ) )
+                 (setq p2 (point)))
+        (setq p2 (point))))
+    (set-mark p1)))
 
 (defun ergoemacs-select-text-in-quote ()
   "Select text between the nearest left and right delimiters.

@@ -70,22 +70,50 @@
 (defvar ergoemacs-debug ""
   "Debugging for `ergoemacs-mode'.")
 
+(defvar ergoemacs-debug-buffer " *ErgoEmacs-mode Debug Log*"
+  "Variable for ergoemacs debugging buffer.")
+
+(defun ergoemacs-debug-keymap (keymap)
+  "Print keymap bindings."
+  (ergoemacs-debug-heading (format "Keymap Description: %s" (symbol-name keymap)))
+  (ergoemacs-debug
+   (substitute-command-keys (format "\\{%s}" (symbol-name keymap)))))
+
+(defvar ergoemacs-debug-heading-start-time (float-time))
+(defvar ergoemacs-debug-heading-last-time (float-time))
+
+(defun ergoemacs-debug-heading (&rest arg)
+  "Ergoemacs debugging heading."
+  (ergoemacs-debug (make-string 80 ?=))
+  (ergoemacs-debug (condition-case err
+                       (apply 'format arg)
+                     (error (format "Bad format string: %s" arg))))
+  (ergoemacs-debug "Time Since Start ergoemacs-mode: %1f sec" (- (float-time) ergoemacs-debug-heading-start-time))
+  (ergoemacs-debug "Time Since Last Heading: %1f sec" (- (float-time) ergoemacs-debug-heading-last-time))
+  (ergoemacs-debug (make-string 80 ?=))
+  (setq ergoemacs-debug-heading-last-time (float-time)))
+
 (defun ergoemacs-debug (&rest arg)
   "Ergoemacs debugging facility."
   (interactive)
   (if (interactive-p)
       (progn
         (ergoemacs-debug-flush)
-        (switch-to-buffer-other-window (get-buffer-create " *ergoemacs-debug*")))
+        (switch-to-buffer-other-window (get-buffer-create ergoemacs-debug-buffer))
+        (setq ergoemacs-debug-buffer (replace-regexp-in-string "^ +" "" ergoemacs-debug-buffer))
+        (rename-buffer ergoemacs-debug-buffer))
     (setq ergoemacs-debug
           (format "%s\n%s"
                   ergoemacs-debug
-                  (apply 'format arg)))))
+                  (condition-case err
+                      (apply 'format arg)
+                    (error (format "Bad Format String: %s" arg)))))))
 
 (defun ergoemacs-debug-flush ()
-  "Flushes ergoemacs debug to *ergoemacs-debug*"
+  "Flushes ergoemacs debug to `ergoemacs-debug-buffer'"
   (save-excursion
-    (with-current-buffer (get-buffer-create " *ergoemacs-debug*") ;; Should be hidden.
+    (with-current-buffer (get-buffer-create ergoemacs-debug-buffer) 
+      (goto-char (point-max))
       (insert ergoemacs-debug "\n")))
   (setq ergoemacs-debug ""))
 
@@ -177,9 +205,7 @@ Valid values are:
   :set 'ergoemacs-set-default
   :group 'ergoemacs-mode)
 
-;; FIXME: maybe a better name is `ergoemacs-change-smex-meta-x', since
-;; Customization displays it as "Ergoemacs Change Smex M X".
-(defcustom ergoemacs-change-smex-M-x t
+(defcustom ergoemacs-change-smex-meta-x t
   "Changes the `smex-prompt-string' to match the `execute-extended-command'"
   :type 'boolean
   :set 'ergoemacs-set-default
@@ -275,7 +301,8 @@ remove the keymap depends on user input and KEEP-PRED:
      ,(format "ErgoEmacs fast keymap for `%s'" (symbol-name command))
      ad-do-it
      (when (and ergoemacs-mode (eq ergoemacs-repeat-undo-commands 'apps))
-       (message "%s" ergoemacs-undo-apps-text)
+       (message
+        "%s" ergoemacs-undo-apps-text)
          (set-temporary-overlay-map ergoemacs-undo-apps-keymap t))))
 
 (mapc
@@ -283,7 +310,7 @@ remove the keymap depends on user input and KEEP-PRED:
    (eval `(ergoemacs-create-undo-advices ,x)))
  ergoemacs-undo-redo-functions)
 
-
+(defvar ergoemacs-check-mode-line-change nil)
 (defmacro ergoemacs-create-movement-commands (command)
   "Creates a shifted and repeat advices and isearch commands."
   `(progn
@@ -295,14 +322,13 @@ remove the keymap depends on user input and KEEP-PRED:
                      (and (not arg) ergoemacs-isearch-backward-char-to-edit))
                  (isearch-edit-string)
                (isearch-exit)
-               (call-interactively ',command t)
-               (setq this-command ',command)))
-        `(defun ,(intern (concat "ergoemacs-isearch-" (symbol-name command))) (&optional arg)
-           ,(format "Ergoemacs isearch movement command for `%s'." (symbol-name command))
-           (interactive "^P")
-           (isearch-exit)
-           (call-interactively ',command t)
-           (setq this-command ',command)))
+               (condition-case err
+                   (call-interactively (or (command-remapping ',command (point)) ',command))
+                 (error
+                  (beep)
+                  (message "%s" err)))
+               
+               (setq this-command ',command))))
      (defvar ,(intern (concat "ergoemacs-fast-" (symbol-name command) "-keymap")) (make-sparse-keymap)
        ,(format "Ergoemacs fast keymap for `%s'." (symbol-name command)))
      ;; Change to advices
@@ -312,11 +338,22 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
 " (symbol-name command) (symbol-name command))
        ad-do-it
        (when (and ergoemacs-mode ergoemacs-repeat-movement-commands
-                  (called-interactively-p 'interactive) (not cua--rectangle-overlays)) ;; Don't add overlays to rectangles
+                  (called-interactively-p 'any)
+                  (not cua--rectangle-overlays)) ;; Don't add overlays to rectangles
          (set-temporary-overlay-map (cond
                                      ((eq ergoemacs-repeat-movement-commands 'single)
+                                      (unless (where-is-internal last-command (list ,(intern (concat "ergoemacs-fast-" (symbol-name command) "-keymap"))) t)
+                                        (setq ergoemacs-check-mode-line-change (list ,(intern (concat "ergoemacs-fast-" (symbol-name command) "-keymap"))))
+                                        (message ,(format "Repeat last movement(%s) key: %%s" (symbol-name command))
+                                                 (replace-regexp-in-string
+                                                  "M-" "" (key-description (this-single-command-keys))))
+                                        (ergoemacs-mode-line (format " %sSingle" (ergoemacs-unicode-char "↔" "<->"))))
                                       ,(intern (concat "ergoemacs-fast-" (symbol-name command) "-keymap")))
                                      ((eq ergoemacs-repeat-movement-commands 'all)
+                                      (unless (where-is-internal last-command (list ergoemacs-full-fast-keys-keymap) t)
+                                        (setq ergoemacs-check-mode-line-change (list ergoemacs-full-fast-keys-keymap))
+                                        ;; (message "Repeating movement keys installed")
+                                        (ergoemacs-mode-line (format " %sFull" (ergoemacs-unicode-char "↔" "<->"))))
                                       ergoemacs-full-fast-keys-keymap)
                                      (t ,(intern (concat "ergoemacs-fast-" (symbol-name command) "-keymap")))) t)))))
 (mapc
@@ -361,6 +398,8 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
 
 (defvar ergoemacs-M-O-prefix-keys nil)
 
+(defvar ergoemacs-shortcut-keys nil)
+(defvar ergoemacs-unbind-keys nil)
 
 (defun ergoemacs-M-O-timeout ()
   "Push timeout on unread command events."
@@ -368,7 +407,7 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
     (setq ergoemacs-push-M-O-timeout nil)
     (if ergoemacs-M-O-prefix-keys
         (let (fn)
-          (let (ergoemacs-shortcut-mode)
+          (let (ergoemacs-shortcut-keys)
             (setq fn (key-binding
                       (read-kbd-macro
                        (format "%s <timeout>"
@@ -376,7 +415,12 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
           ;; Lookup keys, and then send <exit> event.
           (setq prefix-arg ergoemacs-curr-prefix-arg)
           (setq this-command fn)
-          (call-interactively fn t)
+          (condition-case err
+              (call-interactively
+               (or (command-remapping fn (point)) fn) t (read-kbd-macro ergoemacs-M-O-prefix-keys t))
+            (error
+             (beep)
+             (message "%s" err)))
           (reset-this-command-lengths)
           (setq unread-command-events (cons 'exit unread-command-events)))
       (setq prefix-arg ergoemacs-curr-prefix-arg)
@@ -394,7 +438,12 @@ function immediately when `window-system' is true."
         (prefix-keys (if use-map "M-O" "M-o")))
     (if window-system
         (let ((fn (lookup-key map [timeout] t)))
-          (call-interactively fn t))
+          (condition-case err
+              (call-interactively
+               (or (command-remapping fn (point)) fn))
+            (error
+             (beep)
+             (message "%s" err))))
       (when (timerp ergoemacs-M-O-timer)
         (cancel-timer ergoemacs-M-O-timer)
         ;; Issue correct command.
@@ -414,22 +463,6 @@ work in the terminal."
 (require 'ergoemacs-themes)
 (require 'ergoemacs-unbind)
 
-
-(defvar ergoemacs-needs-translation nil
-  "Tells if ergoemacs keybindings need a translation")
-
-(defvar ergoemacs-translation-from nil
-  "Translation from keyboard layout")
-
-(defvar ergoemacs-translation-to nil
-  "Translation to keyboard layout")
-
-(defvar ergoemacs-translation-assoc nil
-  "Translation alist")
-
-(defvar ergoemacs-translation-regexp nil
-  "Translation regular expression")
-
 ;;; ergoemacs-keymap
 
 
@@ -442,208 +475,11 @@ work in the terminal."
 (defvar ergoemacs-shortcut-override-keymap (make-sparse-keymap)
   "Keymap for overriding keymap.")
 
-(defvar ergoemacs-full-fast-keys-keymap (make-sparse-keymap)
-  "Ergoemacs full fast keys keymap")
-
-(defvar ergoemacs-full-alt-keymap (make-sparse-keymap)
-  "Ergoemacs full Alt+ keymap.  Alt is removed from all these keys so that no key chord is necessary.")
-
-(defvar ergoemacs-full-alt-shift-keymap (make-sparse-keymap)
-  "Ergoemacs full Alt+Shift+ keymap.
-Alt+shift is removed from all these keys so that no key chord is
-necessary.  Unshifted keys are changed to shifted keys.")
-
-(defun ergoemacs-exit-dummy ()
-  "Dummy function for exiting keymaps."
-  (interactive))
-
-(defun ergoemacs-setup-fast-keys ()
-  "Setup an array listing the fast keys."
-  (interactive)
-  (ergoemacs-create-undo-apps-keymap)
-  (setq ergoemacs-full-fast-keys-keymap (make-sparse-keymap))
-  (setq ergoemacs-full-alt-keymap (make-sparse-keymap))
-  (setq ergoemacs-full-alt-shift-keymap (make-sparse-keymap))
-  (define-key ergoemacs-full-alt-keymap (read-kbd-macro
-                                         (if (eq system-type 'windows-nt)
-                                             "<apps>"
-                                           "<menu>"))
-    'ergoemacs-exit-dummy)
-  (define-key ergoemacs-full-alt-shift-keymap (read-kbd-macro
-                                               (if (eq system-type 'windows-nt)
-                                                   "<apps>"
-                                                 "<menu>"))
-    'ergoemacs-exit-dummy)
-  (ergoemacs-debug (make-string 80 ?=))
-  (ergoemacs-debug "Setup Fast Keys")
-  (ergoemacs-debug (make-string 80 ?=))
-  (mapc
-   (lambda(var)
-     (let* ((key (ergoemacs-kbd (nth 0 var) t))
-            (cmd (nth 1 var))
-            (stripped-key (replace-regexp-in-string
-                           (format "\\<[%s]-"
-                                   (if ergoemacs-swap-alt-and-control
-                                       "C"
-                                     "M"))
-                           "" key))
-            (new-cmd (nth 1 var)))
-       (ergoemacs-debug "Key:%s stripped-key: %s" key stripped-key)
-       (when (string-match "^[A-Za-z]$" stripped-key)
-         ;;(message "Stripped key: %s" stripped-key)
-         (if (string= (downcase stripped-key) stripped-key)
-             (progn
-               (define-key ergoemacs-full-alt-keymap (edmacro-parse-keys stripped-key) new-cmd)
-               (define-key ergoemacs-full-alt-shift-keymap (edmacro-parse-keys (upcase stripped-key)) new-cmd))
-           (define-key ergoemacs-full-alt-shift-keymap (edmacro-parse-keys (downcase stripped-key)) new-cmd)
-           (define-key ergoemacs-full-alt-keymap (edmacro-parse-keys stripped-key) new-cmd)))
-       (when (member cmd ergoemacs-movement-functions)
-         (set (intern (concat "ergoemacs-fast-" (symbol-name cmd) "-keymap"))
-              (make-sparse-keymap))
-         (eval `(define-key ,(intern (concat "ergoemacs-fast-" (symbol-name cmd) "-keymap"))
-                  ,(edmacro-parse-keys stripped-key) new-cmd))
-         (define-key ergoemacs-full-fast-keys-keymap
-           (edmacro-parse-keys stripped-key)
-           new-cmd))))
-   (symbol-value (ergoemacs-get-variable-layout))))
-
-(defvar ergoemacs-exit-temp-map-var nil)
-
-(defun ergoemacs-minibuffer-exit-maps ()
-  "Exit temporary overlay maps."
-  (setq ergoemacs-exit-temp-map-var t))
-
-(add-hook 'minibuffer-setup-hook #'ergoemacs-minibuffer-exit-maps)
-
-(defun ergoemacs-exit-alt-keys ()
-  "Exit alt keys predicate."
-  (let (ret cmd)
-    (condition-case err
-        (progn
-          (setq cmd (lookup-key ergoemacs-full-alt-keymap
-                                (this-command-keys-vector)))
-          (when cmd
-            (setq ret t))
-          (when (eq cmd 'ergoemacs-exit-dummy)
-            (setq ret nil))
-          (when ergoemacs-exit-temp-map-var
-            (setq ret nil)
-            (setq ergoemacs-exit-temp-map-var nil)))
-      (error (message "Err %s" err)))
-    (symbol-value 'ret)))
-
-(defun ergoemacs-alt-keys ()
-  "Install the alt keymap temporarily"
-  (interactive)
-  (setq ergoemacs-exit-temp-map-var nil)
-  (set-temporary-overlay-map  ergoemacs-full-alt-keymap
-                              'ergoemacs-exit-alt-keys)
-  (message "[Alt+] keys installed to keymap. Press [Menu], [Esc], to exit"))
-
-(defun ergoemacs-exit-alt-shift-keys ()
-  "Exit alt-shift keys predicate"
-  (let (ret cmd)
-    (condition-case err
-        (progn
-          (setq cmd (lookup-key ergoemacs-full-alt-shift-keymap
-                                (this-command-keys-vector)))
-          (when cmd
-            (setq ret t))
-          (when (eq cmd 'ergoemacs-exit-dummy)
-            (setq ret nil))
-          (when ergoemacs-exit-temp-map-var
-            (setq ret nil)
-            (setq ergoemacs-exit-temp-map-var nil)))
-      (error (message "Err %s" err)))
-    (symbol-value 'ret)))
-
-(defun ergoemacs-alt-shift-keys ()
-  "Install the alt-shift keymap temporarily"
-  (interactive)
-  (setq ergoemacs-exit-temp-map-var nil)
-  (set-temporary-overlay-map ergoemacs-full-alt-shift-keymap
-                             'ergoemacs-exit-alt-shift-keys)
-  (message "[Alt+Shift+] keys installed to keymap. Press [Menu], [Esc], to exit"))
-
+(require 'ergoemacs-modal)
 (require 'ergoemacs-functions)
+(require 'ergoemacs-translate)
+(require 'ergoemacs-shortcuts)
 
-(defun ergoemacs-setup-translation (layout &optional base-layout)
-  "Setup translation from BASE-LAYOUT to LAYOUT."
-  (let ((base (or base-layout "us"))
-        lay
-        len i)
-    (unless (and (string= layout ergoemacs-translation-to)
-                 (string= base ergoemacs-translation-from))
-      (if (equal layout base)
-          (progn
-            (setq ergoemacs-translation-from base)
-            (setq ergoemacs-translation-to layout)
-            (setq ergoemacs-needs-translation nil)
-            (setq ergoemacs-translation-assoc nil)
-            (setq ergoemacs-translation-regexp nil))
-        (setq ergoemacs-translation-from base)
-        (setq ergoemacs-translation-to layout)
-        (setq lay (symbol-value (intern (concat "ergoemacs-layout-" layout))))
-        (setq base (symbol-value (intern (concat "ergoemacs-layout-" base))))
-        (setq ergoemacs-needs-translation t)
-        (setq ergoemacs-translation-assoc nil)
-        (setq len (length base))
-        (setq i 0)
-        (while (< i len)
-          (unless (or (string= "" (nth i base))
-                      (string= "" (nth i lay)))
-            (add-to-list 'ergoemacs-translation-assoc
-                         `(,(nth i base) . ,(nth i lay))))
-          (setq i (+ i 1)))
-        (setq ergoemacs-translation-regexp
-              (format "\\(-\\| \\|^\\)\\(%s\\)\\($\\| \\)"
-                      (regexp-opt (mapcar (lambda(x) (nth 0 x))
-                                          ergoemacs-translation-assoc) nil)))))))
-
-(defvar ergoemacs-kbd-hash (make-hash-table :test 'equal))
-;; This is called so frequently make a hash-table of the results.
-
-(defun ergoemacs-kbd (key &optional just-translate only-first)
-  "Translates kbd code KEY for layout `ergoemacs-translation-from' to kbd code for `ergoemacs-translation-to'.
-If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key sequence.
-"
-  (save-match-data
-    (if (not key)
-        nil
-      (let ((new-key (gethash `(,key ,just-translate ,only-first ,ergoemacs-translation-from ,ergoemacs-translation-to)
-                              ergoemacs-kbd-hash)))
-        (if new-key
-            (symbol-value 'new-key)
-          (setq new-key key)
-          (cond
-           ((eq system-type 'windows-nt)
-            (setq new-key (replace-regexp-in-string "<menu>" "<apps>" new-key)))
-           (t
-            (setq new-key (replace-regexp-in-string "<apps>" "<menu>" new-key))))
-          ;; Translate Alt+ Ctl+ or Ctrl+ to M- and C-
-          (setq new-key (replace-regexp-in-string "[Aa][Ll][Tt][+]" "M-" new-key))
-          (setq new-key (replace-regexp-in-string "[Cc][Tt][Rr]?[Ll][+]" "C-" new-key))
-          (when ergoemacs-needs-translation
-            (setq new-key
-                  (with-temp-buffer
-                    (insert new-key)
-                    (goto-char (point-min))
-                    (when (re-search-forward ergoemacs-translation-regexp nil t)
-                      (replace-match (concat (match-string 1) (cdr (assoc (match-string 2) ergoemacs-translation-assoc)) (match-string 3)) t t)
-                      (skip-chars-backward " "))
-                    (when (not only-first)
-                      (while (re-search-forward ergoemacs-translation-regexp nil t)
-                        (replace-match (concat (match-string 1) (cdr (assoc (match-string 2) ergoemacs-translation-assoc)) (match-string 3)) t t)
-                        (skip-chars-backward " ")))
-                    (buffer-string))))
-          (if (not just-translate)
-              (condition-case err
-                  (read-kbd-macro new-key)
-                (error
-                 (read-kbd-macro (encode-coding-string new-key locale-coding-system))))
-            (puthash `(,key ,just-translate ,only-first ,ergoemacs-translation-from ,ergoemacs-translation-to) new-key
-                     ergoemacs-kbd-hash)
-            new-key))))))
 
 (defvar ergoemacs-backward-compatability-variables
   '((ergoemacs-backward-paragraph-key            backward-block)
@@ -667,34 +503,6 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
        (when saved-var
          (set (nth 0 var) (symbol-value saved-var)))))
    ergoemacs-backward-compatability-variables))
-
-(defcustom ergoemacs-swap-alt-and-control nil
-  "Swaps Alt and Ctrl keys"
-  :type 'boolean
-  :set 'ergoemacs-set-default
-  :group 'ergoemacs-mode)
-
-(defun ergoemacs-get-kbd-translation (pre-kbd-code &optional dont-swap)
-  "This allows a translation from the listed kbd-code and the true kbd code."
-  (let ((ret (replace-regexp-in-string
-              "[Cc]\\(?:on\\)?tro?l[+-]" "C-"
-              (replace-regexp-in-string
-               "[Aa]lt[+-]" "M-" pre-kbd-code))))
-    (when (and ergoemacs-swap-alt-and-control (not dont-swap))
-      (setq ret
-            (replace-regexp-in-string
-             "\\^-" "M-"
-             (replace-regexp-in-string
-              "M-" "C-"
-              (replace-regexp-in-string
-               "C-" "^-" ret)))))
-    (symbol-value 'ret)))
-
-(defvar ergoemacs-prefer-shortcuts nil ;; Prefer shortcuts.
-  "Prefer shortcuts")
-
-(defvar ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal)
-  "List of command shortcuts.")
 
 (defun ergoemacs-setup-keys-for-keymap---internal (keymap key def)
   "Defines KEY in KEYMAP to be DEF"
@@ -720,8 +528,11 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
         (mapc
          (lambda(new-def)
            (unless found
-             (setq found
-                   (ergoemacs-setup-keys-for-keymap---internal keymap key new-def))))
+             (when (condition-case err
+                       (interactive-form new-def)
+                     (error nil))
+               (setq found
+                     (ergoemacs-setup-keys-for-keymap---internal keymap key new-def)))))
          def))
       (symbol-value 'found)))
    ((condition-case err
@@ -730,7 +541,7 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
     (cond
      ((memq def '(ergoemacs-ctl-c ergoemacs-ctl-x))
       (define-key ergoemacs-shortcut-keymap key def))
-     ((and ergoemacs-prefer-shortcuts
+     ((and (not (string-match "\\(mouse\\|wheel\\)" (key-description key)))
            (boundp 'setup-ergoemacs-keymap) setup-ergoemacs-keymap
            (or (remove-if '(lambda(x) (eq 'menu-bar (elt x 0))) ; Ignore
                                                            ; menu-bar
@@ -770,100 +581,107 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
 
 (defmacro ergoemacs-setup-keys-for-keymap (keymap)
   "Setups ergoemacs keys for a specific keymap"
-  `(let ((no-ergoemacs-advice t)
-         (case-fold-search t)
-         key
-         trans-key
-         cmd cmd-tmp)
-     (setq ,keymap (make-sparse-keymap))
-     (if (eq ',keymap 'ergoemacs-keymap)
-         (ergoemacs-debug "Theme: %s" ergoemacs-theme))
-     ;; Fixed layout keys
-     (mapc
-      (lambda(x)
-        (when (and (eq 'string (type-of (nth 0 x))))
-          (setq trans-key (ergoemacs-get-kbd-translation (nth 0 x)))
-          (condition-case err
-              (setq key (read-kbd-macro
-                         trans-key))
-            (error
-             (setq key (read-kbd-macro
-                        (encode-coding-string
-                         trans-key
-                         locale-coding-system)))))
-          (if (ergoemacs-global-changed-p trans-key)
-              (progn
-                (ergoemacs-debug "!!!Fixed %s has changed globally." trans-key)
-                (ergoemacs-setup-keys-for-keymap---internal ,keymap key (lookup-key (current-global-map) key)))
-            (setq cmd (nth 1 x))
-	    (if (eq ',keymap 'ergoemacs-keymap)
-                (ergoemacs-debug "Fixed: %s -> %s %s" trans-key cmd key))
-            (when (not (ergoemacs-setup-keys-for-keymap---internal ,keymap key cmd))
-	      (ergoemacs-debug "Key %s->%s not setup." key cmd)))))
-      (symbol-value (ergoemacs-get-fixed-layout)))
-     
-     ;; Variable Layout Keys
-     (mapc
-      (lambda(x)
-        (when (and (eq 'string (type-of (nth 0 x))))
-          (setq trans-key
-                (ergoemacs-get-kbd-translation (nth 0 x)))
-          (setq key (ergoemacs-kbd trans-key nil (nth 3 x)))
-          (if (ergoemacs-global-changed-p trans-key t)
-              (progn
-                (ergoemacs-debug "!!!Variable %s (%s) has changed globally."
-                                 trans-key (ergoemacs-kbd trans-key t (nth 3 x))))
-            ;; Add M-O and M-o handling for globally defined M-O and
-            ;; M-o.
-            ;; Only works if ergoemacs-mode is on...
-            (setq cmd (nth 1 x))
-            
-            (if (and ergoemacs-fix-M-O (string= (ergoemacs-kbd trans-key t t) "M-O"))
-                (progn
-                  (define-key ,keymap key  'ergoemacs-M-O)
-                  (ergoemacs-setup-keys-for-keymap---internal ergoemacs-M-O-keymap [timeout] cmd)
-                  (if (eq ',keymap 'ergoemacs-keymap)
-                      (ergoemacs-debug "Variable: %s (%s) -> %s %s via ergoemacs-M-O" trans-key (ergoemacs-kbd trans-key t (nth 3 x)) cmd key)))
-              (if (and ergoemacs-fix-M-O
-                       (string= (ergoemacs-kbd trans-key t t) "M-o"))
+  `(condition-case err
+       (let ((no-ergoemacs-advice t)
+             (case-fold-search t)
+             key
+             trans-key
+             cmd cmd-tmp)
+         (ergoemacs-debug-heading ,(format "Setup keys for %s" (symbol-name keymap)))
+         (setq ,keymap (make-sparse-keymap))
+         (if (eq ',keymap 'ergoemacs-keymap)
+             (ergoemacs-debug "Theme: %s" ergoemacs-theme))
+         ;; Fixed layout keys
+         (ergoemacs-debug-heading "Setup Fixed Keys")
+         (mapc
+          (lambda(x)
+            (when (and (eq 'string (type-of (nth 0 x))))
+              (setq trans-key (ergoemacs-get-kbd-translation (nth 0 x)))              
+              (if ergoemacs-change-fixed-layout-to-variable-layout
+                  (progn ;; Change to the fixed keyboard layout.
+                    (setq key (ergoemacs-kbd trans-key)))
+                (condition-case err
+                    (setq key (read-kbd-macro trans-key t))
+                  (error
+                   (setq key (read-kbd-macro
+                              (encode-coding-string
+                               trans-key
+                               locale-coding-system) t)))))
+              (if (eq ',keymap 'ergoemacs-keymap)
+                  (ergoemacs-debug "Fixed: %s -> %s %s (%s)" trans-key cmd key (key-description key)))
+              (if (ergoemacs-global-changed-p trans-key)
                   (progn
-                    (define-key ,keymap key  'ergoemacs-M-o)
-                    (ergoemacs-setup-keys-for-keymap---internal ergoemacs-M-o-keymap [timeout] cmd)
-                    (if (eq ',keymap 'ergoemacs-keymap)
-                        (ergoemacs-debug "Variable: %s (%s) -> %s %s via ergoemacs-M-o" trans-key
-                                         (ergoemacs-kbd trans-key t (nth 3 x)) cmd key)))
-                (when cmd
-                  (ergoemacs-setup-keys-for-keymap---internal ,keymap key cmd)
-                  (if (eq ',keymap 'ergoemacs-keymap)
-                      (ergoemacs-debug "Variable: %s (%s) -> %s %s" trans-key (ergoemacs-kbd trans-key t (nth 3 x)) cmd key))))))))
-      (symbol-value (ergoemacs-get-variable-layout)))
-     (when ergoemacs-fix-M-O
-       (let ((M-O (lookup-key ,keymap (read-kbd-macro "M-O")))
-             (g-M-O (lookup-key global-map (read-kbd-macro "M-O")))
-             (M-o (lookup-key ,keymap (read-kbd-macro "M-o")))
-             (g-M-o (lookup-key global-map (read-kbd-macro "M-o"))))
-         (ergoemacs-debug "M-O %s; Global M-O: %s; M-o %s; Global M-o: %s" M-O g-M-O M-o g-M-o)
-         (when (and (not (functionp M-O))
-                    (functionp g-M-O))
-           (ergoemacs-debug "Fixed M-O")
-           (define-key ,keymap (read-kbd-macro "M-O") 'ergoemacs-M-O)
-           (define-key ergoemacs-M-O-keymap [timeout] g-M-O))
-         (when (and (not (functionp M-o))
-                    (functionp g-M-o))
-           (ergoemacs-debug "Fixed M-o")
-           (define-key ,keymap (read-kbd-macro "M-o") 'ergoemacs-M-o)
-           (define-key ergoemacs-M-o-keymap [timeout] g-M-o))))))
+                    (ergoemacs-debug "!!!Fixed %s has changed globally." trans-key)
+                    (ergoemacs-setup-keys-for-keymap---internal ,keymap key (lookup-key (current-global-map) key)))
+                (setq cmd (nth 1 x))
+                (when (not (ergoemacs-setup-keys-for-keymap---internal ,keymap key cmd))
+                  (ergoemacs-debug "Key %s->%s not setup." key cmd)))))
+          (symbol-value (ergoemacs-get-fixed-layout)))
+         (ergoemacs-debug-heading "Setup Variable Layout Keys")
+         ;; Variable Layout Keys
+         (mapc
+          (lambda(x)
+            (when (and (eq 'string (type-of (nth 0 x))))
+              (setq trans-key
+                    (ergoemacs-get-kbd-translation (nth 0 x)))
+              (setq key (ergoemacs-kbd trans-key nil (nth 3 x)))
+              (if (ergoemacs-global-changed-p trans-key t)
+                  (progn
+                    (ergoemacs-debug "!!!Variable %s (%s) has changed globally."
+                                     trans-key (ergoemacs-kbd trans-key t (nth 3 x))))
+                ;; Add M-O and M-o handling for globally defined M-O and
+                ;; M-o.
+                ;; Only works if ergoemacs-mode is on...
+                (setq cmd (nth 1 x))
+                
+                (if (and ergoemacs-fix-M-O (string= (ergoemacs-kbd trans-key t t) "M-O"))
+                    (progn
+                      (define-key ,keymap key  'ergoemacs-M-O)
+                      (ergoemacs-setup-keys-for-keymap---internal ergoemacs-M-O-keymap [timeout] cmd)
+                      (if (eq ',keymap 'ergoemacs-keymap)
+                          (ergoemacs-debug "Variable: %s (%s) -> %s %s via ergoemacs-M-O" trans-key (ergoemacs-kbd trans-key t (nth 3 x)) cmd key)))
+                  (if (and ergoemacs-fix-M-O
+                           (string= (ergoemacs-kbd trans-key t t) "M-o"))
+                      (progn
+                        (define-key ,keymap key  'ergoemacs-M-o)
+                        (ergoemacs-setup-keys-for-keymap---internal ergoemacs-M-o-keymap [timeout] cmd)
+                        (if (eq ',keymap 'ergoemacs-keymap)
+                            (ergoemacs-debug "Variable: %s (%s) -> %s %s via ergoemacs-M-o" trans-key
+                                             (ergoemacs-kbd trans-key t (nth 3 x)) cmd key)))
+                    (when cmd
+                      (ergoemacs-setup-keys-for-keymap---internal ,keymap key cmd)
+                      (if (eq ',keymap 'ergoemacs-keymap)
+                          (ergoemacs-debug "Variable: %s (%s) -> %s %s" trans-key (ergoemacs-kbd trans-key t (nth 3 x)) cmd key))))))))
+          (symbol-value (ergoemacs-get-variable-layout)))
+         (when ergoemacs-fix-M-O
+           (let ((M-O (lookup-key ,keymap (read-kbd-macro "M-O")))
+                 (g-M-O (lookup-key global-map (read-kbd-macro "M-O")))
+                 (M-o (lookup-key ,keymap (read-kbd-macro "M-o")))
+                 (g-M-o (lookup-key global-map (read-kbd-macro "M-o"))))
+             (ergoemacs-debug "M-O %s; Global M-O: %s; M-o %s; Global M-o: %s" M-O g-M-O M-o g-M-o)
+             (when (and (not (functionp M-O))
+                        (functionp g-M-O))
+               (ergoemacs-debug "Fixed M-O")
+               (define-key ,keymap (read-kbd-macro "M-O") 'ergoemacs-M-O)
+               (define-key ergoemacs-M-O-keymap [timeout] g-M-O))
+             (when (and (not (functionp M-o))
+                        (functionp g-M-o))
+               (ergoemacs-debug "Fixed M-o")
+               (define-key ,keymap (read-kbd-macro "M-o") 'ergoemacs-M-o)
+               (define-key ergoemacs-M-o-keymap [timeout] g-M-o))))
+         (ergoemacs-debug-keymap ',keymap))
+     (error
+      (ergoemacs-debug "Error: %s" err)
+      (ergoemacs-debug-flush))))
 
 (defun ergoemacs-setup-keys-for-layout (layout &optional base-layout)
   "Setup keys based on a particular LAYOUT. All the keys are based on QWERTY layout."
   (ergoemacs-setup-translation layout base-layout)
-  (ergoemacs-setup-fast-keys)
   ;; Reset shortcuts layer.
   (setq ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal))
   (let ((setup-ergoemacs-keymap t))
     (ergoemacs-setup-keys-for-keymap ergoemacs-keymap))
-  
-  ;; Now change `minor-mode-map-alist'.
+  (ergoemacs-setup-fast-keys)
   (let ((x (assq 'ergoemacs-mode minor-mode-map-alist)))
     ;; Install keymap
     (if x
@@ -941,38 +759,39 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
     (if existing
         (setcdr existing ergoemacs-keymap)
       (push (cons 'ergoemacs-mode ergoemacs-keymap) minor-mode-map-alist)))
-  
+  (ergoemacs-mode-line)
   ;; Set appropriate mode-line indicator
-  (setq minor-mode-alist
-        (mapcar (lambda(x)
-                  (if (not (eq 'ergoemacs-mode (nth 0 x)))
-                      x
-                    `(ergoemacs-mode ,(concat
-                                       (if (not ergoemacs-theme)
-                                           " ErgoEmacs"
-                                         (concat " Ergo"
-                                                 (upcase (substring ergoemacs-theme 0 1))
-                                                 (substring ergoemacs-theme 1)))
-                                       "[" ergoemacs-keyboard-layout "]"))))
-                minor-mode-alist))
   (ergoemacs-setup-backward-compatability))
+
+(defun ergoemacs-mode-line (&optional text)
+  "Set ergoemacs-mode-line"
+  (ergoemacs-debug-heading "Set Mode Line to %s" (or text "Default"))
+  (if text
+      (setq minor-mode-alist
+            (mapcar (lambda(x)
+                      (if (not (eq 'ergoemacs-mode (nth 0 x)))
+                          x
+                        `(ergoemacs-mode ,text)))
+                    minor-mode-alist))
+    (setq minor-mode-alist
+          (mapcar (lambda(x)
+                    (if (not (eq 'ergoemacs-mode (nth 0 x)))
+                        x
+                      `(ergoemacs-mode ,(concat
+                                         (if (not ergoemacs-theme)
+                                             " ErgoEmacs"
+                                           (concat " Ergo"
+                                                   (upcase (substring ergoemacs-theme 0 1))
+                                                   (substring ergoemacs-theme 1)))
+                                         "[" ergoemacs-keyboard-layout "]"))))
+                  minor-mode-alist)))
+  (ergoemacs-debug-flush))
 
 (require 'lookup-word-on-internet nil "NOERROR")
 (require 'ergoemacs-extras)
 
 ;; ErgoEmacs hooks
-(defun ergoemacs-key-fn-lookup (function &optional use-apps)
-  "Looks up the key binding for FUNCTION based on `ergoemacs-get-variable-layout'."
-  (let ((ret nil))
-    (mapc
-     (lambda(x)
-       (when (and (equal (nth 1 x) function)
-                  (if use-apps
-                      (string-match "<apps>" (nth 0 x))
-                    (not (string-match "<apps>" (nth 0 x)))))
-         (setq ret (ergoemacs-kbd (nth 0 x) nil (nth 3 x)))))
-     (symbol-value (ergoemacs-get-variable-layout)))
-    (symbol-value 'ret)))
+
 
 (defun ergoemacs-hook-define-key (keymap key-def definition translate)
   "Ergoemacs `define-key' in hook."
@@ -997,7 +816,8 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
         (let* ((no-ergoemacs-advice t)
                (key-code
                 (cond
-                 ((and translate (eq 'string (type-of key-def)))
+                 ((and (or translate ergoemacs-change-fixed-layout-to-variable-layout)
+                       (eq 'string (type-of key-def)))
                   (ergoemacs-kbd key-def))
                  ((eq 'string (type-of key-def))
                   (condition-case err
@@ -1027,81 +847,127 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
 
 (defmacro ergoemacs-create-hook-function (hook keys &optional global)
   "Creates a hook function based on the HOOK and the list of KEYS defined."
-  (let ((is-override (make-symbol "is-override"))
-        (minor-mode-p (make-symbol "minor-mode-p"))
+  (let ((is-emulation-p (make-symbol "is-emulation-p"))
+        (is-major-mode-p (make-symbol "is-major-mode-p"))
         (old-keymap (make-symbol "old-keymap"))
         (override-keymap (make-symbol "override-keymap")))
-    (setq is-override (eq 'minor-mode-overriding-map-alist (nth 2 (nth 0 keys))))
-    (setq minor-mode-p (eq 'override (nth 2 (nth 0 keys))))
-    `(progn
-       ,(if (or is-override minor-mode-p)
-            (progn
-	      (setq old-keymap nil)
-	      `(progn
-		 (defvar ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")) nil
-		   ,(concat "Ergoemacs overriding keymap for `" (symbol-name hook) "'"))))
-	  (setq old-keymap t)
-          (setq override-keymap (nth 2 (nth 0 keys)))
-          `(defvar ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap")) nil
-             ,(concat "Old keymap for `" (symbol-name hook) "'.")))
-       
-       ,(when minor-mode-p
-          `(define-minor-mode ,(intern (concat "ergoemacs-" (symbol-name hook) "-mode"))
-             ,(concat "Minor mode for `" (symbol-name hook) "' so ergoemacs keybindings are not lost.
-This is an automatically generated function derived from `ergoemacs-get-minor-mode-layout'. See `ergoemacs-mode'.")
-             nil
-             :lighter ""
-             :global nil
-             :keymap ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap"))))
+    (if (not (listp keys))
+        (progn
+          `(progn
+             (defvar ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap")) nil
+               ,(concat "Old keymap for `" (symbol-name hook) "'."))
+             (defun ,(intern (concat "ergoemacs-" (symbol-name hook))) ()
+               ,(concat "Hook for `" (symbol-name hook) "' so ergoemacs keybindings are not lost.
+This is an automatically generated function derived from `ergoemacs-create-hook-function'.")
+               ;; Only generate keymap if it hasn't previously been
+               ;; generated.
+               (ergoemacs-vars-sync)
+               (if (not ergoemacs-mode)
+                   (progn
+                     (ergoemacs-debug ,(format "WARNING: %s not removed."
+                                               (intern (concat "ergoemacs-" (symbol-name hook))))))
+                 (unless ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))
+                   (ergoemacs-debug-heading ,(concat "Run ergoemacs-" (symbol-name hook)))
+                   (setq ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))
+                         (copy-keymap ,keys))
+                   (ergoemacs-install-shortcuts-map ,keys)
+                   (define-key ,keys
+                     (read-kbd-macro  "<ergoemacs>") 'ignore)
+                   (ergoemacs-debug-keymap ',keys)
+                   (ergoemacs-vars-sync)
+                   (ergoemacs-debug-flush)))
+               t)
+             (ergoemacs-add-hook ',hook
+                                 ',(intern (concat "ergoemacs-" (symbol-name hook)))
+                                 ',(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))
+                                 nil)))
+      (setq is-emulation-p (or (not (nth 2 (nth 0 keys)))
+                               (eq 'emulation-mode-map-alists (nth 2 (nth 0 keys)))))
+      (when is-emulation-p
+        (setq is-major-mode-p
+              (intern-soft
+               (replace-regexp-in-string
+                "-hook$" "" (symbol-name hook)))))
+      `(progn
+         (ergoemacs-debug-heading ,(format "ergoemacs-create-hook-function for %s" (symbol-name hook)))
+         (ergoemacs-debug ,(format "Emulation: %s" is-emulation-p))
+         ,(if is-emulation-p
+              (progn
+                (setq old-keymap nil)
+                `(progn
+                   (defvar ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")) nil
+                     ,(concat "Ergoemacs overriding keymap for `" (symbol-name hook) "'"))))
+            (setq old-keymap t)
+            (setq override-keymap (nth 2 (nth 0 keys)))
+            `(defvar ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap")) nil
+               ,(concat "Old keymap for `" (symbol-name hook) "'.")))
 
-       (defun ,(intern (concat "ergoemacs-" (symbol-name hook))) ()
-         ,(concat "Hook for `" (symbol-name hook) "' so ergoemacs keybindings are not lost.
-This is an automatically generated function derived from `ergoemacs-get-minor-mode-layout'.")
-         ;; Only generate keymap if it hasn't previously been generated.
-         (unless ,(if (or minor-mode-p is-override) nil
-                    (intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap")))
-           
-           ,(if (or is-override minor-mode-p)
-                `(ergoemacs-setup-keys-for-keymap ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")))
-              `(setq ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))
-                     (copy-keymap ,(nth 2 (nth 0 keys)))))
-           ,@(mapcar
-              (lambda(def)
-                `(ergoemacs-hook-define-key
-                  ,(if (or minor-mode-p
-                           (and is-override
-                                (equal (nth 2 def)
-                                       'minor-mode-overriding-map-alist)))
-                       (intern (concat "ergoemacs-" (symbol-name hook) "-keymap"))
-                     (nth 2 def))
-                  ,(if (eq (type-of (nth 0 def)) 'string)
-                       `,(nth 0 def)
-                     `(quote ,(nth 0 def)))
-                  ',(nth 1 def)
-                  ',(nth 3 def)))
-              keys)
-           ,(when minor-mode-p
-              `(progn
-                 (let ((x (assq ',(intern (concat "ergoemacs-" (symbol-name hook) "-mode"))
-                                minor-mode-map-alist)))
-                   ;; Delete keymap.
-                   (if x
-                       (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-                   (add-to-list 'minor-mode-map-alist
-                                (cons ',(intern (concat "ergoemacs-" (symbol-name hook) "-mode"))
-                                      ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap"))))
-                   (funcall ',(intern (concat "ergoemacs-" (symbol-name hook) "-mode")) 1))))
-           ,(if is-override
-                `(add-to-list 'minor-mode-overriding-map-alist
-                              (cons 'ergoemacs-mode ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")))
-                              nil ,(if (equal hook 'minibuffer-setup-hook)
-                                       '(lambda (x y)
-                                          (equal (car y) (car x)))
-                                     nil))
-              nil)
-           (ergoemacs-debug-flush)
-           t))
-       (ergoemacs-add-hook ',hook ',(intern (concat "ergoemacs-" (symbol-name hook))) ',(if old-keymap (intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))) ',override-keymap))))
+         (defun ,(intern (concat "ergoemacs-" (symbol-name hook))) ()
+           ,(concat "Hook for `" (symbol-name hook) "' so ergoemacs keybindings are not lost.
+This is an automatically generated function derived from `ergoemacs-create-hook-function'.")
+           ;; Only generate keymap if it hasn't previously been
+           ;; generated.
+           (ergoemacs-vars-sync)
+           (if  (not ergoemacs-mode)
+               (progn
+                 (ergoemacs-debug ,(format "WARNING: %s not removed."
+                                           (intern (concat "ergoemacs-" (symbol-name hook))))))
+             (unless ,(if is-emulation-p
+                          `(assq ,(if is-major-mode-p
+                                      '(intern (format "ergoemacs--emulation-for-%s" major-mode))
+                                    `(intern ,(concat "ergoemacs--emulation-for-" (symbol-name hook))))
+                                 ergoemacs-emulation-mode-map-alist)
+                        (intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap")))
+               (ergoemacs-debug-heading ,(concat "Run ergoemacs-" (symbol-name hook)))
+               ,(if  is-emulation-p
+                    `(setq ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")) (make-sparse-keymap))
+                  `(progn
+                     (setq ,(intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))
+                           (copy-keymap ,(nth 2 (nth 0 keys))))
+                     (ergoemacs-install-shortcuts-map
+                      ,(nth 2 (nth 0 keys)))
+                     (define-key ,(nth 2 (nth 0 keys))
+                       (read-kbd-macro  "<ergoemacs>") 'ignore)))
+               ,@(mapcar
+                  (lambda(def)
+                    `(ergoemacs-hook-define-key
+                      ,(if (and is-emulation-p
+                                (or (not (nth 2 (nth 0 keys)))
+                                    (equal (nth 2 def)
+                                           'emulation-mode-map-alists)))
+                           (intern (concat "ergoemacs-" (symbol-name hook) "-keymap"))
+                         (nth 2 def))
+                      ,(if (eq (type-of (nth 0 def)) 'string)
+                           `,(nth 0 def)
+                         `(quote ,(nth 0 def)))
+                      ',(nth 1 def)
+                      ',(nth 3 def)))
+                  keys)
+               ,(if (not  is-emulation-p)
+                    `(ergoemacs-debug-keymap ',(nth 2 (nth 0 keys))))
+               ;;(set-default ',(nth 2 (nth 0 keys)) ,(nth 2 (nth 0 keys)))
+               ,(when is-emulation-p
+                  `(progn
+                     (let ((name ,(if is-major-mode-p
+                                      '(intern (format "ergoemacs--emulation-for-%s" major-mode))
+                                    `(intern ,(concat "ergoemacs--emulation-for-" (symbol-name hook))))))
+                       (set-default name nil)
+                       (set (make-local-variable name) t)
+                       (ergoemacs-debug-keymap ',(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")))
+                       (let ((x (assq name ergoemacs-emulation-mode-map-alist)))
+                         ;; Delete keymap.
+                         (if x
+                             (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
+                         ;; Put at the end of the list
+                         (setq ergoemacs-emulation-mode-map-alist
+                               (append ergoemacs-emulation-mode-map-alist
+                                       (list (cons name ,(intern (concat "ergoemacs-" (symbol-name hook) "-keymap")))))))
+                       (ergoemacs-debug-keymap ',(intern (concat "ergoemacs-" (symbol-name hook) "-keymap"))))))
+               (ergoemacs-debug-heading ,(concat "Finish ergoemacs-" (symbol-name hook)))
+               (ergoemacs-vars-sync)
+               (ergoemacs-debug-flush)
+               t)))
+         (ergoemacs-add-hook ',hook ',(intern (concat "ergoemacs-" (symbol-name hook))) ',(if old-keymap (intern (concat "ergoemacs-" (symbol-name hook) "-old-keymap"))) ',override-keymap)))))
 
 (defun ergoemacs-pre-command-install-minor-mode-overriding-map-alist ()
   "Install `minor-mode-overriding-map-alist' if it didn't get installed (like in some `org-mode')."
@@ -1121,9 +987,7 @@ This is an automatically generated function derived from `ergoemacs-get-minor-mo
 
 (defun ergoemacs-hook-modes ()
   "Installs/Removes ergoemacs minor mode hooks from major modes
-depending the state of `ergoemacs-mode' variable.  If the mode
-is being initialized, some global keybindings in current-global-map
-will change."
+depending the state of `ergoemacs-mode' variable."
   (let ((modify-advice (if (and (boundp 'ergoemacs-mode) ergoemacs-mode) 'ad-enable-advice 'ad-disable-advice)))    
     ;; when ergoemacs-mode is on, activate hooks and unset global keys, else do inverse
     (if (and (boundp 'ergoemacs-mode) ergoemacs-mode (not (equal ergoemacs-mode 0)))
@@ -1194,7 +1058,19 @@ will change."
       (ergoemacs-setup-keys-for-layout "us")))
     (ergoemacs-unbind-setup-keymap)
     (ergoemacs-create-hooks)
-    
+    ;; Add ergoemacs-shortcut
+    (let ((x (assq 'ergoemacs-shortcut-keys ergoemacs-emulation-mode-map-alist)))
+      (when x
+        (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
+      (push (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap) ergoemacs-emulation-mode-map-alist))
+    ;; Add ergoemacs-unbind
+    (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
+      (when x
+        (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
+      ;; Put at the END of the list.
+      (setq minor-mode-map-alist
+            (append minor-mode-map-alist
+                    (list (cons 'ergoemacs-unbind-keys ergoemacs-unbind-keymap)))))
     (unless no-check
       (when ergoemacs-state
         (when (fboundp 'ergoemacs-mode)
@@ -1207,691 +1083,7 @@ will change."
        (ergoemacs-key-fn-lookup 'smex)
        (ergoemacs-key-fn-lookup 'helm-M-x))))
 
-(defcustom ergoemacs-translate-keys t
-  "When translating extracted keymaps, attempt to translate to
-the best match."
-  :type 'boolean
-  :group 'ergoemacs-mode)
 
-(defvar ergoemacs-extract-map-hash (make-hash-table :test 'equal))
-
-
-
-(defmacro ergoemacs-extract-maps (keymap &optional prefix)
-  "Extracts maps."
-  `(save-excursion
-     (let ((deactivate-mark nil)
-           (buf (current-buffer))
-           (normal '())
-           (translations '())
-           (prefixes '())
-           (bound-regexp "")
-           (tmp "")
-           (fn nil)
-           (new-key nil)
-           (start-time (float-time))
-           (last-time nil)
-           (cur-prefix (or ,prefix "C-x"))
-           (hashkey "")
-           (prefix-regexp ""))
-       (ergoemacs-debug (make-string 80 ?=))
-       (ergoemacs-debug "Extracting maps for %s" cur-prefix)
-       (ergoemacs-debug (make-string 80 ?=))
-       (with-temp-buffer
-         (let (ergoemacs-shortcut-mode)
-           (describe-buffer-bindings buf (read-kbd-macro cur-prefix)))
-         (goto-char (point-min))
-         (while (re-search-forward (format "%s \\(.*?\\)[ \t]\\{2,\\}\\(.+\\)$" cur-prefix) nil t)
-           (setq new-key (match-string 1))
-           (setq fn (match-string 2))
-           (unless (string-match " " new-key)
-             (cond
-              ((save-match-data
-                 (string-match "[ \t]+[?][?]$" (match-string 0)))
-               (ergoemacs-debug "Anonymous function for %s" new-key)
-               (let (ergoemacs-shortcut-mode)
-                 (setq fn (key-binding (read-kbd-macro new-key)))
-                 (add-to-list 'normal (list new-key fn))))
-              ((save-match-data
-                 (string-match "Prefix Command$" (match-string 0)))
-               (unless (string-match "ESC" new-key)
-                 (ergoemacs-debug "Prefix: %s" new-key)
-                 (add-to-list 'prefixes new-key)))
-              (t
-               (condition-case err
-                   (with-temp-buffer
-                     (insert "(if (keymapp '" fn
-                             ") (unless (string-match \"ESC\" \"" new-key
-                             "\") (add-to-list 'prefixes \"" new-key
-                             "\") (ergoemacs-debug \"Prefix (keymap): %s\" new-key)) (add-to-list 'normal '(\""
-                             new-key "\" " fn ")) (ergoemacs-debug \"Normal: %s -> %s\" new-key fn))")
-                     (eval-buffer)
-                     (when ergoemacs-translate-keys
-                       (cond
-                        ((string-match "\\( \\|^\\)C-\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
-                         (add-to-list 'translations
-                                      (list (replace-match "\\1\\2" t nil new-key)
-                                            fn)))
-                        ((string-match "\\( \\|^\\)\\([a-zA-Z'0-9{}/,.`]\\)$" new-key)
-                         (add-to-list 'translations
-                                      (list (replace-match "\\1C-\\2" t nil new-key)
-                                            fn))))))
-                 (error
-                  (setq fn nil))))))))
-
-       (ergoemacs-debug (make-string 80 ?=))
-       (ergoemacs-debug "Finished (%1f sec); Building keymap" (- (float-time) start-time))
-       (setq last-time (float-time))      (ergoemacs-debug (make-string 80 ?=))
-       (setq hashkey (md5 (format "%s;%s;%s" cur-prefix normal prefixes)))
-       (setq ,keymap (gethash hashkey ergoemacs-extract-map-hash))
-       (unless ,keymap
-         (setq ,keymap (make-keymap))
-         (mapc
-          (lambda(x)
-            (let* ((normal (nth 0 x))
-                   (ctl-to-alt
-                    (replace-regexp-in-string
-                     "\\<W-" "M-"
-                     (replace-regexp-in-string
-                      "\\<M-" "C-"
-                      (replace-regexp-in-string "\\<C-" "W-" normal))))
-                   (unchorded
-                    (replace-regexp-in-string
-                     "\\<W-" ""
-                     (replace-regexp-in-string
-                      "\\(^\\| \\)\\([^-]\\)\\( \\|$\\)" "\\1M-\\2\\3"
-                      (replace-regexp-in-string "\\<M-" "W-" ctl-to-alt)))))
-              (if (not (functionp (nth 1 x)))
-                  (when (string-match "^C-x 8" cur-prefix)
-                    (ergoemacs-debug "Not a function AND C-x 8, assuming translation.")
-                    (ergoemacs-debug "<Normal> %s %s => %s" cur-prefix normal (nth 1 x))
-                    
-                    (define-key local-function-key-map
-                      (read-kbd-macro
-                       (format "<Normal> %s %s" cur-prefix normal))
-                      (read-kbd-macro (format "%s" (nth 1 x))))
-                    
-                    (define-key local-function-key-map
-                      (read-kbd-macro
-                       (format "<Ctl%sAlt> %s %s" 
-                               (ergoemacs-unicode-char "↔" " to ")
-                               cur-prefix ctl-to-alt))
-                      (read-kbd-macro (format "%s" (nth 1 x))))
-                    (ergoemacs-debug "<Ctl%sAlt> %s %s => %s"
-                                     (ergoemacs-unicode-char "↔" " to ")
-                                     cur-prefix ctl-to-alt (nth 1 x))
-
-                    (define-key local-function-key-map
-                      (read-kbd-macro
-                       (format "<Unchorded> %s %s" cur-prefix unchorded))
-                      (read-kbd-macro (format "%s" (nth 1 x))))
-
-                    (ergoemacs-debug "<Unchorded> %s %s => %s"
-                                     cur-prefix unchorded (nth 1 x)))
-                (ergoemacs-debug "<Normal> %s %s => %s" cur-prefix normal (nth 1 x))
-                (define-key ,keymap
-                  (read-kbd-macro (format "<Normal> %s %s" cur-prefix normal)) (nth 1 x))
-                (define-key ,keymap
-                  (read-kbd-macro
-                   (format "<Ctl%sAlt> %s %s" 
-                           (ergoemacs-unicode-char "↔" " to ")
-                           cur-prefix ctl-to-alt)) (nth 1 x))
-                (ergoemacs-debug "<Ctl%sAlt> %s %s => %s"
-                                 (ergoemacs-unicode-char "↔" " to ")
-                                 cur-prefix ctl-to-alt (nth 1 x))
-                
-                (define-key ,keymap
-                  (read-kbd-macro
-                   (format "<Unchorded> %s %s" cur-prefix unchorded)) (nth 1 x))
-                (ergoemacs-debug "<Unchorded> %s %s => %s"
-                                 cur-prefix unchorded (nth 1 x)))))
-          normal)
-         (ergoemacs-debug (make-string 80 ?=))
-         (ergoemacs-debug "Built (%1f s;%1f s); Adding Prefixes" 
-                          (- (float-time) start-time)
-                          (- (float-time) last-time))
-         (setq last-time (float-time))
-         (ergoemacs-debug (make-string 80 ?=))
-         
-         ;; Now add prefixes.
-         (mapc
-          (lambda(x)
-            (let ((new (replace-regexp-in-string
-                        "\\<W-" "M-"
-                        (replace-regexp-in-string
-                         "\\<M-" "C-"
-                         (replace-regexp-in-string "\\<C-" "W-" x)))))
-
-              (condition-case err
-                  (define-key ,keymap
-                    (read-kbd-macro (format "<Normal> %s %s" cur-prefix x))
-                    `(lambda(&optional arg)
-                       (interactive "P")
-                       (ergoemacs-menu-send-prefix ,cur-prefix ,x 'normal)))
-                (error nil))
-
-              (condition-case err
-                  (define-key ,keymap 
-                    (read-kbd-macro
-                     (format "<Ctl%sAlt> %s %s" 
-                             (ergoemacs-unicode-char "↔" " to ")
-                             cur-prefix new))
-                    `(lambda(&optional arg)
-                       (interactive "P")
-                       (ergoemacs-menu-send-prefix ,cur-prefix ,x 'ctl-to-alt)))
-                (error nil))
-              
-              (setq new
-                    (replace-regexp-in-string
-                     "\\<W-" ""
-                     (replace-regexp-in-string
-                      "\\(^\\| \\)\\([^-]\\)\\( \\|$\\)" "\\1M-\\2\\3"
-                      (replace-regexp-in-string "\\<M-" "W-" new))))
-              
-              (condition-case err
-                  (define-key ,keymap 
-                    (read-kbd-macro
-                     (format "<Unchorded> %s %s"
-                             cur-prefix new))
-                    `(lambda(&optional arg)
-                       (interactive "P")
-                       (ergoemacs-menu-send-prefix ,cur-prefix ,x 'unchorded)))
-                (error nil))))
-          prefixes)
-
-         (ergoemacs-debug (make-string 80 ?=))
-         (ergoemacs-debug "Built (%1f s;%1f s); Translating keys" 
-                          (- (float-time) start-time)
-                          (- (float-time) last-time))
-         (setq last-time (float-time))
-         (ergoemacs-debug (make-string 80 ?=))
-         
-         ;;
-         (when ergoemacs-translate-keys
-           (setq bound-regexp
-                 (format "^%s$"
-                         (regexp-opt
-                          (append
-                           (mapcar (lambda(x) (nth 0 x))
-                                   normal) prefixes) t)))
-           (ergoemacs-debug (make-string 80 ?=))
-           (ergoemacs-debug "Translating keys for %s" cur-prefix)
-           (ergoemacs-debug (make-string 80 ?=))
-           (mapc
-            (lambda(x)
-              (if (string-match bound-regexp (nth 0 x))
-                  (ergoemacs-debug "Assume %s is already defined" x)
-                (ergoemacs-debug "Testing %s; %s" x (functionp (intern (nth 1 x))))
-                (when (functionp (intern (nth 1 x)))    
-                  (let* ((fn (intern (nth 1 x)))
-                         (normal (nth 0 x))
-                         (ctl-to-alt
-                          (replace-regexp-in-string
-                           "\\<W-" "M-"
-                           (replace-regexp-in-string
-                            "\\<M-" "C-"
-                            (replace-regexp-in-string "\\<C-" "W-" normal))))
-                         (unchorded
-                          (replace-regexp-in-string
-                           "\\<W-" ""
-                           (replace-regexp-in-string
-                            "\\(^\\| \\)\\([^-]\\)\\( \\|$\\)" "\\1M-\\2\\3"
-                            (replace-regexp-in-string "\\<M-" "W-" ctl-to-alt)))))
-                    (let ((curr-kbd (format "<Normal> %s %s" cur-prefix normal)))
-                      (ergoemacs-debug "\tcurr-kbd: %s" curr-kbd)
-                      (define-key ,keymap
-                        (read-kbd-macro curr-kbd) fn)
-                      (condition-case err
-                          (ergoemacs-debug "<Normal> %s %s => %s" cur-prefix normal fn)
-                        (error (ergoemacs-debug "%s" err)))
-                      (setq curr-kbd
-                            (format "<Ctl%sAlt> %s %s" 
-                                    (ergoemacs-unicode-char "↔" " to ")
-                                    cur-prefix ctl-to-alt))
-                      (ergoemacs-debug "\tcurr-kbd: %s" curr-kbd)
-                      (condition-case err
-                          (define-key ,keymap
-                            (read-kbd-macro curr-kbd) fn)
-                        (error (ergoemacs-debug "%s" err)))
-                      (ergoemacs-debug "<Ctl%sAlt> %s %s => %s"
-                                       (ergoemacs-unicode-char "↔" " to ")
-                                       cur-prefix ctl-to-alt fn)
-                      (setq curr-kbd (format "<Unchorded> %s %s" cur-prefix unchorded))
-                      (ergoemacs-debug "\tcurr-kbd: %s" curr-kbd)
-                      (condition-case err
-                          (define-key ,keymap
-                            (read-kbd-macro curr-kbd) fn)
-                        (error (ergoemacs-debug "%s" err)))
-                      (ergoemacs-debug "<Unchorded> %s %s => %s"
-                                       cur-prefix unchorded fn))))))
-            translations))
-
-         (ergoemacs-debug (make-string 80 ?=))
-         (ergoemacs-debug "Built (%1f s;%1f s); Adding swap" 
-                          (- (float-time) start-time)
-                          (- (float-time) last-time))
-         (setq last-time (float-time))
-         (ergoemacs-debug (make-string 80 ?=))
-         
-         ;; Now add root level swap.
-         (ergoemacs-debug "Root: %s <%s>" cur-prefix (if (eq system-type 'windows-nt) "apps" "menu"))
-         
-         (condition-case err
-             (define-key ,keymap
-               (read-kbd-macro (format "<Normal> %s <%s>" cur-prefix
-                                       (if (eq system-type 'windows-nt) "apps" "menu")))
-               `(lambda(&optional arg)
-                  (interactive "P")
-                  (ergoemacs-menu-swap ,cur-prefix "" 'normal)))
-           (error nil))
-
-         (condition-case err
-             (define-key ,keymap
-               (read-kbd-macro (format "<Normal> %s <exit>" cur-prefix))
-               'ignore)
-           (error nil))
-         
-         (condition-case err
-             (define-key ,keymap 
-               (read-kbd-macro
-                (format "<Ctl%sAlt> %s <%s>" 
-                        (ergoemacs-unicode-char "↔" " to ")
-                        cur-prefix
-                        (if (eq system-type 'windows-nt) "apps" "menu")))
-               `(lambda(&optional arg)
-                  (interactive "P")
-                  (ergoemacs-menu-swap ,cur-prefix "" 'ctl-to-alt)))
-           (error nil))
-
-         (condition-case err
-             (define-key ,keymap
-               (read-kbd-macro
-                (format "<Ctl%sAlt> %s <exit>"
-                        (ergoemacs-unicode-char "↔" " to ")
-                        cur-prefix)) 'ignore)
-           (error nil))
-
-         (condition-case err
-             (define-key ,keymap 
-               (read-kbd-macro
-                (format "<Unchorded> %s <%s>"
-                        cur-prefix
-                        (if (eq system-type 'windows-nt) "apps" "menu")))
-               `(lambda(&optional arg)
-                  (interactive "P")
-                  (ergoemacs-menu-swap ,cur-prefix "" 'unchorded)))
-           (error nil))
-
-         (condition-case err
-             (define-key ,keymap 
-               (read-kbd-macro
-                (format "<Unchorded> %s <exit>"
-                        cur-prefix)) `ignore)
-           (error nil))
-         (puthash hashkey ,keymap ergoemacs-extract-map-hash))
-       (ergoemacs-debug (make-string 80 ?=))
-       (ergoemacs-debug-flush))))
-
-(defcustom ergoemacs-echo-function-call nil
-  "Will echo function call when `ergoemacs-menu-send-function' is called."
-  :type 'boolean
-  :group 'ergoemacs-mode)
-
-(defun ergoemacs-menu-send-function (prefix-key untranslated-key fn)
-  "Sends actual key for translation maps or runs function FN"
-  (setq ergoemacs-push-M-O-timeout nil)
-  (setq this-command last-command) ; Don't record this command.
-  (setq prefix-arg current-prefix-arg)
-  (condition-case err
-      (progn
-        (call-interactively fn)
-        (when ergoemacs-echo-function-call
-          (princ
-           (format "%s%s%s: %s" (if current-prefix-arg
-                                    (format "%s " current-prefix-arg)
-                                  "")
-                   (ergoemacs-pretty-key prefix-key)
-                   (if (string= untranslated-key "<timeout>") ""
-                     (ergoemacs-pretty-key untranslated-key))
-                   fn))))
-    (error
-     (message "Error %s" err))))
-
-(defun ergoemacs-menu-send-prefix (prefix-key untranslated-key type)
-  "Extracts maps for PREFIX-KEY UNTRANSLATED-KEY of TYPE."
-  (setq this-command last-command) ; Don't record this command.
-  (setq prefix-arg current-prefix-arg)
-  (ergoemacs-shortcut-internal (format "%s %s" prefix-key untranslated-key) type))
-
-(defun ergoemacs-menu-swap (prefix-key untranslated-key type)
-  "Swaps what <menu> key translation is in effect"
-  (let* (deactivate-mark
-         (new-type nil)
-         (new-key nil)
-         (kbd-code nil)
-         (normal untranslated-key)
-         (ctl-to-alt (replace-regexp-in-string
-                      "\\<W-" "M-"
-                      (replace-regexp-in-string
-                       "\\<M-" "C-"
-                       (replace-regexp-in-string "\\<C-" "W-" normal))))
-         (unchorded (replace-regexp-in-string
-                     "\\<W-" ""
-                     (replace-regexp-in-string
-                      "\\(^\\| \\)\\([^-]\\)\\( \\|$\\)" "\\1M-\\2\\3"
-                      (replace-regexp-in-string "\\<M-" "W-" ctl-to-alt)))))
-    (cond
-     ((member ergoemacs-first-extracted-variant '(ctl-to-alt normal))
-      (cond
-       ((eq type 'ctl-to-alt)
-        (setq new-type 'unchorded))
-       ((eq type 'unchorded)
-        (setq new-type 'normal))
-       ((eq type 'normal)
-        (setq new-type 'ctl-to-alt))))
-     ((equal ergoemacs-first-extracted-variant 'unchorded)
-      (cond
-       ((eq type 'ctl-to-alt)
-        (setq new-type 'normal))
-       ((eq type 'unchorded)
-        (setq new-type 'ctl-to-alt))
-       ((eq type 'normal)
-        (setq new-type 'unchorded)))))
-    (setq kbd-code
-          (cond
-           ((eq new-type 'normal)
-            (format "<Normal> %s %s" prefix-key normal))
-           ((eq new-type 'ctl-to-alt)
-            (format "<Ctl%sAlt> %s %s"
-                    (ergoemacs-unicode-char "↔" " to ")
-                    prefix-key
-                    ctl-to-alt))
-           ((eq new-type 'unchorded)
-            (format "<Unchorded> %s %s" prefix-key
-                    unchorded))))
-    (setq new-key (listify-key-sequence (read-kbd-macro kbd-code)))
-    (setq this-command last-command) ; Don't record this command.
-    (setq prefix-arg current-prefix-arg)
-    (set-temporary-overlay-map ergoemacs-current-extracted-map)
-    (reset-this-command-lengths)
-    (setq unread-command-events (append new-key unread-command-events))
-    
-    (save-match-data
-      (when (string-match "<\\(.*?\\)> \\(.*\\)" kbd-code)
-        (message "%s%s"
-                 (if current-prefix-arg (format "%s " current-prefix-arg) "")
-                 (replace-regexp-in-string "<Normal> +" ""
-                                           (format "<%s> %s" (match-string 1 kbd-code)
-                                                   (ergoemacs-pretty-key (match-string 2 kbd-code)))))))))
-
-
-(defvar ergoemacs-repeat-shortcut-keymap (make-sparse-keymap)
-  "Keymap for repeating often used shortcuts like C-c C-c.")
-
-(defvar ergoemacs-repeat-shortcut-msg ""
-  "Message for repeating keyboard shortcuts like C-c C-c")
-
-(defun ergoemacs-shortcut-timeout ()
-  (message ergoemacs-repeat-shortcut-msg)
-  (set-temporary-overlay-map ergoemacs-repeat-shortcut-keymap))
-
-(defvar ergoemacs-current-extracted-map nil
-  "Current extracted map for `ergoemacs-shortcut' defined functions")
-
-(defvar ergoemacs-first-extracted-variant nil
-  "Current extracted variant")
-
-(defcustom ergoemacs-shortcut-ignored-functions
-  '(undo-tree-visualize)
-  "Ignored functions for `ergoemacs-shortcut'."
-  :group 'ergoemacs-mode
-  :type '(repeat
-          (symbol :tag "Function to ignore:")))
-
-(defun ergoemacs-shortcut (&optional arg)
-  "Shortcut for other key/function.
-Calls the function shortcut key defined in
-`ergoemacs-command-shortcuts-hash' for `this-command-keys-vector'.  The
-workhorse of this function is in `ergoemacs-shortcut-internal'."
-  (interactive "P")
-  (let ((args (gethash (this-command-keys-vector)
-                       ergoemacs-command-shortcuts-hash)))
-    (unless args
-      (gethash (read-kbd-macro (key-description (this-command-keys)) t)))
-    (if (not args)
-        (progn
-          ;; Remove reference to `ergoemacs-shortcut'
-          (when (featurep 'keyfreq)
-            (when keyfreq-mode
-              (let ((command 'ergoemacs-shortcut) count)
-                (setq count (gethash (cons major-mode command) keyfreq-table))
-                (remhash (cons major-mode command) keyfreq-table)
-                ;; Add `ergoemacs-undefined' to counter.
-                (setq command 'ergoemacs-undefined)
-                (setq count (gethash (cons major-mode command) keyfreq-table))
-                (puthash (cons major-mode command) (if count (+ count 1) 1)
-                         keyfreq-table))))
-          (ergoemacs-undefined))
-      (when (featurep 'keyfreq)
-        (when keyfreq-mode
-          (let ((command 'ergoemacs-shortcut) count)
-            (setq count (gethash (cons major-mode command) keyfreq-table))
-            (remhash (cons major-mode command) keyfreq-table))))
-      (setq this-command last-command)
-      (setq prefix-arg current-prefix-arg)
-      (if (interactive-form (nth 0 args))
-          (eval (macroexpand `(ergoemacs-shortcut-internal ',(nth 0 args) ',(nth 1 args))))
-        (eval (macroexpand `(ergoemacs-shortcut-internal ,(nth 0 args) ',(nth 1 args))))))))
-
-(defun ergoemacs-shortcut-internal (key &optional chorded repeat keymap-key)
-  "Ergoemacs Shortcut.
-
-KEY is the keyboard shortcut.
-
-CHORDED is a variable that alters to keymap to allow unchorded
-key sequences.  Also if CHORDED is 'global, then make this a
-shortcut to a global command.
-
-If CHORDED is nil, the NAME command will just issue the KEY sequence.
-
-If CHORDED is 'unchorded or the NAME command will translate the control
-bindings to be unchorded.  For example:
-
-For example for the C-x map,
-
-Original Key   Translated Key  Function
-C-k C-n     -> k n             (kmacro-cycle-ring-next)
-C-k a       -> k M-a           (kmacro-add-counter)
-C-k M-a     -> k C-a           not defined
-C-k S-a     -> k S-a           not defined
-
-If CHORDED is 'ctl-to-alt or the NAME command will translate the control
-bindings to be unchorded.  For example:
-
-C-k C-n     -> M-k M-n         (kmacro-cycle-ring-next)
-C-k a       -> M-k a           (kmacro-add-counter)
-C-k M-a     -> k C-a           not defined
-C-k S-a     -> k S-a           not defined
-
-When REPEAT is a variable name, then an easy repeat is setup for the command.
-
-For example if you bind <apps> m to Ctrl+c Ctrl+c, this allows Ctrl+c Ctrl+c to be repeated by m.
-
-When KEYMAP-KEY is non-nil, define the KEYMAP-KEY on the `ergoemacs-shortcut-override-keymap'
-"
-  (cond
-   ((or (not chorded)
-        (condition-case err
-            (functionp key)
-          (error nil))
-        (memq chorded '(repeat repeat-global global-repeat global)))
-    ;; A single function for the key shortcut.
-    (let ((ctl-c-keys (key-description (this-command-keys))))
-      (let (ergoemacs-shortcut-mode
-            ergoemacs-unbind-mode
-            (minor (intern-soft (format "ergoemacs-%s-hook-mode" major-mode)))
-            old-minor
-            ;; if chorded is undefined, shortcut is to ergoemacs-keys
-            ;; if chorded doesn't have global in it it acts on
-            ;; ergoemacs-keys.
-            ;; otherwise the shortcut is acting on non-ergoemacs keys.
-            (ergoemacs-mode
-             (or (eq chorded 'repeat)
-                 (not chorded)))
-            fn fn-lst new-fn fn-override)
-        (setq ergoemacs-unbind-mode ergoemacs-mode)
-        ;; Temporarily unbind ergoemacs-major-mode-hook-mode
-        (when minor
-          (setq old-minor (symbol-value minor))
-          (set minor nil))
-        (cond
-         ((condition-case err
-              (interactive-form key)
-            (error nil))
-          ;; FIXME:  Overlays that are installed/removed based on
-          ;; pre-command-hook status can be disrupted.  This is the
-          ;; case in `auto-complete-mode'.  Therefore,
-          ;; `ergoemacs-mode' currently does not translate these keys
-          ;; correctly :(
-
-          ;; I tried a post-command-hook setting up a temporary
-          ;; overlay map with the actual command.  It was too slow...
-
-          ;; Currently fixed by a hook :)
-          
-          ;; Lookup function on non-ergoemacs keymaps.
-          (setq ergoemacs-mode nil)
-          (setq ergoemacs-unbind-mode nil)
-          (mapc
-           (lambda(cur-key)
-             (let ((binding (key-binding cur-key t nil (point))))
-               (setq new-fn (intern-soft (format "erogemacs-%s" binding)))
-               (when (and new-fn (interactive-form new-fn))
-                 ;; When a lookup finds org-metadown and there is a
-                 ;; function ergoemacs-org-metadown, use the
-                 ;; ergoemacs-org-metadown instead.
-                 (setq fn-override new-fn))
-               (unless (or (eq binding key)
-                           (memq binding ergoemacs-shortcut-ignored-functions))
-                 (add-to-list 'fn-lst binding))))
-           (or (remove-if '(lambda(x) (eq 'menu-bar (elt x 0))) ; Ignore
-                                                           ; menu-bar
-                                                           ; functions
-                          (where-is-internal key (current-global-map)))
-               (gethash key ergoemacs-where-is-global-hash)))
-          (cond
-           (fn-override
-            (set fn fn-override))
-           (fn-lst
-            ;; FIXME: If new functions exist, have user option to use
-            ;; these functions
-
-            ;; For now, just use the first function.
-            (setq fn (nth 0 fn-lst)))
-           (t  ; Could not find another function, just use the
-               ; function passed to `ergoemacs-shortcut'
-            (setq fn key))))
-         (t ;; lookup keybinding for the function keys.          
-          (setq fn (key-binding (read-kbd-macro key)))))
-        (if (not fn)
-            (unless keymap-key
-              (message "%s is not defined." (ergoemacs-pretty-key key)))
-          (unless keymap-key
-            (setq this-command fn) ; Don't record this command.
-            (setq prefix-arg current-prefix-arg))
-          (if (condition-case err
-                  (interactive-form fn)
-                (error nil))
-              (if keymap-key
-                  (progn
-                    (define-key ergoemacs-shortcut-override-keymap
-                      keymap-key fn))
-                (when (featurep 'keyfreq)
-                  (when keyfreq-mode
-                    (let ((command fn) count)
-                      ;; Add function name to to counter.
-                      (setq count (gethash (cons major-mode command)
-                                           keyfreq-table))
-                      (puthash (cons major-mode command) (if count (+ count 1) 1)
-                               keyfreq-table))))
-                (call-interactively fn)
-                ;; repeat only works with a function.
-                (when (and repeat
-                           (or (not chorded)
-                               (not (eq chorded 'global))))
-                  (when  (string-match "[A-Za-z]$" ctl-c-keys)
-                    (setq ctl-c-keys (match-string 0 ctl-c-keys))
-                    (setq ergoemacs-repeat-shortcut-keymap (make-keymap))
-                    (define-key ergoemacs-repeat-shortcut-keymap (read-kbd-macro ctl-c-keys) fn)
-                    (setq ergoemacs-repeat-shortcut-msg
-                          (format  "Repeat %s with %s"
-                                   (ergoemacs-pretty-key key)
-                                   (ergoemacs-pretty-key ctl-c-keys)))
-                    ;; Allow time to process the unread command events before
-                    ;; installing temporary keymap
-                    (setq ergoemacs-M-O-timer
-                          (run-with-timer ergoemacs-M-O-delay nil
-                                          #'ergoemacs-shortcut-timeout)))))
-            ;; Not a function, probably a keymap
-            (if keymap-key
-                (progn
-                  ;; (define-key ergoemacs-repeat-shortcut-keymap (read-kbd-macro ctl-c-keys) (symbol-value fn))
-                  )
-              (setq prefix-arg current-prefix-arg)
-              (setq unread-command-events
-                    (append
-                     (listify-key-sequence (read-kbd-macro key))
-                     unread-command-events))
-              (reset-this-command-lengths))))
-        (when minor
-          (set minor old-minor)))))
-   (keymap-key ;; extract key prefixes.
-    )
-   (t ;; key prefix
-    (setq ergoemacs-push-M-O-timeout nil) ;; Cancel timeouts
-    (setq this-command last-command) ; Don't record this command.
-    (setq prefix-arg current-prefix-arg)
-    (let (key-seq
-          (key-type
-           (cond
-            ((eq chorded 'unchorded)
-             "Unchorded")
-            ((eq chorded 'ctl-to-alt)
-             (format "Ctl%sAlt"
-                     (ergoemacs-unicode-char "↔" " to ")))
-            (t "Normal")))
-          deactivate-mark)
-      (eval (macroexpand '(ergoemacs-extract-maps ergoemacs-current-extracted-map key)))
-      (set-temporary-overlay-map ergoemacs-current-extracted-map)
-      (setq ergoemacs-first-extracted-variant chorded)
-      (setq key-seq
-            (read-kbd-macro
-             (format "<%s> %s" key-type key)))
-      (setq key-seq (listify-key-sequence key-seq))
-      (reset-this-command-lengths)
-      (setq unread-command-events
-            (append key-seq unread-command-events))
-      (setq key-type (concat "<" key-type "> "))
-      (when (string= key-type "<Normal> ")
-        (setq key-type ""))
-      (princ (concat
-              (if current-prefix-arg
-                  (format "%s " current-prefix-arg)
-                "")
-              (format "%s%s " key-type
-                      (ergoemacs-pretty-key key))))))))
-
-(defcustom ergoemacs-repeat-ctl-c-ctl-c t
-  "Repeat C-c C-c"
-  :group 'ergoemacs-mode
-  :type 'boolean)
-
-(defun ergoemacs-ctl-c-ctl-c (&optional arg)
-  "Ergoemacs C-c C-c. If `ergoemacs-repeat-ctl-c-ctl-c', repeat the command"
-  (interactive "P")
-  (setq this-command last-command) ; Don't record this command.
-  (setq prefix-arg current-prefix-arg)
-  (ergoemacs-shortcut-internal "C-c C-c" 'repeat-global ergoemacs-repeat-ctl-c-ctl-c))
 
 
 (require 'cus-edit)
@@ -1941,9 +1133,18 @@ When KEYMAP-KEY is non-nil, define the KEYMAP-KEY on the `ergoemacs-shortcut-ove
   :set 'ergoemacs-set-default
   :group 'ergoemacs-mode)
 
-(defvar ergoemacs-org-CUA-compatible nil)
-(defvar ergoemacs-shift-select-mode nil)
-(defvar ergoemacs-delete-selection-mode nil)
+(defvar ergoemacs-save-variables
+  '((org-CUA-compatible t)
+    (shift-select-mode t)
+    (delete-selection-mode 1)
+    (scroll-error-top-bottom t))
+  "Variables/Modes that `ergoemacs-mode' changes, and restores.
+Initial state is what `ergoemacs-mode' toggles to when it is turned on.
+When the state is 1 or -1 it turns on/off the corresponding mode.")
+(defvar ergoemacs-save-variables-state nil)
+
+(defvar ergoemacs-emulation-mode-map-alist nil
+  "Override keys in ergoemacs-mode for `emulation-mode-map-alist'")
 
 ;; ErgoEmacs minor mode
 ;;;###autoload
@@ -1963,10 +1164,6 @@ The layout and theme changes the bindings.  For the current
 bindings the keymap is:
 
 \\{ergoemacs-keymap}
-
-The shortcuts defined are:
-
-\\{ergoemacs-shortcut-keymap}
 "
   nil
   :lighter " ErgoEmacs"
@@ -1977,253 +1174,170 @@ The shortcuts defined are:
   ;; Try to turn on only rectangle support, global mark mode, and
   ;; other features of CUA mode.  Let ergoemacs handle C-c and C-v.
   ;; This will possibly allow swapping of C-c and M-c.
-  (when (and ergoemacs-mode cua-mode)
-    (cua-mode -1)
-    (cua-selection-mode 1))
-  ;; Turn on/off shift-select delete-selection and CUA-compatible org-mode
-  (cond
-   (ergoemacs-mode
-    ;; (if (boundp 'org-CUA-compatible)
-    ;;     (setq ergoemacs-org-CUA-compatible nil)
-    ;;   (setq ergoemacs-org-CUA-compatible org-CUA-compatible))
-    (setq ergoemacs-shift-select-mode shift-select-mode)
-    (setq ergoemacs-delete-selection-mode delete-selection-mode)
-    ;; (setq org-CUA-compatible t)
-    (set-default 'shift-select-mode t)
-    ;; turn on text selection highlighting and make typing override
-    ;; selected text (Note: when delete-selection-mode is on, then
-    ;; transient-mark-mode is automatically on too.)
-    (delete-selection-mode 1))
-   ((not ergoemacs-mode)
-    ;; (when (boundp 'org-CUA-compatible)
-    ;;   (setq org-CUA-compatible ergoemacs-org-CUA-compatible))
-    (setq shift-select-mode ergoemacs-shift-select-mode)
-    (unless ergoemacs-delete-selection-mode
-      (delete-selection-mode -1))))
-  
-  (setq ergoemacs-shortcut-keymap (make-sparse-keymap))
-  (ergoemacs-setup-keys t)
-  (ergoemacs-debug "Ergoemacs Keys have loaded.")
-  (if ergoemacs-use-menus
+  (if ergoemacs-mode
       (progn
-        (require 'ergoemacs-menus)
-        (ergoemacs-menus-on))
-    (when (featurep 'ergoemacs-menus)
-      (ergoemacs-menus-off)))
-  (when (and (eq system-type 'darwin))
-    (if ergoemacs-mode
-        (progn
+        (setq ergoemacs-debug-heading-start-time (float-time))
+        (setq ergoemacs-debug-heading-last-time (float-time))
+        (ergoemacs-debug-heading "Ergoemacs-mode is turning ON.")
+        (when cua-mode
+          (cua-mode -1)
+          (cua-selection-mode 1))
+        ;; (if (boundp 'org-CUA-compatible)
+        ;;     (setq ergoemacs-org-CUA-compatible nil)
+        ;;   (setq ergoemacs-org-CUA-compatible org-CUA-compatible))
+        (unless ergoemacs-save-variables-state
+          (ergoemacs-debug-heading "Update variables and modes")
+          (ergoemacs-debug "Old ergoemacs-save-variables: %s" ergoemacs-save-variables)
+          (setq ergoemacs-save-variables
+                (mapcar
+                 (lambda(x)
+                   (let (val)
+                     (if (condition-case err (or (= 1 (nth 1 x)) (= -1 (nth 1 x))) (error nil))
+                         (progn
+                           (ergoemacs-debug "Call (%s %s)"
+                                            (symbol-name (nth 0 x)) (nth 1 x))
+                           (funcall (nth 0 x) (nth 1 x))
+                           (setq val (if (= (nth 1 x) 1) -1 1)))
+                       (ergoemacs-debug "Set %s to %s" (symbol-name (nth 0 x)) (nth 1 x))
+                       (set (nth 0 x) (nth 1 x))
+                       (set-default (nth 0 x) (nth 1 x))
+                       (setq val (not (nth 1 x))))
+                     `(,(nth 0 x) ,val)))
+                 ergoemacs-save-variables))
+          (ergoemacs-debug "New ergoemacs-save-variables: %s" ergoemacs-save-variables)
+          (setq ergoemacs-save-variables-state t))
+        ;; From yasnippet:
+        ;; Install the direct keymaps in `emulation-mode-map-alists'
+        ;; (we use `add-hook' even though it's not technically a hook,
+        ;; but it works). Then define variables named after modes to
+        ;; index `ergoemacs-emulation-mode-map-alist'.
+        (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
+        ;; Setup keys
+        (setq ergoemacs-shortcut-keymap (make-sparse-keymap))
+        (ergoemacs-setup-keys t)
+        (ergoemacs-debug-heading "Ergoemacs Keys have loaded.")
+        (when (eq system-type 'darwin)
           (setq ergoemacs-old-ns-command-modifier ns-command-modifier)
           (setq ergoemacs-old-ns-alternate-modifier ns-alternate-modifier)
           (setq ns-command-modifier 'meta)
           (setq ns-alternate-modifier nil))
-      (setq ns-command-modifier ergoemacs-old-ns-command-modifier)
-      (setq ns-alternate-modifier ergoemacs-old-ns-alternate-modifier)))
-  (if ergoemacs-mode
-      (define-key cua--cua-keys-keymap (read-kbd-macro "M-v") nil)
-    (define-key cua--cua-keys-keymap (read-kbd-macro "M-v") 'cua-repeat-replace-region))
-  (condition-case err
-      (when ergoemacs-cua-rect-modifier
-        (if ergoemacs-mode
+        ;; Turn on menu
+        (if ergoemacs-use-menus
             (progn
-              (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
-              (setq cua--rectangle-keymap (make-sparse-keymap))
-              (setq cua--rectangle-initialized nil)
-              (cua--init-rectangles)
-              (setq cua--keymap-alist
-                    `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
-                      (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
-                      (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
-                      (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
-                      (cua--rectangle . ,cua--rectangle-keymap)
-                      (cua--ena-region-keymap . ,cua--region-keymap)
-                      (cua-mode . ,cua-global-keymap))))
-          (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier-orig)
-          (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
-          (setq cua--rectangle-keymap (make-sparse-keymap))
-          (setq cua--rectangle-initialized nil)
-          (cua--init-rectangles)
-          (setq cua--keymap-alist
-                `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
-                  (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
-                  (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
-                  (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
-                  (cua--rectangle . ,cua--rectangle-keymap)
-                  (cua--ena-region-keymap . ,cua--region-keymap)
-                  (cua-mode . ,cua-global-keymap))))
-        (ergoemacs-debug "CUA rectangle mode modifier changed."))
-    (error (message "CUA rectangle modifier wasn't changed.")))
-  
-  (when ergoemacs-change-smex-M-x
-    (if ergoemacs-mode
-        (setq smex-prompt-string (concat (ergoemacs-pretty-key "M-x") " "))
-      (setq smex-prompt-string "M-x ")))
-  (if ergoemacs-mode
-      (mapc ;; Now install hooks.
-       (lambda(buf)
-         (with-current-buffer buf
-           (when (and (intern-soft (format "ergoemacs-%s-hook" major-mode)))
-             (funcall (intern-soft (format "ergoemacs-%s-hook" major-mode))))))
-       (buffer-list))
-    (mapc ;; Remove overriding keys.
-     (lambda(buf)
-       (with-current-buffer buf
-         (when (and (intern-soft (format "ergoemacs-%s-hook-mode" major-mode))
-                    (symbol-value (intern-soft (format "ergoemacs-%s-hook-mode" major-mode))))
-           (funcall (intern-soft (format "ergoemacs-%s-hook-mode" major-mode)) -1))
-         (let ((x (assq 'ergoemacs-mode minor-mode-overriding-map-alist)))
-           (if x
-               (setq minor-mode-overriding-map-alist (delq x minor-mode-overriding-map-alist))))))
-     (buffer-list)))
-  (if ergoemacs-mode
-      (progn
-        (ergoemacs-shortcut-mode 1)
-        (ergoemacs-unbind-mode 1))
-    (ergoemacs-shortcut-mode -1)
-    (ergoemacs-unbind-mode -1))
+              (require 'ergoemacs-menus)
+              (ergoemacs-menus-on))
+          (when (featurep 'ergoemacs-menus)
+            (ergoemacs-menus-off)))
+        (ergoemacs-debug-heading "Ergoemacs Menus have loaded.")
+        (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
+        (setq cua--rectangle-keymap (make-sparse-keymap))
+        (setq cua--rectangle-initialized nil)
+        (cua--init-rectangles)
+        (setq cua--keymap-alist
+              `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
+                (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
+                (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
+                (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
+                (cua--rectangle . ,cua--rectangle-keymap)
+                (cua--ena-region-keymap . ,cua--region-keymap)
+                (cua-mode . ,cua-global-keymap)))
+        (when ergoemacs-change-smex-meta-x
+          (setq smex-prompt-string (concat (ergoemacs-pretty-key "M-x") " ")))
+        (mapc ;; Now install hooks.
+         (lambda(buf)
+           (with-current-buffer buf
+             (when (and (intern-soft (format "ergoemacs-%s-hook" major-mode)))
+               (funcall (intern-soft (format "ergoemacs-%s-hook" major-mode))))))
+         (buffer-list))
+        (setq ergoemacs-shortcut-keys t)
+        (setq ergoemacs-unbind-keys t)
+        (add-hook 'pre-command-hook 'ergoemacs-pre-command-hook)
+        (add-hook 'minibuffer-setup-hook #'ergoemacs-minibuffer-setup)
+        (ergoemacs-debug-heading "Ergoemacs-mode turned ON."))
+    ;; turn off ergoemacs-mode
+    (ergoemacs-debug-heading "Ergoemacs-mode is turning OFF.")
+    (when ergoemacs-save-variables-state
+      (ergoemacs-debug-heading "Revert variables and modes")
+      (ergoemacs-debug "Old ergoemacs-save-variables: %s" ergoemacs-save-variables)
+      (setq ergoemacs-save-variables
+            (mapcar
+             (lambda(x)
+               (let (val)
+                 (if (condition-case err (or (= 1 (nth 1 x)) (= -1 (nth 1 x))) (error nil))
+                     (progn
+                       (ergoemacs-debug "Call (%s %s)"
+                                        (symbol-name (nth 0 x)) (nth 1 x))
+                       (funcall (nth 0 x) (nth 1 x))
+		       (setq val (if (= 1 (nth 1 x)) -1 1)))
+                   (ergoemacs-debug "Set %s to %s" (symbol-name (nth 0 x)) (nth 1 x))
+                   (set (nth 0 x) (nth 1 x))
+		   (setq val (not (nth 1 x)))
+                   (set-default (nth 0 x) (nth 1 x)))
+                 `(,(nth 0 x) ,val)))
+             ergoemacs-save-variables))
+      (ergoemacs-debug "New ergoemacs-save-variables: %s" ergoemacs-save-variables)
+      (setq ergoemacs-save-variables-state nil))    
+    (remove-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
+    (when (featurep 'ergoemacs-menus)
+      (ergoemacs-menus-off))
+    (when (and (eq system-type 'darwin))
+      (setq ns-command-modifier ergoemacs-old-ns-command-modifier)
+      (setq ns-alternate-modifier ergoemacs-old-ns-alternate-modifier))
+    ;; Change retangle modifier back.    
+    (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier-orig)
+    (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
+    (setq cua--rectangle-keymap (make-sparse-keymap))
+    (setq cua--rectangle-initialized nil)
+    (cua--init-rectangles)
+    (setq cua--keymap-alist
+          `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
+            (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
+            (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
+            (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
+            (cua--rectangle . ,cua--rectangle-keymap)
+            (cua--ena-region-keymap . ,cua--region-keymap)
+            (cua-mode . ,cua-global-keymap)))
+    (when ergoemacs-change-smex-meta-x
+      (setq smex-prompt-string "M-x "))
+    
+    (let ((x (assq 'ergoemacs-mode minor-mode-map-alist)))
+      ;; Remove keymap
+      (when x
+        (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
+      (setq x (assq 'ergoemacs-unbind-keys minor-mode-map-alist))
+      (when x
+        (setq minor-mode-map-alist (delq x minor-mode-map-alist))))
+    (setq ergoemacs-shortcut-keys nil)
+    (setq ergoemacs-unbind-keys nil)
+    (setq ergoemacs-emulation-mode-map-alist nil)
+    (ergoemacs-hook-modes) ;; Remove hooks and advices.
+    (remove-hook 'minibuffer-setup-hook #'ergoemacs-minibuffer-setup)
+    (remove-hook 'pre-command-hook 'ergoemacs-pre-command-hook)
+    (ergoemacs-debug-heading "Ergoemacs-mode turned OFF."))
+  ;; Always have `ergoemacs-post-command-hook' on so that it will
+  ;; uninstall ergoemacs keymaps that were installed to overlays and
+  ;; text-properties and anything above `emulation-mode-map-alists'.
+  (add-hook 'post-command-hook 'ergoemacs-post-command-hook) 
+  (ergoemacs-debug "post-command-hook: %s" post-command-hook)
+  (ergoemacs-debug "pre-command-hook: %s" pre-command-hook)
+  (ergoemacs-debug "ergoemacs-shortcut-keys: %s" ergoemacs-shortcut-keys)
+  (ergoemacs-debug "ergoemacs-unbind-keys: %s" ergoemacs-unbind-keys)
+  (ergoemacs-debug "ergoemacs-mode %s" ergoemacs-mode)
+  (ergoemacs-debug "ergoemacs-save-variables-state %s" ergoemacs-save-variables-state)
+  (ergoemacs-debug "emulation-mode-map-alists: %s" emulation-mode-map-alists)
+  (ergoemacs-debug "ergoemacs-emulation-mode-map-alist: %s"
+                   (mapcar
+                    (lambda(x) (nth 0 x))
+                    ergoemacs-emulation-mode-map-alist))
+  (ergoemacs-debug "minor-mode-map-alist: %s"
+                   (mapcar
+                    (lambda(x) (nth 0 x))
+                    minor-mode-map-alist))
+  (ergoemacs-debug-heading "ErgoEmacs Hooks")
+  (ergoemacs-debug "%s" (mapconcat (lambda(x) (format "%s: %s" (nth 0 x) (symbol-value (nth 0 x)))) ergoemacs-hook-list "\n"))
+  (unless ergoemacs-mode
+    (setq ergoemacs-hook-list nil))
   (ergoemacs-debug-flush))
-
-(define-minor-mode ergoemacs-shortcut-mode
-  "Toggle `ergoemacs-mode' shortcut keys.  In theory, this allows
-`ergoemacs-mode' to overwrite commonly used shortcuts like C-c and C-x"
-  nil
-  :lighter ""
-  :global t
-  :group 'ergoemacs-mode
-  (if ergoemacs-shortcut-mode
-      (progn
-        (ergoemacs-debug "Ergoemacs Shortcut Keys have loaded been turned on.")
-        (let ((x (assq 'ergoemacs-shortcut-mode minor-mode-map-alist)))
-          (when x
-            (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-          (push (cons 'ergoemacs-shortcut-mode ergoemacs-shortcut-keymap) minor-mode-map-alist)))
-    (ergoemacs-debug "Ergoemacs Shortcut Keys have loaded been turned off."))
-  (ergoemacs-debug-flush))
-
-(define-minor-mode ergoemacs-shortcut-override-mode
-  "Lookup the functions for `ergoemacs-mode' shortcut keys."
-  nil
-  :lighter ""
-  :global t
-  :group 'ergoemacs-mode
-  (if ergoemacs-shortcut-override-mode
-      (progn
-        (ergoemacs-debug "Ergoemacs Shortcut Override have loaded been turned on.")
-        (let ((x (assq 'ergoemacs-shortcut-override-mode
-                       minor-mode-map-alist)))
-          (when x
-            (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-          ;; Create keymap
-          (setq ergoemacs-shortcut-override-keymap (make-sparse-keymap))
-          ;; Add M-O and M-o key-bindings; Pretend they are the actual
-          ;; bindings instead of the M-O and M-o work-rounds.
-          (when (eq (key-binding (read-kbd-macro "M-O"))
-                    'ergoemacs-M-O)
-            (define-key ergoemacs-shortcut-override-keymap
-              (read-kbd-macro "M-O")
-              (lookup-key ergoemacs-M-O-keymap [timeout])))
-          (when (eq (key-binding (read-kbd-macro "M-o"))
-                    'ergoemacs-M-o)
-            (define-key ergoemacs-shortcut-override-keymap
-              (read-kbd-macro "M-o")
-              (lookup-key ergoemacs-M-o-keymap [timeout])))
-          (maphash
-           (lambda(key args)
-             (if (interactive-form (nth 0 args))
-                 (eval (macroexpand `(ergoemacs-shortcut-internal ',(nth 0 args) ',(nth 1 args) nil ,key)))
-               (eval (macroexpand `(ergoemacs-shortcut-internal ,(nth 0 args) ',(nth 1 args) nil ,key)))))
-           ergoemacs-command-shortcuts-hash)
-          (push (cons 'ergoemacs-shortcut-override-mode
-                      ergoemacs-shortcut-override-keymap)
-                minor-mode-map-alist)))
-    (ergoemacs-debug "Ergoemacs Shortcut Keys have loaded been turned off."))
-  (ergoemacs-debug-flush))
-
-(defvar ergoemacs-unbind-keymap (make-sparse-keymap)
-  "Keymap for `ergoemacs-unbind-mode'")
-
-(defun ergoemacs-undefined (&optional arg)
-  "Ergoemacs Undefined key, tells where to perform the old action."
-  (interactive "P")
-  (let* ((key (key-description (this-command-keys)))
-         (fn (assoc key ergoemacs-emacs-default-bindings))
-         (local-fn nil)
-         (last (substring key -1))
-         (ergoemacs-where-is-skip t)
-         (curr-fn nil))
-    ;; Lookup local key, if present and then issue that
-    ;; command instead...
-    ;;
-    ;; This way the unbound keys are just above the global
-    ;; map and doesn't actually change it.
-    (cond
-     ((progn
-        ;; Local map present.  Use it, if there is a key
-        ;; defined there.
-        (setq local-fn (get-char-property (point) 'local-map))
-        (if local-fn
-            (setq local-fn (lookup-key local-fn
-                                       (read-kbd-macro key)))
-          (setq local-fn (lookup-key (current-local-map)
-                                     (read-kbd-macro key))))
-        (functionp local-fn))
-      (setq this-command last-command) ; Don't record this
-                                        ; command.
-      (setq prefix-arg current-prefix-arg)
-      (call-interactively local-fn t))
-     (t
-      ;; Not locally defined, complain.
-      (beep)
-      (message "%s keybinding is disabled! Use %s"
-               (ergoemacs-pretty-key key)
-               (ergoemacs-pretty-key-rep
-                (with-temp-buffer
-                  (setq curr-fn (nth 0 (nth 1 fn)))
-                  (when (and fn (not (eq 'prefix curr-fn)))
-                    (setq curr-fn (ergoemacs-translate-current-function curr-fn))
-                    (where-is curr-fn t))
-                  (ergoemacs-format-where-is-buffer)
-                  (buffer-string))))))))
-
-(defun ergoemacs-unbind-setup-keymap ()
-  "Setup `ergoemacs-unbind-keymap' based on current layout."
-  (setq ergoemacs-unbind-keymap (make-sparse-keymap))
-  (mapc
-   (lambda(x)
-     (unless (ergoemacs-global-changed-p x)
-       (define-key ergoemacs-unbind-keymap (read-kbd-macro x) 'ergoemacs-undefined
-         )))
-   (symbol-value (ergoemacs-get-redundant-keys))))
-
-(define-minor-mode ergoemacs-unbind-mode
-  "These are the unbound keys for `ergoemacs-mode'.  This should
-be the last entry in `minor-mode-map-alist'.
-
-Ideally, this keymap should be right above the global binding
-map. However, by making this a minor mode, it masks bindings from:
-
-- locally-defined maps in the text properties (get-char-property (point) 'local-map)
-- `current-local-map'
-
-If these keys exist, execute what was bound to them.
-" 
-  
-  nil
-  :lighter ""
-  :global t
-  :group 'ergoemacs-mode
-  (if ergoemacs-unbind-mode
-      (progn
-        (ergoemacs-debug "Ergoemacs Unbind Keys have loaded been turned on.")
-        (let ((x (assq 'ergoemacs-unbind-mode minor-mode-map-alist)))
-          (when x
-            (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-          ;; Put at the END of the list.
-          (setq minor-mode-map-alist
-                (append minor-mode-map-alist
-                        (list (cons 'ergoemacs-unbind-mode ergoemacs-unbind-keymap))))))
-    (ergoemacs-debug "Ergoemacs Unbind Keys have loaded been turned off.")))
-
 
 
 ;; ErgoEmacs replacements for local-set-key
@@ -2316,30 +1430,72 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
 (when ergoemacs-use-aliases
   (ergoemacs-load-aliases))
 
-(defvar ergoemacs-describe-keybindings-functions
-  '(describe-package
-    describe-bindings
-    describe-key
-    where-is
-    describe-key-briefly
-    describe-function
-    describe-variable
-    ergoemacs-describe-major-mode)
-  "Functions that describe keys.
-Setup C-c and C-x keys to be described properly.")
+(defun ergoemacs-vars-sync ()
+  "Sync variables. `ergoemacs-mode' `ergoemacs-shortcut-keys', `ergoemacs-unbind-keys'."
+  (if (assq 'ergoemacs-mode minor-mode-map-alist)
+      (when (or ergoemacs-mode ergoemacs-shortcut-keys ergoemacs-unbind-keys
+                ergoemacs-save-variables)
+        (unless ergoemacs-mode
+          (setq ergoemacs-mode t)
+          (ergoemacs-debug "WARNING: ergoemacs-mode was turned off; Turning on."))
+        (unless ergoemacs-shortcut-keys
+          (if ergoemacs-shortcut-override-mode
+              (ergoemacs-debug "WARNING: ergoemacs-shortcut-keys was turned off, but ergoemacs-shortcut-override-mode is on, keeping off.")
+            (setq ergoemacs-shortcut-keys t)
+            (ergoemacs-debug "WARNING: ergoemacs-shortcut-keys was turned off; Turning on.")))
+        (unless ergoemacs-unbind-keys
+          (setq ergoemacs-unbind-keys t)
+          (ergoemacs-debug "WARNING: ergoemacs-unbind-keys was turned off; Turning on.")))
+    (when ergoemacs-mode
+      (setq ergoemacs-mode nil)
+      (ergoemacs-debug "WARNING: ergoemacs-mode was turned on; Turning off."))
+    (unless ergoemacs-unbind-keys
+      (setq ergoemacs-unbind-keys nil)
+      (ergoemacs-debug "WARNING: ergoemacs-unbind-keys was turned on; Turning off."))
+    (unless ergoemacs-shortcut-keys
+      (setq ergoemacs-shortcut-keys nil)
+      (ergoemacs-debug "WARNING: ergoemacs-shortcut-keys was turned on; Turning off."))
+    (unless ergoemacs-shortcut-override-mode
+      (setq ergoemacs-shortcut-override-mode nil)
+      (ergoemacs-debug "WARNING: ergoemacs-shortcut-override-mode was turned on; Turning off."))))
 
-(defvar ergoemacs-show-true-bindings nil
-  "Show the true bindings.  Otherwise, show what the bindings translate to...")
+(defun ergoemacs-shuffle-keys ()
+  "Shuffle ergoemacs keymaps"
+  ;; Promotes keymaps in `ergoemacs-emulation-mode-map-alist'
+  (mapc
+   (lambda(what)
+     (let ((x (assq 'ergoemacs-modal ergoemacs-emulation-mode-map-alist)))
+       (and x (setq ergoemacs-emulation-mode-map-alist
+                    (cons x (delq x ergoemacs-emulation-mode-map-alist ))))))
+   '(ergoemacs-modal ergoemacs-shortcut-keys ergoemacs-shortcut-override-mode))
+  ;; Demote
+  (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
+    (setq minor-mode-map-alist (append (delete x minor-mode-map-alist) (list x)))))
 
 (defun ergoemacs-pre-command-hook ()
   "Ergoemacs pre-command-hook."
   (let (deactivate-mark)
     (condition-case err
-        (when ergoemacs-mode
-          (when (and (not ergoemacs-show-true-bindings)
-                     (memq this-command ergoemacs-describe-keybindings-functions))
-            (ergoemacs-shortcut-mode -1)
-            (ergoemacs-shortcut-override-mode 1)))
+        (progn
+          (ergoemacs-vars-sync)
+          (when ergoemacs-mode
+            ;; Raise shortcuts and modal modes.
+            (ergoemacs-shuffle-keys)
+            (let ((key-binding
+                   (read-kbd-macro
+                    (format
+                     "<override> %s" (key-description (this-single-command-keys))))))
+              (cond
+               ((condition-case err
+                    (interactive-form key-binding)
+                  (error nil))
+                (setq this-command key-binding))))
+            (unless ergoemacs-modal
+              (ergoemacs-install-shortcuts-up))
+            (when (and (not ergoemacs-show-true-bindings)
+                       (memq this-command ergoemacs-describe-keybindings-functions))
+              (setq ergoemacs-shortcut-keys nil)
+              (ergoemacs-shortcut-override-mode 1))))
       (error nil)))
   t)
 
@@ -2347,22 +1503,45 @@ Setup C-c and C-x keys to be described properly.")
   "Ergoemacs post-command-hook"
   (let (deactivate-mark)
     (condition-case err
-        (when ergoemacs-mode
-          (when (and (not ergoemacs-show-true-bindings)
-                     (memq this-command ergoemacs-describe-keybindings-functions))
-            (ergoemacs-shortcut-mode 1)
-            (ergoemacs-shortcut-override-mode -1))
-          (unless (and ergoemacs-shortcut-mode
-                       (eq 'ergoemacs-ctl-c
-                           (key-binding (read-kbd-macro "C-c"))))
-            (when ergoemacs-shortcut-mode
-              (ergoemacs-shortcut-mode -1))
-            (ergoemacs-shortcut-mode 1)))
-      (error nil)))
+        (progn
+          (when ergoemacs-mode
+            (ergoemacs-shuffle-keys)
+            ;; Reset mode-line
+            (when ergoemacs-check-mode-line-change
+              (unless (where-is-internal this-command  ergoemacs-check-mode-line-change)
+                ;; (message "Restored normal ergoemacs keys.")
+                (ergoemacs-mode-line)
+                (setq ergoemacs-check-mode-line-change nil)))
+            (when (and (not ergoemacs-show-true-bindings)
+                       (memq this-command ergoemacs-describe-keybindings-functions))
+              (setq ergoemacs-shortcut-keys t)
+              (ergoemacs-shortcut-override-mode -1))
+            (when (and ergoemacs-modal
+                       (memq major-mode ergoemacs-modal-emacs-state-modes))
+              (set (make-local-variable 'ergoemacs-modal)
+                   nil))
+            (when ergoemacs-modal
+              (mapc
+               (lambda(reg)
+                 (when (and ergoemacs-modal
+                            (string-match reg (buffer-name)))
+                   (set (make-local-variable 'ergoemacs-modal)
+                        nil)))
+               ergoemacs-modal-ignored-buffers))
+            (if ergoemacs-modal
+                (progn
+                  (set-cursor-color ergoemacs-modal-cursor)
+                  (ergoemacs-mode-line ;; Indicate Alt+ in mode-line
+                   (concat " " ergoemacs-modal)))
+              (set-cursor-color ergoemacs-default-cursor)
+              (ergoemacs-mode-line))
+            (unless ergoemacs-modal
+              (ergoemacs-install-shortcuts-up)
+              (ergoemacs-vars-sync)))
+          (when (not ergoemacs-mode)
+            (ergoemacs-remove-shortcuts)))
+      (error (message "Error %s" err))))
   t)
-
-(add-hook 'post-command-hook 'ergoemacs-post-command-hook)
-(add-hook 'pre-command-hook 'ergoemacs-pre-command-hook)
 
 (provide 'ergoemacs-mode)
 

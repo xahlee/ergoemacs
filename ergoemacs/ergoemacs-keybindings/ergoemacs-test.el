@@ -237,7 +237,7 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
                                                          "<menu> m") nil nil "<menu>") t)))
 
 (ert-deftest ergoemacs-test-global-key-set-apps-m-after ()
-  "Test setting <apps> m after loading."
+  "Test setting <apps> m after loading"
   (should (equal (ergoemacs-test-global-key-set-before 'after
                                                        (if (eq system-type 'windows-nt)
                                                            "<apps> m"
@@ -267,37 +267,6 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
   "Issue #65.  helm-M-x should not be helm-[Alt+X]."
   (let (ergoemacs-use-unicode-char)
     (should (string= (ergoemacs-pretty-key-rep "helm-M-x test") "helm-M-x test"))))
-
-(ert-deftest ergoemacs-test-remove-ergoemacs-keys-in-org-mode ()
-  "Should test Issue #67.
-Ergoemacs in `org-mode' should be removed when turning off `ergoemacs-mode'"
-  (let ((old (symbol-value 'ergoemacs-mode))
-        ret)
-    (unless old
-      (ergoemacs-mode 1))
-    (with-temp-buffer
-      (org-mode)
-      (ergoemacs-mode -1)
-      (setq ret (not ergoemacs-org-mode-hook-mode)))
-    (when old
-      (ergoemacs-mode 1))
-    (should ret)))
-
-(ert-deftest ergoemacs-test-add-back-ergoemacs-keys-in-org-mode ()
-    "Should be the second test for Issue #67.
-When ergoemacs-mode is enabled, and an org-mode buffer is already
-present, it should be re-enabled in that particular buffer."
-  (let ((old (symbol-value 'ergoemacs-mode)) ret)
-    (when old
-      (ergoemacs-mode -1))
-    (set-buffer (get-buffer-create "*ergoemacs-test-org-mode*"))
-    (org-mode)
-    (ergoemacs-mode 1)
-    (setq ret ergoemacs-org-mode-hook-mode)
-    (kill-buffer (get-buffer-create "*ergoemacs-test-org-mode*"))
-    (unless old
-      (ergoemacs-mode -1))
-    (should ret)))
 
 (ert-deftest ergoemacs-test-cut-line-or-region ()
   "Issue #68.
@@ -359,6 +328,50 @@ Hyper Key mapping no longer works."
     (should (file-exists-p w-file))
     (when (file-exists-p w-file)
       (delete-file w-file))))
+
+(ert-deftest ergoemacs-test-issue-98 ()
+  "Test full fast-movement-keys"
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        (macro (edmacro-parse-keys "C-f ars C-f <backspace> M-n" t))
+        (ergoemacs-repeat-movement-commands 'all)
+        (ret t))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme nil)
+    (setq ergoemacs-keyboard-layout "colemak")
+    (ergoemacs-mode 1)
+    (cua-mode 1)
+    (save-excursion
+      (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+      (insert ergoemacs-test-lorem-ipsum)
+      (goto-char (point-min))
+      (execute-kbd-macro (edmacro-parse-keys "M-e"))
+      (unless (looking-at "do eiusmod")
+        (setq ret nil))
+      (execute-kbd-macro (edmacro-parse-keys "e"))
+      (unless (looking-at "enim ad")
+        (setq ret nil))
+      (execute-kbd-macro (edmacro-parse-keys "u"))
+      (unless (looking-at "do eiusmod")
+        (setq ret nil))
+      (kill-buffer (current-buffer)))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should ret)))
+
+(ert-deftest ergoemacs-test-modal-preserve-mark ()
+  "Issue #101.
+Test next and prior translation."
+  (with-temp-buffer
+    (insert ergoemacs-test-lorem-ipsum)
+    (goto-char (point-min))
+    (ergoemacs-toggle-full-alt)
+    (set-mark (point))
+    (forward-char 3)
+    (ergoemacs-toggle-full-alt)
+    (should mark-active)))
 
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
