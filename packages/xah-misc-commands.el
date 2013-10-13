@@ -35,7 +35,9 @@
 
 (defun xah-cycle-camel-style-case ()
   "Cyclically replace {camelStyle, camel_style} current word or text selection.
-actually, currently just change from camel to underscore. no cycle"
+actually, currently just change from camel to underscore. no cycle
+Note: this command is currently unstable.
+"
   (interactive)
   ;; this function sets a property 「'state」. Possible values are 0 to length of char_array.
   (let (input_text
@@ -90,7 +92,7 @@ actually, currently just change from camel to underscore. no cycle"
 
 (defun xah-cycle-hyphen-underscore-space ()
   "Cyclically replace {underscore, space, hypen} chars on current word or text selection.
-When called repeatedly, this command cycles the {“ ”, “_”, “-”} characters."
+When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters."
   (interactive)
   ;; this function sets a property 「'state」. Possible values are 0 to length of charArray.
   (let (inputText bds charArray p1 p2 currentState nextState changeFrom
@@ -104,14 +106,16 @@ When called repeatedly, this command cycles the {“ ”, “_”, “-”} char
 
     (setq charArray [" " "_" "-"])
 
+    ;; when called first time, set statet to 0 
     (setq currentState
-          (if (get 'xah-cycle-hyphen-underscore-space 'state)
-              (get 'xah-cycle-hyphen-underscore-space 'state)
-            0))
-    (setq nextState (% (+ currentState 1) (length charArray)))
-
-    (setq changeFrom (elt charArray currentState ))
-    (setq changeTo (elt charArray nextState ))
+          (if (equal last-command this-command ) 
+            (get 'xah-cycle-hyphen-underscore-space 'state)
+            0 )
+          )
+    
+      (setq nextState (% (+ currentState 1) (length charArray)))
+      (setq changeFrom (elt charArray currentState ))
+      (setq changeTo (elt charArray nextState ))
 
     (setq inputText (replace-regexp-in-string changeFrom changeTo (buffer-substring-no-properties p1 p2)) )
     (delete-region p1 p2)

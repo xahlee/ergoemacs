@@ -635,6 +635,7 @@
   (puthash "fdash" "‒" xmsi-abrvs) ;FIGURE DASH. abbrev consistent with html entity mdash ndash
   (puthash "wdash" "〜" xmsi-abrvs) ; WAVE DASH
   (puthash "--" "—" xmsi-abrvs)     ;EM DASH
+  (puthash "??" "⁇" xmsi-abrvs)
   (puthash "?!" "⁈" xmsi-abrvs)
   (puthash "!?" "⁉" xmsi-abrvs)
   (puthash "!!" "‼" xmsi-abrvs)
@@ -848,14 +849,18 @@
   (puthash "0," "🄁" xmsi-abrvs)
   )
 
+(progn
   ;; music
-(puthash "notes4" "♩" xmsi-abrvs)
-(puthash "notes8" "♪" xmsi-abrvs)
-(puthash "notes8d" "♫" xmsi-abrvs)
-(puthash "notes16d" "♬" xmsi-abrvs)
+(puthash "music" "🎶" xmsi-abrvs)
+(puthash "n4" "♩" xmsi-abrvs)
+(puthash "n8" "♪" xmsi-abrvs)
+(puthash "n8d" "♫" xmsi-abrvs)
+(puthash "n16d" "♬" xmsi-abrvs)
 (puthash "flat" "♭" xmsi-abrvs)
 (puthash "natural" "♮" xmsi-abrvs)
 (puthash "sharp" "♯" xmsi-abrvs)
+(puthash "#" "♯" xmsi-abrvs)
+)
 
 (progn
   ;; letters
@@ -1152,9 +1157,11 @@
 (xmsi-add-cycle [":" "："])    ; FULLWIDTH COLON
 (xmsi-add-cycle [";" "；"])
 (xmsi-add-cycle ["!" "！" "¡" "‼" "❕"])
+(xmsi-add-cycle ["♩" "♪" "♫" "♬"])
+(xmsi-add-cycle ["🎶" "🎵" "🎼"])
 
 (xmsi-add-cycle ["&" "＆" "﹠"])
-(xmsi-add-cycle ["?" "？" "�" "؟" "¿" "⁇" "❓" "❔"])
+(xmsi-add-cycle ["?" "？" "�" "؟" "¿" "❓" "❔"])
 
 (xmsi-add-cycle [" " " " "　"])         ; space, NO-BREAK SPACE, IDEOGRAPHIC SPACE
 
