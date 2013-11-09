@@ -106,10 +106,11 @@
   (add-to-list 'ergoemacs-global-changed-cache (key-description key))
   (when ergoemacs-global-not-changed-cache
     (delete (key-description key) ergoemacs-global-not-changed-cache))
-  (when (lookup-key ergoemacs-unbind-keymap key)
-    (define-key ergoemacs-unbind-keymap key nil)
-    (unless (string-match "^C-[xc]" (key-description key))
-      (define-key ergoemacs-shortcut-keymap key nil)))
+  (let ((no-ergoemacs-advice t))
+    (when (lookup-key ergoemacs-unbind-keymap key)
+      (define-key ergoemacs-unbind-keymap key nil)
+      (unless (string-match "^C-[xc]" (key-description key))
+        (define-key ergoemacs-shortcut-keymap key nil))))
   (let ((x (assq 'ergoemacs-shortcut-keys ergoemacs-emulation-mode-map-alist)))
     (when x
       (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
@@ -126,7 +127,11 @@
                 (aset prefix-vector i (elt key-as-vector i))
                 (setq i (+ 1 i)))
               (define-key ergoemacs-keymap prefix-vector nil)))
-          (define-key ergoemacs-keymap key nil);; Take care of prefix
+          ;; Take care of prefix
+          (when (lookup-key ergoemacs-keymap key)
+            (define-key ergoemacs-keymap key nil))
+          (when (lookup-key ergoemacs-shortcut-keymap key)
+            (define-key ergoemacs-shortcut-keymap key nil))
           ;; commands.
           (define-key ergoemacs-keymap key command)))
     (if (and ergoemacs-fix-M-O
@@ -140,7 +145,9 @@
             (define-key ergoemacs-keymap key 'ergoemacs-M-o)
             (define-key ergoemacs-M-o-keymap [timeout] command)))
       (let ((no-ergoemacs-advice t))
-        (define-key ergoemacs-keymap key nil)))))
+        (condition-case err
+            (define-key ergoemacs-keymap key nil)
+          (error (ergoemacs-debug "Key %s not found in erogemacs-keymap (probably a shortcut).  Did not remove it from the map." (key-description key))))))))
 
 (add-to-list 'ergoemacs-advices 'ergoemacs-global-set-key-advice)
 
@@ -158,7 +165,7 @@
 
 (defadvice local-set-key (around ergoemacs-local-set-key-advice (key command))
   "This let you use `local-set-key' as usual when `ergoemacs-mode' is enabled."
-  (if (fboundp 'ergoemacs-mode)
+  (if (and (fboundp 'ergoemacs-mode) ergoemacs-mode)
       (ergoemacs-local-set-key key command)
     ad-do-it))
 
@@ -219,8 +226,20 @@
 
 (ad-activate 'cua-mode)
 
+(defadvice icicle-mode (around ergoemacs-icicle-play (arg))
+  "Allow `ergoemacs-mode' to play nicely with `icicle-mode'."
+  (let ((oee ergoemacs-mode))
+    (when oee ;; Remove key bindings
+      (ergoemacs-mode -1))
+    ad-do-it
+    (when oee ;; Add them back.  Now icy-mode should play nice.
+      (ergoemacs-mode 1))))
+
+(ad-activate 'icicle-mode)
+
+
 (provide 'ergoemacs-advices)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;`';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-advices.el ends here
 ;; Local Variables:
 ;; coding: utf-8-emacs

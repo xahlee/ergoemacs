@@ -72,12 +72,10 @@ enabled."
   :type '(repeat string)
   :group 'ergoemacs-modal)
 
-(defcustom ergoemacs-default-cursor ;; Adapted from evil-mode
-  (or (frame-parameter nil 'cursor-color) "black")
+(defvar ergoemacs-default-cursor nil
   "The default cursor color.
-A color string as passed to `set-cursor-color'."
-  :type 'string
-  :group 'ergoemacs-modal)
+This should be reset every time that the modal cursor changes color.  Otherwise this will be nil
+A color string as passed to `set-cursor-color'.")
 
 (defcustom ergoemacs-modal-cursor ;; Adapted from evil-mode
   "red"
@@ -267,7 +265,7 @@ modal state is currently enabled."
               ,(format "Run `%s' or whatever this mode remaps the command to be using `ergoemacs-shortcut-internal'." (symbol-name cmd))
               (interactive "P")
               (setq this-command ',cmd)
-              (setq prefix-arg current-prefix-arg)
+              ;; (setq prefix-arg current-prefix-arg)
               (ergoemacs-shortcut-internal ',cmd))))
          (setq new-cmd (intern (format "%s-ergoemacs" (symbol-name cmd))))
          (ergoemacs-debug "Created %s" new-cmd)
@@ -354,7 +352,21 @@ modal state is currently enabled."
   "Exit temporary overlay maps."
   ;; (setq ergoemacs-exit-temp-map-var t)
   (set (make-local-variable 'ergoemacs-modal) nil)
-  (setq ergoemacs-shortcut-keys t))
+  (ergoemacs-debug-heading "ergoemacs-minibuffer-setup")
+  (ergoemacs-debug "emulation-mode-map-alists: %s" emulation-mode-map-alists)
+  (ergoemacs-debug "ergoemacs-emulation-mode-map-alist: %s"
+                   (mapcar
+                    (lambda(x) (nth 0 x))
+                    ergoemacs-emulation-mode-map-alist))
+  (ergoemacs-debug "minor-mode-map-alist: %s"
+                   (mapcar
+                    (lambda(x) (nth 0 x))
+                    minor-mode-map-alist))
+  ;; (setq ergoemacs-shortcut-keys t)
+  (ergoemacs-debug "ergoemacs-shortcut-keys: %s" ergoemacs-shortcut-keys)
+  (ergoemacs-debug "ergoemacs-shortcut-override-mode: %s" ergoemacs-shortcut-override-mode)
+  (ergoemacs-debug "ergoemacs-mode: %s" ergoemacs-mode)
+  (ergoemacs-debug "ergoemacs-unbind-keys: %s" ergoemacs-unbind-keys))
 
 
 (defvar ergoemacs-modal nil
@@ -382,7 +394,10 @@ modal state is currently enabled."
       (setq ergoemacs-modal mode-text)
       (ergoemacs-mode-line ;; Indicate Alt+ in mode-line
        (concat " " mode-text))
-      (set-cursor-color ergoemacs-modal-cursor)
+      (unless ergoemacs-default-cursor
+        (setq ergoemacs-default-cursor
+              (or (frame-parameter nil 'cursor-color) "black"))
+        (set-cursor-color ergoemacs-modal-cursor))
       (let (message-log-max)
         (message "%s command move installed. Exit by %s"
                alt

@@ -28,6 +28,9 @@
 
 ;;; Code:
 
+(defvar ergoemacs-maps-only-install-shortcuts '(isearch-mode-map)
+  "List of keymaps where the full ergoemacs keymap is not installed.")
+
 ;; Ergoemacs keys
 
 (defgroup ergoemacs-standard-layout nil
@@ -40,8 +43,8 @@
     ("M-i" previous-line "↑ line")
     ("M-k" next-line "↓ line")
 
-    ("M-C-j" left-word  "← char")
-    ("M-C-l" right-word "→ char")
+    ("M-C-j" left-word  "← word")
+    ("M-C-l" right-word "→ word")
     ("M-C-i" backward-paragraph "↑ ¶")
     ("M-C-k" forward-paragraph "↓ ¶")
     
@@ -54,19 +57,16 @@
     ("M-O" ergoemacs-forward-block  "→ ¶")
     
     ;; Move to beginning/ending of line
-    ("M-h" ergoemacs-beginning-of-line-or-block "← line/¶")
-    ("M-H" ergoemacs-end-of-line-or-block "→ line/¶")
-
-    ("<home>" ergoemacs-beginning-of-line-or-block "← line/¶")
-    ("<end>" ergoemacs-end-of-line-or-block "→ line/¶")
+    ("M-h" ergoemacs-beginning-of-line-or-what "← line/*")
+    ("M-H" ergoemacs-end-of-line-or-what "→ line/*")
     
     ;; Move by screen (page up/down)
     ("M-I" scroll-down "↑ page")
     ("M-K" scroll-up "↓ page")
     
     ;; Move to beginning/ending of file
-    ("M-n" beginning-of-buffer "↑ Top")
-    ("M-N" end-of-buffer "↓ Bottom")
+    ("M-n" ergoemacs-beginning-or-end-of-buffer "↑ Top*")
+    ("M-N" ergoemacs-end-or-beginning-of-buffer "↓ Bottom*")
     
     ;; Move by bracket
     ("M-J" ergoemacs-backward-open-bracket "← bracket")
@@ -91,8 +91,8 @@
     ;; Copy Cut Paste, Paste previous
     ("M-x" ergoemacs-cut-line-or-region "✂ region")
     ("M-c" ergoemacs-copy-line-or-region "copy")
-    ("M-v" yank "paste")
-    ("M-V" yank-pop "paste ↑")
+    ("M-v" ergoemacs-paste "paste")
+    ("M-V" ergoemacs-paste-cycle "paste ↑")
     ("M-C" ergoemacs-copy-all "copy all")
     ("M-X" ergoemacs-cut-all "✂ all")
     
@@ -114,6 +114,7 @@
     
     ;; keyword completion, because Alt+Tab is used by OS
     ("M-t" ergoemacs-call-keyword-completion "↯ compl")
+    ("M-T" flyspell-auto-correct-word "flyspell")
     
     ;; Hard-wrap/un-hard-wrap paragraph
     ("M-q" ergoemacs-compact-uncompact-block "fill/unfill ¶")
@@ -126,8 +127,8 @@
     ;; Mark point.
     ("M-SPC" set-mark-command "Set Mark")
     
-    ;; ("M-a" (helm-M-x smex execute-extended-command) "M-x")
     ("M-a" execute-extended-command "M-x")
+    ;; ("M-a" execute-extended-command "M-x")
     ("M-A" shell-command "shell cmd")
     
     ;; WINDOW SPLITING
@@ -141,7 +142,7 @@
     ("M-`" ergoemacs-switch-to-next-frame "next frame")
     
     ("M-5" query-replace "rep")
-    ("M-%" query-replace-regexp "rep reg")
+    ("M-%" (vr/query-replace query-replace-regexp) "rep reg")
     
     ("M-3" delete-other-windows "x other pane")
     ("M-2" delete-window "x pane")
@@ -160,50 +161,69 @@
     ("<apps> 3" delete-other-windows "x other pane")
     ("<apps> 4" split-window-vertically "split —")
     ("<apps> 5" query-replace "rep")
+    
+    ("<apps> <f2>" ergoemacs-cut-all "✂ all")
+    ("<apps> <f3>" ergoemacs-copy-all "copy all")
+    
     ("<apps> <return>" execute-extended-command "M-x")
+    ;;("<apps> <backspace>" )  Delete/cut text-block.
+    
+    ("<apps> TAB" indent-region "indent-region")  ;; Already in CUA
+    
     ("<apps> SPC" set-mark-command "Set Mark")
+
     ("<apps> a" mark-whole-buffer "Sel All")
+
     ("<apps> d" ("C-x" ctl-to-alt) "Ctl-x")
-    ("<apps> f" ("C-c" ctl-to-alt) "Ctl-c")
-    ;;("<apps> <apps> f" ("C-x" unchorded) "Ctl-x")
-    ("<apps> h" ("C-h" nil) "Ctl-h")
+    ("<apps> f" ("C-c" unchorded) "Ctl-c")
+    ("<apps> h" help-map "Help")
+    ("<apps> h '" ergoemacs-display-current-svg)
+    ("<apps> h 1" describe-function)
+    ("<apps> h 2" describe-variable)
+    ("<apps> h 3" describe-key)
+    ("<apps> h 4" describe-char)
+    ("<apps> h 5" man)
+    ("<apps> h 7" ergoemacs-lookup-google)
+    ("<apps> h 8" ergoemacs-lookup-wikipedia)
+    ("<apps> h 9" ergoemacs-lookup-word-definition)
+    ("<apps> h `" elisp-index-search)
+    ("<apps> h m" ergoemacs-describe-major-mode)
+    ("<apps> h o" ergoemacs-where-is-old-binding)
+    ("<apps> h z" ergoemacs-clean)
+    ("<apps> h Z" ergoemacs-clean-nw)
+
     ("<apps> i"  ergoemacs-toggle-full-alt-shift "Alt+Shift")
-    ("<apps> j" ("C-c" unchorded) "Ctl-c")
-    ("<apps> <apps> j" ("C-c" ctl-to-alt) "Ctl-c")
     ("<apps> k" ergoemacs-toggle-full-alt "Alt+mode")
     ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
-    ;; ("<apps> r" ("C-x" unchorded) "Ctl-x*")
     ("<apps> s" save-buffer "Save")
     ("<apps> o" find-file "Open")
-    ;; ("<apps> u" ("C-c" unchorded) "Ctl-c*")
+
     ("<apps> g" universal-argument "C-u")
     ("<apps> w" ergoemacs-close-current-buffer "Close")
-    ;;("<apps> y" ergoemacs-ctl-h-unchorded "Ctl-h*")
-    ;; ("<apps> y y" isearch-forward "→ isearch")
-    ;; ("<apps> y h" isearch-backward "← isearch")
-    ;; ("<apps> y u" isearch-forward-regexp "→ reg isearch")
-    ;; ("<apps> y j" isearch-backward-regexp "← reg isearch")
     ("<apps> x" ergoemacs-cut-line-or-region "✂ region")
     ("<apps> c" ergoemacs-copy-line-or-region "copy")
-    ("<apps> v" yank "paste")
+    ("<apps> v" ergoemacs-paste "paste")
     ("<apps> b" redo "↷ redo")
-    ("<apps> t" (helm-mini ido-switch-buffer switch-to-buffer) "switch buf")
+    ;; ("<apps> u" ergoemacs-smart-punctuation "()")
+    ("<apps> t" switch-to-buffer "switch buf")
     ("<apps> z" undo "↶ undo")
+
     ("<apps> n a" org-agenda "agenda")
+    ("<apps> n A" org-capture "capture")
     ("<apps> n c" calc "calc" t)
-    ("<apps> n m" magit-status "magit" t)
-    ("<apps> n g" grep "grep" t)
     ("<apps> n d" dired-jump "dired" t)
+    ("<apps> n e" eshell "eshell" t)
     ("<apps> n f" ergoemacs-open-in-desktop "OS Dir" t)
+    ("<apps> n g" grep "grep" t)
+    ("<apps> n m" magit-status "magit" t)
     ("<apps> n o" ergoemacs-open-in-external-app "OS Open" t)
+    ("<apps> n r" R "R" t)
     ("<apps> n s" shell "shell" t)
-    ("<apps> TAB" indent-region "indent-region")  ;; Already in CUA
+    ("<apps> n t" org-capure "capture")
+    ("<apps> n T" org-agenda "agenda")
+    
     ;; but some modes don't honor it...
-    
-    ;; ("<apps> V" yank-pop "paste ↑")
-    ;; ("<apps> C" ergoemacs-copy-all "copy all")
-    ;; ("<apps> X" ergoemacs-cut-all "✂ all")
-    
+    ("<apps> r" goto-map "Goto")
     )
   
   "Ergoemacs that vary from keyboard types.  By default these keybindings are based on QWERTY."
@@ -225,87 +245,157 @@
   :set 'ergoemacs-set-default
   :group 'ergoemacs-standard-layout)
 
+
+;; C-i is open in OS direbctory for Mac OSX; ....
+;; C-q is quit in Mac OSX; Quoted insert in emacs
+;; C-T show/hide font panel.
+;; C-m Minimize frame
+;; C-` move to different window (frame)
+;; --------------------------------------------------
+;; STANDARD SHORTCUTS
+;; See http://en.wikipedia.org/wiki/Table_of_keyboard_shortcuts
+
+
+;; ("<M-f4>" yank-pop "paste ↑")
+;; From http://superuser.com/questions/521223/shift-click-to-extend-marked-region
+;; Now add copy and paste support
+;; Shortcuts
+;; Timeout commands to support both
+;; arrow keys to traverse brackets
+
+
+
 (defcustom ergoemacs-fixed-layout
   `(
+    ;; General Shortcuts
+    ("<M-backspace>" (undo-tree-undo undo) "↶ undo")
+    ("<f5>" (undo-tree-undo undo) "↶ undo")
+    ("C-z" (undo-tree-undo undo) "↶ undo")
+
+    ("<C-f5>" (undo-tree-redo redo) "↷ redo")
+    ("<M-f5>" (undo-tree-redo redo) "↷ redo")
+    ("C-S-z" (undo-tree-redo redo) "↷ redo")
+
+    ;; Modernize isearch and add back search-map to ergoemacs-mode
+    ("<f8>" search-map)
+    ("<f8> <f8>" highlight-symbol-at-point)
+    ("<C-f8>" highlight-symbol-prev)
+    ("<C-f9>" highlight-symbol-next)
+    ("<f8> <f9>" highlight-symbol-query-replace)
+
+    ("<S-delete>" ergoemacs-cut-line-or-region "✂ region")
+    ("<f2>" ergoemacs-cut-line-or-region "✂ region")
+
+    ("C-c <timeout>" ergoemacs-copy-line-or-region)
+    ("C-c" ergoemacs-ctl-c "Copy")
+    ("<C-insert>" ergoemacs-copy-line-or-region "Copy")    
+    
+    ("<C-f2>" ergoemacs-cut-all "✂ all")
+    ("<C-f3>" ergoemacs-copy-all "Copy all")
+
+    ("<C-f4>" ergoemacs-paste-cycle "paste ↑")
+    ("C-S-v" ergoemacs-paste-cycle "paste ↑")
+    
+    ("<S-insert>" ergoemacs-paste "paste")
+    ("<f4>" ergoemacs-paste "paste")
+    ("C-v" ergoemacs-paste "paste")
+
+    ;; Navigation
+    ("C-S-n" make-frame-command "New Frame")
+
+    ;; Text editing
+    ("<delete>" delete-char "⌦ char") ; the Del key for forward
+                                      ; delete. Needed if C-d is set
+                                      ; to nil.
+
+    ("<M-delete>" kill-word "⌦ word")
+    ("<C-delete>" kill-word "⌦ word")
+
+    ("<home>" ergoemacs-beginning-of-line-or-what "← line/¶")
+    ("<end>" ergoemacs-end-of-line-or-what "→ line/¶")
+    
     ("<C-home>" beginning-of-buffer "↑ Top")
     ("<C-end>" end-of-buffer "↓ Bottom")
+
+    ("<C-left>" backward-word "← word")
+    ("<C-right>" forward-word "→ word")
+
+    ("<C-up>" ergoemacs-backward-block "← ¶")
+    ("<M-up>" ergoemacs-backward-block "→ ¶")
+    ("<C-down>" ergoemacs-forward-block "→ ¶")
+    ("<M-down>" ergoemacs-forward-block "→ ¶")
+
+    ;; C-H is search and replace.
+
+    ;; C-1 to C-9 should be switch tab...  Same as in Google chrome.
+    ;; C-T should be new tab.
+
+    ;; Refresh should be <f5>; erogemacs uses <f5>.
+    ;; C-r also should be refresh
+    ("C-r" revert-buffer "Revert")
+
+    ;; Text Formatting
+    ;; Upper/Lower case toggle.
+    ("<S-f3>" ergoemacs-toggle-letter-case "tog. case")
+
+    ;; Ergoemacs fixed keys...
+    
+    ("<M-f2>" ergoemacs-cut-all "✂ all")
+    ("<M-f3>" ergoemacs-copy-all "Copy all")
     ("<M-f4>" delete-frame "× Frame") ;; Alt+f4 should work.
-    ;; C-i is open in OS direbctory for Mac OSX; ....
-    ;; C-q is quit in Mac OSX; Quoted insert in emacs
-    ("C-l" goto-line "Goto")
-    ;; C-T show/hide font panel.
-    ;; C-m Minimize frame
-    ;; C-` move to different window (frame)
-    ("C-`" other-frame "↔ Frame")
-    ;; From http://superuser.com/questions/521223/shift-click-to-extend-marked-region
+    
+    ("<M-left>" ergoemacs-backward-open-bracket) ; Alt+←
+    ("<M-right>" ergoemacs-forward-close-bracket) ; Alt+→
+    ("<M-up>" ergoemacs-backward-block) ; Alt+↑
     ("<S-down-mouse-1>" mouse-save-then-kill) ;; Allow shift selection
+    
     ("<S-mouse-1>" ignore)
     
-    ("C-+" text-scale-increase "+Font Size")
-    ("C-=" text-scale-increase "+Font Size")
-    ("C--" text-scale-decrease "-Font Size")
-    ("C-0" ergoemacs-text-scale-normal-size)
-    ;; --------------------------------------------------
-    ;; STANDARD SHORTCUTS
-    ;; See http://en.wikipedia.org/wiki/Table_of_keyboard_shortcuts
-    ("C-n" ergoemacs-new-empty-buffer "New Buffer")
-    ("C-S-n" make-frame-command "New Frame")
-    
-    ("C-o" find-file "Edit File")
-    ("C-S-o" ergoemacs-open-in-external-app "OS Open")
-    ("C-S-t" ergoemacs-open-last-closed "Open Last")
-    ("C-w" ergoemacs-close-current-buffer "Close Buf.")
-    ("C-S-w" delete-frame "× Frame")
-    ("C-?" info "Info")
-    ("C-/" info "Info")
-    
-    ("C-s" save-buffer "Save")
-    ("C-S-s" write-file "Save As")
-    ("C-p" ergoemacs-print-buffer-confirm "Print")
-    ("C-a" mark-whole-buffer "Select all")
-    ("C-S-z" redo "↷ redo")
-    ("C-y" redo "↷ redo")
-    ("C-z" undo "↶ undo")
-    
-    ("<M-backspace>" undo "↶ undo")
-    ("<S-delete>" ergoemacs-cut-line-or-region "✂ region")
-    ("<C-insert>" ergoemacs-copy-line-or-region "copy")
-    ("<S-insert>" yank "paste")
-    
-    ("C-f" isearch-forward "Search")
-    ("C-S-f" occur "Occur")
-    
-    ("<delete>" delete-char) ; the Del key for forward delete. Needed if C-d is set to nil.
-    
-    ("C-<prior>" ergoemacs-previous-user-buffer)
-    ("C-<next>" ergoemacs-next-user-buffer)
-    
-    ("C-S-<prior>" ergoemacs-previous-emacs-buffer)
-    ("C-S-<next>" ergoemacs-next-emacs-buffer)
-    
-    ("M-S-<prior>" backward-page)
-    ("M-S-<next>" forward-page)
-    
-    ("C-x C-b" ibuffer)
-    ("C-h m" ergoemacs-describe-major-mode)
-    ("<f1> m" ergoemacs-describe-major-mode)
-    ("C-h o" ergoemacs-where-is-old-binding)
-    ("<f1> o" ergoemacs-where-is-old-binding)
-    ("C-h '" ergoemacs-display-current-svg)
+    ("<f11>" previous-line "Previous")
+    ("<f12>" next-line "Next")
     ("<f1> '" ergoemacs-display-current-svg)
-    
-    ("C-<pause>" kill-compilation)      ; stop compilation/find/grep
-    
     ("<f1> 1" describe-function)
     ("<f1> 2" describe-variable)
     ("<f1> 3" describe-key)
     ("<f1> 4" describe-char)
     ("<f1> 5" man)
-    ("<f1> 7" lookup-google)
-    ("<f1> 8" lookup-wikipedia)
-    ("<f1> 9" lookup-word-definition)
+    ("<f1> 7" ergoemacs-lookup-google)
+    ("<f1> 8" ergoemacs-lookup-wikipedia)
+    ("<f1> 9" ergoemacs-lookup-word-definition)
     ("<f1> `" elisp-index-search)
+    ("<f1> m" ergoemacs-describe-major-mode)
+    ("<f1> o" ergoemacs-where-is-old-binding)
     
+    ("<f3>" ergoemacs-copy-line-or-region "copy")
+    
+    
+    ("<f6>" ergoemacs-toggle-full-alt "Alt mode")
+    ("C-+" text-scale-increase "+Font Size")
+    ("C--" text-scale-decrease "-Font Size")
+    ("C-." keyboard-quit "Quit")
+    ("C-/" info "Info")
+    ("C-0" ergoemacs-text-scale-normal-size)
+    ("C-<next>" ergoemacs-next-user-buffer)
+    ("C-<pause>" kill-compilation)      ; stop compilation/find/grep
+    ("C-<prior>" ergoemacs-previous-user-buffer)
+    ("C-=" text-scale-increase "+Font Size")
+    ("C-?" info "Info")
+    ("C-S-<next>" ergoemacs-next-emacs-buffer)
+    ("C-S-<prior>" ergoemacs-previous-emacs-buffer)
+    ("C-S-c" ("C-c" normal) "Copy") 
+    ("C-S-f" occur "Occur")
+    
+    ("C-S-o" ergoemacs-open-in-external-app "OS Open")
+    ("C-S-s" write-file "Save As")
+    ("C-S-t" ergoemacs-open-last-closed "Open Last")
+    
+    ("C-S-w" delete-frame "× Frame")
+    ("C-S-x" ("C-x" normal)  "Cut") 
+    
+    ("C-`" other-frame "↔ Frame")
+    ("C-a" mark-whole-buffer "Select all")
+    ("C-f" isearch-forward "Search")
+    ("C-h '" ergoemacs-display-current-svg)
     ("C-h 1" describe-function)
     ("C-h 2" describe-variable)
     ("C-h 3" describe-key)
@@ -315,50 +405,23 @@
     ("C-h 8" lookup-wikipedia)
     ("C-h 9" lookup-word-definition)
     ("C-h `" elisp-index-search)
-    
-    ("<f2>" ergoemacs-cut-line-or-region "✂ region")
-    ("<C-f2>" ergoemacs-cut-all "✂ all")
-    ("<M-f2>" ergoemacs-cut-all "✂ all")
-    
-    ("<f3>" ergoemacs-copy-line-or-region "copy")
-    ("<C-f3>" ergoemacs-copy-all "Copy all")
-    ("<M-f3>" ergoemacs-copy-all "Copy all")
-    
-    ("<f4>" yank "paste")
-    ("<C-f4>" yank-pop "paste ↑")
-    ;; ("<M-f4>" yank-pop "paste ↑")
-
-    ("<f11>" previous-line "Previous")
-    ("<f12>" next-line "Next")
-    
-    ("<f5>" undo "Undo")
-    ("<C-f5>" redo "Redo")
-    ("<M-f5>" redo "Redo")
-
-    ("<f6>" ergoemacs-toggle-full-alt "Alt mode")
-
-    ("C-." keyboard-quit "Quit")
-    
-    ("<M-delete>" kill-word "⌦ word")
-    
-    ;; arrow keys to traverse brackets
-    ("<M-left>" ergoemacs-backward-open-bracket) ; Alt+←
-    ("<M-right>" ergoemacs-forward-close-bracket) ; Alt+→
-    
-    ("<M-up>" ergoemacs-backward-block) ; Alt+↑
-    ("<M-down>" ergoemacs-forward-block) ; Alt+↓
-
-    ;; Now add copy and paste support
-    ;; Timeout commands to support both
-    ("C-c <timeout>" ergoemacs-copy-line-or-region)
+    ("C-h m" ergoemacs-describe-major-mode)
+    ("C-h o" ergoemacs-where-is-old-binding)
+    ("C-l" goto-line "Goto")
+    ("C-n" ergoemacs-new-empty-buffer "New Buffer")
+    ("C-o" find-file "Edit File")
+    ("C-p" ergoemacs-print-buffer-confirm "Print")
+    ("C-s" save-buffer "Save")
+     
+    ("C-w" ergoemacs-close-current-buffer "Close Buf.")
     ("C-x <timeout>" ergoemacs-cut-line-or-region)
-    ;; Shortcuts
-    ("C-c" ergoemacs-ctl-c "Copy") 
+    ("C-x C-b" ibuffer)
     ("C-x" ergoemacs-ctl-x "Cut")
-    ("C-S-c" ("C-c" normal) "Copy") 
-    ("C-S-x" ("C-x" normal)  "Cut") 
-    ("C-v" yank "Paste") 
-    ("C-S-v" yank-pop "paste ↑"))
+    ("C-y" redo "↷ redo")
+    
+    ("M-S-<next>" forward-page)
+    ("M-S-<prior>" backward-page)
+    )
   "Keybinding that are constant regardless of they keyboard used."
   :type '(repeat
           (list :tag "Fixed Key"
@@ -380,16 +443,34 @@
 
 (defcustom ergoemacs-minor-mode-layout
   `(;; Key/variable command x-hook
+    
     (org-mode-hook
      (;; (move-beginning-of-line org-beginning-of-line nil remap)
       ;; (move-end-of-line org-end-of-line nil remap)
       (cua-set-rectangle-mark ergoemacs-org-mode-ctrl-return nil)
       (cua-paste ergoemacs-org-mode-paste nil)
+      ("C-b" ergoemacs-org-bold)
+      ("C-i" ergoemacs-org-italic)
+      ;; ("C-u" ergoemacs-org-underline)
       ("<C-return>" ergoemacs-org-insert-heading-respect-content nil)
       ("<M-down>" ergoemacs-org-metadown nil)
       ("<M-up>" ergoemacs-org-metaup nil)
       ("<M-left>" ergoemacs-org-metaleft nil)
       ("<M-right>" ergoemacs-org-metaright nil)))
+
+    ;; Browse Kill ring support
+    (browse-kill-ring-hook
+     (("<f11>" browse-kill-ring-previous)
+      ("<f12>" browse-kill-ring-forward)
+      (keboard-quit  browse-kill-ring-quit)
+      ("ESC" browse-kill-ring-quit)
+      ("<escape>" browse-kill-ring-quit)
+      (isearch-forward browse-kill-ring-search-forward)
+      (isearch-backward browse-kill-ring-search-backward)
+      (previous-line browse-kill-ring-previous)
+      (next-line browse-kill-ring-forward)
+      (delete-char browse-kill-ring-delete)
+      (undo browse-kill-ring-undo-other-window)))
 
     ;; Isearch Hook
     (isearch-mode-hook
@@ -399,6 +480,8 @@
       ("S-<f12>" isearch-ring-retreat isearch-mode-map)
       ("C-S-f" isearch-occur isearch-mode-map)
       ("C-M-f" isearch-occur isearch-mode-map)
+      (ergoemacs-paste isearch-yank-kill isearch-mode-map)
+      (keyboard-quit isearch-abort isearch-mode-map)
       (ergoemacs-toggle-letter-case isearch-toggle-regexp isearch-mode-map)
       (ergoemacs-toggle-camel-case isearch-toggle-case-fold isearch-mode-map)))
     
@@ -409,7 +492,9 @@
       ("<M-f11>" previous-matching-history-element)
       ("S-<f11>" previous-matching-history-element)
       ("<M-f12>" next-matching-history-element)
-      ("S-<f12>" next-matching-history-element)))    
+      ("S-<f12>" next-matching-history-element)
+      (keyboard-quit minibuffer-keyboard-quit)))
+    
     
     ;; Comint
     (comint-mode-hook
@@ -463,12 +548,31 @@
       ("<M-f11>" previous-matching-history-element)
       ("S-<f12>" next-matching-history-element)
       ("<M-f12>" next-matching-history-element)))
+
+    (ido-mode
+     ((execute-extended-command smex nil remap)))
     
     ;; Info Mode hooks
     (Info-mode-hook
      (("<backspace>" Info-history-back)
       ("<S-backspace>" Info-history-forward)))
+    
+    (SAS-mode-hook
+     (("<apps> j j" ess-sas-goto-log nil t)
+      ("<apps> j u" ess-sas-goto-lst nil t)
+      ("<apps> j h" ess-sas-submit nil t)
+      ("<apps> j k" ess-sas-data-view-fsview nil t)
+      ("<apps> j ," ess-sas-data-view-insight nil t)
+      ("<apps> j m" ess-sas-graph-view nil t)
+      ("<apps> j n" ess-sas-goto-shell nil t)))
+    
     ;; Helm mode hooks
+    (helm-mode
+     ((execute-extended-command helm-M-x nil remap)
+      (switch-to-buffer helm-mini nil remap)
+      (find-file helm-find-files nil remap)
+      (eshell-pcomplete helm-esh-pcomplete nil remap)
+      (grep helm-do-grep nil remap)))
     
     (helm-before-initialize-hook
      (("C-w" helm-keyboard-quit helm-map)
@@ -1201,7 +1305,7 @@ Some exceptions we don't want to unset.
   (ergoemacs-key "M-5" 'delete-other-windows "x other")
   (ergoemacs-key "M-+" 'balance-windows "balance")
 
-  (ergoemacs-key "M-a" '(smex execute-extended-command) "M-x")
+  (ergoemacs-key "M-a" 'execute-extended-command "M-x")
   (ergoemacs-key "M-q" 'shell-command "shell cmd")
   (ergoemacs-key "M-e" 'cabbage-testing-execute-test)
   
@@ -1333,7 +1437,39 @@ Some exceptions we don't want to unset.
 
 ;; git bundle bindings
   (ergoemacs-fixed-key "C-x g" 'magit-status)
-)
+  )
+
+(ergoemacs-deftheme reduction
+  "Chord-Reduction"
+  nil
+  (ergoemacs-key "M-*" 'mc/mark-next-like-this "Mark Next")
+  (ergoemacs-key "M-&" 'mc/edit-lines "Edit Lines")
+  (ergoemacs-key "M-," 'ace-jump-mode "Jump")
+  (ergoemacs-key "M-g" 'kill-line "⌦ line")
+  (ergoemacs-key "M-b" 'ergoemacs-kill-line-backward "⌫ line")
+  ;; (ergoemacs-key "M-," 'ergoemacs-smart-punctuation "Toggle ()")
+  (ergoemacs-key "M-." 'ergoemacs-end-of-line-or-what "→ line/*")
+  (ergoemacs-key "M-m" 'ergoemacs-beginning-of-line-or-what "← line/*" )
+  (ergoemacs-key "M-t" 'isearch-backward "← isearch")
+  (ergoemacs-key "M-T" 'isearch-backward-regexp "← reg isearch")
+  (ergoemacs-key "M-Y" 'isearch-backward-regexp "→ reg isearch")
+  
+  (ergoemacs-key "M-H" nil)
+  (ergoemacs-key "M-I" nil)
+  (ergoemacs-key "M-K" nil)
+  (ergoemacs-key "M-U" nil)
+  (ergoemacs-key "M-O" nil)
+  (ergoemacs-key "M-N" nil)
+  (ergoemacs-key "M-G" nil)
+  (ergoemacs-key "M-S" nil)
+  (ergoemacs-key "M-A" nil)
+  (ergoemacs-key "M-J" nil)
+  (ergoemacs-key "M-L" nil)
+  (ergoemacs-key "M-a" 'ergoemacs-move-cursor-previous-pane "prev pane")
+  ;; (ergoemacs-key "M-t" 'execute-extended-command "M-x")
+  ;; (ergoemacs-key "M-a" 'ergo-call-keyward-completion "compl")
+  (ergoemacs-key "M-9" 'er/contract-region "→region←")
+  (ergoemacs-key "M-h" 'execute-extended-command "M-x"))
 
 (make-obsolete-variable 'ergoemacs-variant 'ergoemacs-theme
                         "ergoemacs-mode 5.8.0.1")

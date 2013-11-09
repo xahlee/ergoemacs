@@ -637,8 +637,9 @@
 (defun ergoemacs-undefined (&optional arg)
   "Ergoemacs Undefined key, tells where to perform the old action."
   (interactive "P")
-  (let* ((key (key-description (this-command-keys)))
+  (let* ((key (key-description (this-single-command-keys)))
          (fn (assoc key ergoemacs-emacs-default-bindings))
+         tmp
          (local-fn nil)
          (last (substring key -1))
          (ergoemacs-where-is-skip t)
@@ -650,35 +651,76 @@
     ;; map and doesn't actually change it.
     (cond
      ((progn
+        ;; See if this is present in the `ergoemacs-shortcut-keymap'
+        (setq local-fn (lookup-key ergoemacs-shortcut-keymap (read-kbd-macro key)))
+        (unless (functionp local-fn)
+          ;; Lookup in ergoemacs-keymap
+          (setq local-fn (lookup-key ergoemacs-keymap (read-kbd-macro key))))
+        (functionp local-fn))
+      (ergoemacs-debug "WARNING: The command %s is undefined when if shouldn't be..." local-fn)
+      (ergoemacs-vars-sync) ;; Try to fix issue.
+      (setq tmp (key-binding (read-kbd-macro key)))
+      (when (and tmp (not (equal tmp 'ergoemacs-undefined)))
+        (setq local-fn tmp))
+      (when (featurep 'keyfreq)
+        (when keyfreq-mode
+          (let ((command 'ergoemacs-undefined) count)
+            (setq count (gethash (cons major-mode command) keyfreq-table))
+            (cond
+             ((not count))
+             ((= count 1)
+              (remhash (cons major-mode command) keyfreq-table))
+             (count
+              (puthash (cons major-mode command) (- count 1)
+                       keyfreq-table)))
+            ;; Add local-fn to counter.
+            (setq command local-fn)
+            (setq count (gethash (cons major-mode command) keyfreq-table))
+            (puthash (cons major-mode command) (if count (+ count 1) 1)
+                     keyfreq-table))))
+      (setq this-command local-fn)
+      (condition-case err
+          (call-interactively local-fn)
+        (error (beep) (message "%s" err))))
+     ((progn
         ;; Local map present.  Use it, if there is a key
         ;; defined there.
         (setq local-fn (get-char-property (point) 'local-map))
-        (if local-fn
+        (if (and local-fn
+                 (condition-case err
+                     (keymapp local-fn)
+                   (error nil)))
             (setq local-fn (lookup-key local-fn
                                        (read-kbd-macro key)))
-          (setq local-fn (lookup-key (current-local-map)
-                                     (read-kbd-macro key))))
+          (if (current-local-map)
+              (setq local-fn (lookup-key (current-local-map)
+                                         (read-kbd-macro key)))
+            (setq local-fn nil)))
         (functionp local-fn))
-      (setq this-command last-command) ; Don't record this
-                                        ; command.
-      (setq prefix-arg current-prefix-arg)
+      (setq this-command local-fn) ; Don't record this command.
+      (when (featurep 'keyfreq)
+        (when keyfreq-mode
+          (let ((command 'ergoemacs-undefined) count)
+            (setq count (gethash (cons major-mode command) keyfreq-table))
+            (cond
+             ((not count))
+             ((= count 1)
+              (remhash (cons major-mode command) keyfreq-table))
+             (count
+              (puthash (cons major-mode command) (- count 1)
+                       keyfreq-table)))
+            ;; Add local-fn to counter.
+            (setq command local-fn)
+            (setq count (gethash (cons major-mode command) keyfreq-table))
+            (puthash (cons major-mode command) (if count (+ count 1) 1)
+                     keyfreq-table))))
       (condition-case err
           (call-interactively local-fn)
         (error (beep) (message "%s" err))))
      (t
       ;; Not locally defined, complain.
       (beep)
-      (let (message-log-max)
-        (message "%s keybinding is disabled! Use %s"
-                 (ergoemacs-pretty-key key)
-                 (ergoemacs-pretty-key-rep
-                  (with-temp-buffer
-                    (setq curr-fn (nth 0 (nth 1 fn)))
-                    (when (and fn (not (eq 'prefix curr-fn)))
-                      (setq curr-fn (ergoemacs-translate-current-function curr-fn))
-                      (where-is curr-fn t))
-                    (ergoemacs-format-where-is-buffer)
-                    (buffer-string)))))))))
+      (ergoemacs-where-is-old-binding (this-single-command-keys))))))
 
 (defun ergoemacs-unbind-setup-keymap ()
   "Setup `ergoemacs-unbind-keymap' based on current layout."
@@ -751,6 +793,13 @@
     (goto-char (point-min))
     (when (re-search-forward " *([^)]*);\n.*alias *" nil t)
       (replace-match ""))))
+
+(defun ergoemacs-translate-current-key (key)
+  "Translate the current key."
+  (cond
+   ((string= (key-description key) "<backspace>")
+    (read-kbd-macro "DEL" t))
+   (t key)))
 
 (defun ergoemacs-translate-current-function (curr-fn)
   "Translate the current function"
@@ -959,10 +1008,16 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
           (while (search-forward "M-" nil t)
             (replace-match (if (eq system-type 'darwin)
                                (cond
-                                ((eq ns-command-modifier 'meta)
+                                ((or (and (boundp 'mac-command-modifier)
+                                          (eq mac-command-modifier 'meta))
+                                     (and (boundp 'ns-command-modifier)
+                                          (eq ns-command-modifier 'meta)))
                                  (format "%sCmd+"
                                          (ergoemacs-unicode-char "⌘" "")))
-                                ((eq ns-alternate-modifier 'meta)
+                                ((or (and (boundp 'mac-alternate-modifier)
+                                          (eq mac-alternate-modifier 'meta))
+                                     (and (boundp 'ns-alternate-modifier)
+                                          (eq ns-alternate-modifier 'meta)))
                                  (format "%sOpt+"
                                          (ergoemacs-unicode-char "⌥" "")))
                                 (t "Alt+"))
@@ -1000,6 +1055,22 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
           (goto-char (point-min))
           (while (re-search-forward "[+]\\([[:lower:]]\\)\\(】\\|\\]\\)" nil t)
             (replace-match (upcase (match-string 0)) t t))
+          (when (and (eq system-type 'darwin)
+                     (string= "⇧" (ergoemacs-unicode-char "⇧" ""))
+                     (string= "⌘" (ergoemacs-unicode-char "⌘" ""))
+                     (string= "⌥" (ergoemacs-unicode-char "⌥" "")))
+            (goto-char (point-min))
+            (while (re-search-forward ".Opt[+]" nil t)
+              (replace-match "⌥"))
+            (goto-char (point-min))
+            (while (re-search-forward ".Cmd[+]" nil t)
+              (replace-match "⌘"))
+            (goto-char (point-min))
+            (while (re-search-forward ".Shift[+]" nil t)
+              (replace-match "⇧"))
+            (goto-char (point-min))
+            (while (re-search-forward "Ctrl[+]" nil t)
+              (replace-match "^")))
           (setq ret (buffer-string)))))
     (symbol-value 'ret)))
 
@@ -1036,7 +1107,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
       (ergoemacs-pretty-key-rep-internal))))
 
 ;; Based on describe-key-briefly
-(defun ergoemacs-where-is-old-binding (&optional key)
+(defun ergoemacs-where-is-old-binding (&optional key only-new-key)
   "Print the name of the function KEY invoked before to start ErgoEmacs minor mode."
   (interactive
    (let ((enable-disabled-menus-and-buttons t)
@@ -1069,22 +1140,30 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
          message-log-max
          (key-desc (key-description key))
          (new-key (key-description (ergoemacs-key-fn-lookup old-cmd))))
+    (unless old-cmd
+      (setq old-cmd (lookup-key
+                     (current-global-map)
+                     (ergoemacs-translate-current-key key)))
+      (setq new-key (key-description (ergoemacs-key-fn-lookup old-cmd))))
     (cond
+     ((and new-key only-new-key)
+      (read-kbd-macro new-key t))
+     (only-new-key
+      nil)
      ((and old-cmd new-key)
-      (if (called-interactively-p  'any)
-          (message "%s keybinding%s%s. (%s)"
-                   (ergoemacs-pretty-key key-desc)
-                   (if (called-interactively-p  'any)
-                       " is changed to "
-                     " is disabled! Use ")
-                   (ergoemacs-pretty-key new-key)
-                   old-cmd)))
+      (message "%s keybinding%s%s (%s)"
+               (ergoemacs-pretty-key key-desc)
+               (if (called-interactively-p  'any)
+                   " is changed to "
+                 " is disabled! Use ")
+               (ergoemacs-pretty-key new-key)
+               old-cmd))
      (old-cmd
       (message "Key %s was bound to `%s' which is not bound any longer"
                (ergoemacs-pretty-key key-desc)
                old-cmd))
      (t
-      (message "Key %s was not bound to any command"
+      (message "Key %s was not bound to any command (%s)"
                (ergoemacs-pretty-key key-desc)
                old-cmd)))))
 

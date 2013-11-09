@@ -7,7 +7,7 @@
 #+TEMPLATE_DIR: ./o-blog-template
 #+URL: http://ergoemacs.github.com/ergoemacs-mode/
 #+DEFAULT_CATEGORY: Tips
-#-DISQUS: renard-ergoemacs-mode
+#+DISQUS: ergoemacsmode
 #+FILENAME_SANITIZER: ob-sanitize-string
 #+POST_SORTER: ob-sort-posts-by-title
 
@@ -43,7 +43,7 @@ A minor-mode that aims to:
 
 [[file:{lisp}(ob:path-to-root){/lisp}/features.html][/icon-cog icon-white/ Features]]
 
-[[https://groups.google.com/forum/#!forum/ergoemacs][/icon-group icon-white/ ErgoEmacs Google Group]]
+[[https://groups.google.com/forum/#!forum/ergoemacs][/icon-group icon-white/ Google Group]]
 
 [[https://github.com/ergoemacs/ergoemacs-mode][/icon-github-sign icon-white/ Github]]
 
@@ -53,7 +53,13 @@ A minor-mode that aims to:
 
 [[file:{lisp}(ob:path-to-root){/lisp}/bug-report.html][/icon-fire icon-white/ Bug report]]
 
-[[http://ergoemacs.org/emacs/blog.html][/icon-blog icon-white/ Xah's Emacs Blog]]
+[[http://ergoemacs.org/emacs/emacs_keys_index.html][/icon-keyboard-wireless icon-white/ Keyboard Articles]]
+
+[[http://ergoemacs.org/emacs/emacs_modernization.html][Emacs Modernization]]
+
+[[http://ergoemacs.org/emacs/blog.html][/icon-blog icon-white/ Emacs Blog]]
+
+
 
 
 #+HTML: </div>
@@ -78,11 +84,11 @@ type:
 
 #+HTML: <h4>Manual setup</h4>
 
-Start by cloning the /git/ repository from [[http://github.com][Github]]
+Start by cloning the main branch /git/ repository from [[http://github.com][Github]]
 
 #+begin_src bash
 cd ~/.emacs.d
-git clone https://github.com/ergoemacs/ergoemacs-mode.git
+git clone -b master --single-branch https://github.com/ergoemacs/ergoemacs-mode.git
 #+end_src
 
 And add following to your =~/.emacs.d/init.el= file:
@@ -157,6 +163,7 @@ org-mode and exported to HTML using [[https://github.com/renard/o-blog][o-blog]]
   - [[file:{lisp}(ob:path-to-root){/lisp}/customize-keys.html][Customizing your keys]]
   - 
   - [[file:{lisp}(ob:path-to-root){/lisp}/aliases.html][Making Commands Easier to Type]]
+  - [[file:{lisp}(ob:path-to-root){/lisp}/smart-commands.html][Smart Commands]]
 
 - [[file:{lisp}(ob:path-to-root){/lisp}/testimonials.html][/icon-comments-alt icon-white/ Testimonials]]
 
@@ -618,7 +625,11 @@ This version is now a full featured minor mode. It supports 3 different keyboard
 *** The key 【Ctrl+x Ctrl+b】 is now ibuffer, instead of list-buffers.
 *** 【Ctrl+h m】 now calls describe-major-mode.
 ** version 4.2.1, 2009-02-28
-Changed the keybinding for previous-user-buffer from 【Ctrl+←】 to 【Ctrl+PageUp】. And previous-emacs-buffer from 【Ctrl+Shift+←】 to 【Ctrl+Shift+PageUp】. Similar for the “next” versions. Rationale: The 【Ctrl+Arrow】 are standard editing shortcuts command in Windows, Mac, Linux.
+Changed the keybinding for previous-user-buffer from 【Ctrl+←】 to
+【Ctrl+PageUp】. And previous-emacs-buffer from 【Ctrl+Shift+←】 to
+【Ctrl+Shift+PageUp】. Similar for the “next” versions. Rationale: The
+【Ctrl+Arrow】 are standard editing shortcuts command in Windows, Mac,
+Linux.
 ** version 4.2.0, 2009-02-27
 Added 【Alt+t】 for keyword completion. Rationale: The default 「M-TAB」 is used by Windows, Mac, Linux, to switch apps.
 ** version 4.1.8, 2009-02-15
@@ -781,8 +792,9 @@ This shows the standard shortcuts implemented in ergoemacs:
 Standard shortcuts for cursor navigation are also supported. For example:
 
 - Ctrl+← ⇒ move cursor to to previous word.
-- @@html:<kbd class="dark">@@Home@@html:</kbd>@@ ⇒ move cursor to beginning of line.
-- ⇧ Shift+↓ select text downward.
+- @@html:<kbd class="dark">@@Home@@html:</kbd>@@ ⇒ move cursor to beginning of
+- Shift+↓ select text downward.
+
 
 ** Preserving Emacs Commands while maintaining familiar shortcuts
   :PROPERTIES:
@@ -851,7 +863,7 @@ This can be done by:
 The possible disadvantage to this is you would have to use another key
 to access the defined emacs commands.  Currently ergoemacs-mode allows
 you to use QWERTY 【▤ Menu d】 or 【Ctrl+⇧ Shift+x】 to access emacs
-Ctrl+x commands and QWERTY 【▤ Menu t】 or 【Ctrl+⇧ Shift+c】 to
+Ctrl+x commands and QWERTY 【▤ Menu f】 or 【Ctrl+⇧ Shift+c】 to
 access Ctrl+c commands.
 
 The 【▤ Menu】 keybindings are slightly different than plan Ctrl+x or
@@ -1117,6 +1129,15 @@ right of the rectangle and filling the rectangle with blanks.
 [M-C-up] and [M-C-down] scrolls the lines INSIDE the rectangle up
 and down; lines scrolled outside the top or bottom of the rectangle
 are lost, but can be recovered using [C-z].
+
+*** Visual Regexp
+When [[https://github.com/benma/visual-regexp.el][visual regexp]] is installed, ergoemacs-mode changes
+=query-replace-regexp= to =vr/query-replace=
+*** Browse-kill-ring and pasting
+The package =browse-kill-ring= can be integrated into the way that
+ergoemacs-mode pastes.  For information see
+[[file:smart-commands.html][smart commands]].
+*** Highlight Symbol and searching
 
 ** Bug report
   :PROPERTIES:
@@ -1505,6 +1526,24 @@ for a while.
 #+end_quote
 
 [[http://emacsblog.org/2007/08/27/newbie-tip-visual-emacs-keybinding-cheatsheet/#comments][emacsblog.org]]
+
+#+BEGIN_HTML
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'ergoemacsmode'; // required: replace example with your forum shortname
+  
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+#+END_HTML
+
 ** Roadmap
   :PROPERTIES:
   :PAGE:     roadmap.html
@@ -1530,198 +1569,59 @@ work in progress.
   :TEMPLATE: blog_static_no_title.html
   :END:
 
-*** Background
-Key chords (like Ctrl+x) is the bane of keyboarding.
-There are 3 types of key shortcuts to invoke commands in software:
+This is an experimental ergoemacs feature to banish key chord and
+replace ergoemacs keys.  The background is given in the following pages
+- Why it would be good to [[http://xahlee.info/kbd/banish_key_chords.html][banish key chords]].
+- Xah's quest to [[http://ergoemacs.org/emacs/emacs_keybinding_redesign_2.html][totally redesign the keys]].
 
-1. Single key.  Examples include: @@html:<kbd class="dark">@@F1@@html:</kbd>@@, @@html:<kbd class="dark">@@PgUp@@html:</kbd>@@. 
-2. Key chord: @@html:<kbd class="dark">@@⇧ Shift+a @@html:</kbd>@@,
-   Ctrl+c, Ctrl+⇧ Shift+z, @@html:<kbd class="dark">@@Alt@@html:</kbd>@@+@@html:<kbd class="dark">@@F4@@html:</kbd>@@.
-3. Key sequence of single keys or chords. For example on Microsoft
-   Windows, @@html:<kbd class="dark">@@F10@@html:</kbd>@@ @@html:<kbd class="dark">@@e@@html:</kbd>@@ @@html:<kbd class="dark">@@c@@html:</kbd>@@ for copy, or @@html:<kbd class="dark">@@Alt@@html:</kbd>@@+@@html:<kbd class="dark">@@Space@@html:</kbd>@@ @@html:<kbd class="dark">@@c@@html:</kbd>@@ to close window.
+*** Changing Ctrl+x and Ctrl+c
+For emacs, the most common key sequences start with C-x or C-c. This
+usually requires the use of the control key, and leads to the dreaded
+[[http://ergoemacs.org/emacs/emacs_pinky.html][emacs pinky]].  It also conflicts with the standard Cut and Copy
+commands (see [[file:standard-shortcuts.html][standard shortcuts]]).
 
-of these, in terms of efficiency and hand health (Repetitive Strain
-Injury), the single key is the best. Key sequence of single keys is
-second best. Key chord is the worst.
+I've thought about how to take out the use of the
+control key and reduce the key chord reduction. This is how
+I came up with the Ctrl+c and Ctrl+x replacements:
 
+- Ctrl-x commands can be accessed by QWERTY 
+  @@html:<kbd class="dark">@@Menu@@html:</kbd>@@  @@html:<kbd class="dark">@@d@@html:</kbd>@@
+  - This is *not* the same as the traditional Ctrl+x. Heres how its
+    different:
+    - By default all @@html:<kbd class="dark">@@Ctrl@@html:</kbd>@@ commands are translated to @@html:<kbd class="dark">@@Alt@@html:</kbd>@@ commands.
+      - Ctrl+x Ctrl+b could be accessed by @@html:<kbd class="dark">@@Menu@@html:</kbd>@@ @@html:<kbd class="dark">@@d@@html:</kbd>@@ @@html:<kbd class="dark">@@Alt@@html:</kbd>@@+@@html:<kbd class="dark">@@b@@html:</kbd>@@ (list-buffers)
+      - C-x b could be accessed by @@html:<kbd class="dark">@@Menu@@html:</kbd>@@ @@html:<kbd class="dark">@@d@@html:</kbd>@@ @@html:<kbd class="dark">@@b@@html:</kbd>@@ (switch-to-buffer)
+    - Pressing @@html:<kbd class="dark">@@Menu@@html:</kbd>@@ will
+      change the type of key translation used.  The default for Ctrl+x is
+      translate/swap the Alt and Ctl keys.  Pressing Menu again will:
+      - Make the keyboard translation for C-x "unchorded"
+      - The pressing Menu would remove the keyboard translation for Ctrl+x.
+      - Finally pressing Menu again would result the translation/swap
+        of Ctrl and Alt (as at the beginning).
 
-Key chord is the most hard on hand health, but is also conceptually
-the most convoluted.
+For your information, an "unchorded" filter/translation would translate:
+- Ctrl key combinations to standard keys.  For example Ctrl+b would be
+  just b.
+- Standard keys like b would be translated to Alt+b.
+- Alt key combinations would be translated to Ctrl key combinations.
+  Therefore Alt+b would be translated to Ctrl+b.
 
-I [Xah Lee] remember in around 1991, when i first learned about key
-chord on the Macintosh Classic. I thought, it's strange. You have to
-hold @@html:<kbd class="dark">@@⌘ Cmd@@html:</kbd>@@ first, then press the key @@html:<kbd class="dark">@@c@@html:</kbd>@@, then, release @@html:<kbd class="dark">@@c@@html:</kbd>@@, then, release
-@@html:<kbd class="dark">@@⌘ Cmd@@html:</kbd>@@. It must be in that specific order.
-
-A more natural way is either key sequence, or real chords. That is,
-pressing several keys together but you don't have to worry about which
-to hold or release first. Stenograph machines are like that.
-
-**** Whence Did Key Chord Came From?
-I suppose, when computer keyboard came, sans levels and gears, but
-habit stuck, and this evolved into “modifier” keys, with Bucky bits.
-
-Now, thinking about this, i think Microsoft must be a genius, when
-they invented the key system on Windows, where Alt is used to invoke
-menu, and all command can be called by a sequence of key strokes. This
-is probably the best system given the PC keyboard. This system, lets
-you invoke any command, yet has menu counter-part, so it's easy to see
-a list of them and also grouped by category. (emacs's system of course
-is much more extensive than that.)
-
-**** What Should a Keyboard Nerd Do with Key Chords?
-BAN the them out of the universe.
-
-But, there isn't enough keys on keyboard. You only have 12 function
-keys, plus some others such as ↖ Home, ↓. But there are 10 times more
-commands in software.  What to do?
-
-For majority of commands, you should use a key sequence of single
-keys, instead. For example, 【F10 e c】. But Function keys are further
-away. So, you could start with a easy key such as 【▤ Menu e c】, and
-reassign most of your keys to key sequence. (you can make Caps Lock as
-your start key, whichever key on YOUR keyboard is easy to press.)
-
-There are 26 letters in alphabet, plus 10 digits, so you have 36 key
-choices for the key. (ignore punctuation keys for the moment) If each
-of your command has 2 keys in a key sequence (not counting the
-starting key), then you have 36 × 36 = 1296 possible keys for
-commands. Quite enough!
-
-Still, some commands are not suitable for key sequence. For example,
-moving cursor by word. You want to be able to hold down a key and have
-the cursor keep moving. You can't do that with key sequences, because
-you need to release the key and press again to invoke the command
-again. Answer: use single key. Retort: But F keys are far away and
-arrow keys are already used. Answer: key chord then.
-
-**** Principles on Efficient Use of Key Chords
-Key chord should be used only for commands that need to be repeated
-within a second (hold the key and let the command repeat).  This
-includes moving cursor, paging, switching tab/window.
-
-Key chord should use no more than one modifier. This saves your
-hand. So, key chord such as emacs interactive replace 【Alt+⇧ Shift+5】
-or Mac's redo 【⌘ Cmd+⇧ Shift+z】 should not be allowed.
-
-# FIXME: 【Ctrl+‹letter/digit›】 is displayed incorrect on web page
-If you survey commands in an editor, such as emacs, vast majority of
-commands are the non-repeating type. The repeating type are probably
-less than 5% of commands. Using 【Ctrl+‹letter/digit›】 key give you
-about 36 spots. Adding Alt, you have 72 spots. And that's more than
-enough for repeating commands. In practice, I estimate a programer
-uses less than 30 repeating commands per day on average.
-**** What About Sticky Keys?
-I do not advocate the Sticky Keys feature for the handicapped. It's
-not the same. Sticky Keys actually make things a worse, because it's a
-hack over key chords. When you press a sequence of keys, it has to
-guess whether you mean a sequence or chord (since emacs supports
-both). The end result is that it's confusing to use, imprecise, and
-slows you down.
-
-*** Keyboard Shortcut Design
-This section discuss one criterion on the design of keyboard shortcut
-system: Repeatable vs Non-Repeatable Commands and Keys. This
-applicable in designing keybinding for emacs, vi, 3D modeling app, or
-any app that has hundreds commands that needs to map to keys.
-**** Repeatable and Non-Repeatable Commands
-In my keyboarding research, there's an important discovery. Commands
-can be classified into 2 types:
-1. Repeatable commands. Commands that make sense to be repeated within
-   a second. i.e. moving cursor by char, word, page. Page up/down. Delete
-   by char, word. Expand selection, prev/next tab. You can hold down a
-   key or a key-chord to repeat the command many times. 
-
-2. Non-repeat commands. This is vast majority. i.e. starting
-   find/replace, open file, close file, list buffers, call a shell
-   command or start shell, describe-function, keyword expansion or
-   completion, list-matching-lines, sort-lines, kill-buffer,
-   switch-to-buffer, ...
-
-**** Repeatable and Non-Repeatable Keys
-The Repeatable Commands must have keys that can be held down. Here's
-example of repeatable hotkeys: F8, t, ⇟ Page ▽, ↓, 【Ctrl+t】,
-【Ctrl+Alt+8】, ….
-# FIXME: 【Ctrl+Alt+8】 is displayed incorrect on the web page
-
-Non-repeatable hotkeys are basically keys that involves a sequence:
-【Ctrl+x 2】, 【F8 F9】
-
-So, when designing a shortcut system, one of the principle is for
-repeatable commands be on repeatable keys, else it's a waste. (because
-you only have a few precious easy key spots, yet you have one hundred
-commands in common use.)
-
-# FIXME: 【Ctrl+‹number›】 and 【Alt+‹number›】 is displayed incorrect on the web page
-In GNU Emacs's default keybinding, there are many such wastes. For
-example, all 【Ctrl+‹number›】 and 【Alt+‹number›】 are bound to
-digit-argument. The digit-argument is a non-repeat command, yet it
-sits on 20 EASY repeatable keys. (but most damaging is that
-digit-argument isn't a frequently needed command, with respect to all
-commands and the relatively few easy-key-spots.)
-
-Another bad example is forward-page 【Ctrl+x ]】. forward-page is a
-repeatable command, but it doesn't have a repeating key. Imagine, if
-every time you need to ⇟ Page ▽ that you have to press 【Ctrl+x】
-first. You couldn't just hold it down.
-
-But remember, this “Repeatable and Non-Repeatable key” is only a
-supporting criterion in keybinding design. It is not the most
-important criterion. The single most important criterion in designing
-a keyboard shortcut system is that most frequently used commands be
-mapped to the most easy-to-press keys. 
-
-
-*** Ergoemacs Key Chord Reduction
-**** [Control+x] and [Control-c] reduction
-For emacs, the most common prefixes are [Control-x] or [Control-c].
-
-For QWERTY, an additional mapping of these keys have been made:
-- A modified Control-x map has been assigned to Menu f:
-  - This map allows you to type the keys without a key chord
-    requirement.  For example to switch buffers instead of
-    [Control+x] [b] you could type [Menu] [f] [b].  (Note that the [f]
-    key changes based on layout; For example using the colemak layout
-    you would type [Menu] [t] [b] to switch buffers).
-
-  - This modified keymap changes the control-chorded keys to
-    alt-chorded keys since they are easier to reach, there is another
-    keymap that removes the control-chorded keys.  Therefore to get
-    the buffer list, instead of having to type [Control-x]
-    [Control-b] you can type [Menu] [f] [Alt-b].
-
-  - The [Alt-] keychords in this modified keymap are changed to
-    [Control-] keys.  For example, =repeat-complex-command= is mapped
-    from [Control-x] [Alt+:] to [Menu] [f] [Control-:].  As far as I
-    can tell this is the only [Control-x] [Alt] combination. 
-
-- A modified unchorded Control-x map has assigned to QWERTY [Menu]
-  [r].  This map has changed the Control-x map as follows:
-
-  - Chorded control keys are subset.  Therefore only keys that have
-    the combination [Control-x] [Control-] are used.
-
-  - Chorded key combinations are changed drop the chord.  For example
-    the buffer list [Control-x] [Conrtol-b] is changed to [Menu] [r]
-    [b].
-
-  - Chorded key combinations that are single key are translated to
-    [Alt+] for example [Control+k] [a] is changed to [Menu] [r] [k]
-    [Alt+a]
-
-  - Chorded key combinations that work with [Alt+] are translated to
-    [Control+].  For example [Control+k] [Alt+a] is changed to [Menu]
-    [r] [k] [Control+a].  I don't think there are currently any keys
-    bound to these types of key combinations.  They are quite
-    difficult to press and remember.
-
-Similarly The Control-c keymap is rebound to [Menu] [j] for the
-modified [Control-c] keymap and [Menu] [u] for the unchorded
-[Control-c] keymap.  This is also true of the [Control-h] keymap.
-This is bound to [Menu] [h] for the normal Control-h keymap.  It is
-also bound to [Menu] [y] for the unchorded Control-h keymap.
-
-
+- C-c commands can be accessed by QWERTY 
+  @@html:<kbd class="dark">@@Menu@@html:</kbd>@@  @@html:<kbd class="dark">@@f@@html:</kbd>@@
+  - This is *not* the same as the traditional Ctrl+c. Heres how its
+    different:
+    - By default the "unchorded" filter is on.  This is because by [[http://www.gnu.org/software/emacs/manual/html_node/elisp/Key-Binding-Conventions.html][convention]],
+      major modes bind control keys like Ctrl+c Ctrl+r and leave keys like
+      Ctrl+c r to be bound by the user.  This means that you would put
+      less strain on your hand to have these key combinations to be
+      unchorded by default.
+    - @@html:<kbd class="dark">@@Ctrl@@html:</kbd>@@ commands are translated to @@html:<kbd class="dark">@@Alt@@html:</kbd>@@ commands.
+  - Like C-x, pressing Menu changes the filter
+    - First Menu press changes the unchorded filter to the ctl <->
+      alt filter
+    - Second Menu press removes the filter
+    - Press Menu again to go back to the unchorded keyboard filter.*
+** Ergoemacs Key Chord Reduction
 **** Movement without key-chords
 ***** Method #1 -- <menu> Movement mode
 One can enable movement without key-chords as follows:
@@ -1747,6 +1647,12 @@ One can enable movement without key-chords as follows:
   - Shift and the key is the unshifted command.  Therefore [Menu] [i]
     [i] [Shift+k] would be Page Up followed by down one character.
 
+***** Method #2 -- Modal Ergoemacs-mode
+You can press [F6] to get all the [Alt+] commands bound letters
+themselves.  For example [Alt+k] is bound to [k].  [Alt+Shift+] keys
+are bound to [Shift+] or [Alt+] keys.  Hence, [Shift+Alt+m] is bound
+to both [Shift+m] and  [Alt+m].  To exit ergoemacs modal mode, you
+can press [Return] or [F6].  
 ** FAQ
   :PROPERTIES:
   :PAGE:     faq.html
@@ -2074,3 +1980,249 @@ can also be turned off by setting =ergoemacs-use-aliases= to nil:
 #+BEGIN_SRC emacs-lisp
   (setq ergoemacs-use-aliases nil)
 #+END_SRC
+
+** Smart Commands
+  :PROPERTIES:
+  :PAGE:     smart-commands.html
+  :TEMPLATE: blog_static_no_title.html
+  :END:
+
+*** Beginning of Line
+
+Often you wish to move to the beginning of some part of a line.  For
+example:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+    (ergoemacs-mode 1)) ; This turns ergoemacs-mode on.|
+#+END_SRC
+
+With the cursor =|= at the end of the line, you might want to go to
+the beginning of the comment:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+    (ergoemacs-mode 1)) ; |This turns ergoemacs-mode on.
+#+END_SRC
+
+That way you can delete and change the commment (With QWERTY 【Alt+g】).
+
+You may even want to go to  the end of the code line:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+      (ergoemacs-mode 1))| ; This turns ergoemacs-mode on.
+#+END_SRC
+
+That way you can delete the comment entirely (With QWERTY 【Alt+g】).
+
+Often you may want to go back to the first non-whitespace character
+of the line like:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+     |(ergoemacs-mode 1)) ; This turns ergoemacs-mode on.
+#+END_SRC
+
+Or even the fist actual first character of the line:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+  |  (ergoemacs-mode 1)) ; This turns ergoemacs-mode on.
+#+END_SRC
+
+Once there it is not too useful to go to the beginning of the line
+again.  So, you may wish to:
+- Goto the last text block (separated by 2 new lines; default, [[http://ergoemacs.org/emacs/emacs_key_combo.html][why?]])
+- Issue a page-up command
+- Goto the beginning of the buffer
+
+All of these can be accomplished by the smart ergoemacs-mode
+=beginning-of-line= function, which is  bound to 【Alt+h】.
+
+If you don't want ergoemacs-mode to ignore comments when going to the
+beginning or end of the line you can change this behavior by:
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-end-of-comment-line nil)
+#+END_SRC
+
+You may want to only go to the beginning of line, instead of the
+beginning of the indentation (the first non whitespace character).
+This can be changed by
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-back-to-indentation nil)
+#+END_SRC
+
+You can change the command that is issued at the beginning of the
+line by using one of the following commands.
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'block) ; Beginning
+                                          ; of text block
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'page) ; Page Up
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'buffer) ; Beginning
+                                          ; of Buffer
+#+END_SRC
+
+You may worry about smart mode-specific commands such as org-mode's
+beginning or end of line.  Don't worry ergoemacs-mode will respect
+it, and do the right thing.  This is because ergoemacs-mode actually
+replaces the =move-beginning-line= with whatever the mode defines
+=move-beginning-line= to be.
+
+For example set:
+#+BEGIN_SRC emacs-lisp
+(setq org-special-ctrl-a/e t)
+#+END_SRC
+
+And then go to an =org-mode= headline:
+
+#+BEGIN_SRC org
+  ,* TODO Install ergoemacs-mode  |
+#+END_SRC
+
+By pressing the beginning of line command, you would go to:
+
+
+#+BEGIN_SRC org
+  ,* TODO |Install ergoemacs-mode  
+#+END_SRC
+
+As hoped/expected.
+
+*** End of line
+
+The end of line command for ergoemacs is just as smart as beginning
+of line.  For example if your cursor is =|=, and you are at:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+  |  (ergoemacs-mode 1)) ; This turns ergoemacs-mode on.
+#+END_SRC
+
+ may wish to go to the end of the code block:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+    (ergoemacs-mode 1))| ; This turns ergoemacs-mode on.
+#+END_SRC
+
+or the end of the line:
+
+#+BEGIN_SRC emacs-lisp
+  (progn
+    (ergoemacs-mode 1)) ; This turns ergoemacs-mode on.|
+#+END_SRC
+
+The after that you can:
+- Goto the next text-block (default, [[http://ergoemacs.org/emacs/emacs_key_combo.html][why?]])
+- Issue a PageDown command
+- Goto the end of the buffer.
+
+Currently this command is bound to 【Alt+Shift+h】
+
+You can ignore the comment feature by the following initialization code:
+
+You can change the command that is issued at the end of the
+line by using one of the following commands.
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'block) ; End
+                                          ; of text block
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'page) ; Page Down
+  (setq ergoemacs-beginning-or-end-of-line-and-what 'buffer) ; End
+                                          ; of Buffer
+#+END_SRC
+
+Note that this command also respects mode specific changes to
+end-of-line commands (like in =org-mode=).
+
+*** Beginning or end of buffer
+This smart will:
+ 1. Goto the beginning of the buffer
+ 2. If at the beginning of the buffer it will go to the end of the buffer.
+
+If you want to go to the beginning of the buffer only, you can turn it
+of by setting =ergoemacs-repeatable-beginning-or-end-of-buffer= to
+nil:
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-repeatable-beginning-or-end-of-buffer nil)
+#+END_SRC
+
+*** Paste
+Ergoemacs can allow a paste command to cycle through the previous
+items that were copied.  
+
+In this case Ctrl+v:
+- Pastes the first item
+- Upon repeating, Ctrl+v cycles through previous items pasted.
+
+Note that if you move/type then this pattern repeats itself, you will
+paste and then cycle through the items pasted.
+
+If you wish to paste an item twice, you can use Ctrl+Shift+v.
+
+When this is disabled, the Ctrl+v only pastes and
+Ctrl+Shift+v cycles through the previous items pasted.  This can be
+disabled by
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-smart-paste nil)
+#+END_SRC
+
+
+This is enabled by default because it reduces pinky usage.
+
+When installed, ergoemacs' smart paste can also use browse-kill-ring
+
+When calling Ctrl+Shift+v if the last command was not a paste, it
+starts browsing the kill ring.  The standard ergoemacs-mode keys
+apply.  Pressing Ctrl+v or Alt+v will cycle forward through the kill
+ring.  Pressing Ctrl+Shift+v or Ctrl+Alt+v will cycle backward
+through the kill ring.  To accept the text, press enter.
+
+If you want the second paste to call =browse-kill-ring=, you can
+enable this by:
+
+#+BEGIN_SRC emacs-lisp
+  (setq ergoemacs-smart-paste 'browse-kill-ring)
+#+END_SRC
+
+
+*** Smart punctuation
+*** Smart Capitalization
+This command is an extension of the [[http://ergoemacs.org/emacs/modernization_upcase-word.html][smart Letter-Case command]]. It
+also toggles camelCase words when it detects you are in a variable.
+When you are outside of a word, it corrects the last mis-spelled
+word. 
+
+The camel-case is determined by the major-mode's mode's settings in
+=ergoemacs-toggle-camel-case-chars=.  In emacs-lisp it is more common
+to separate variables with =-= rather than =_=.  The default setting
+for =emacs-lisp-mode= allows toggling between the various variables.
+For exampleVariable emacs-lisp toggles between the following:
+
+- exampleVariable
+- ExampleVariable
+- example-variable
+- example_variable
+
+In =R= it is likely that you separate variables by =.= or =_=  so
+exampleVariable would be toggled between
+
+- exampleVariable
+- ExampleVariable
+- example.variable
+- example_variable
+
+In some modes, like =org-mode= only the toggle letter case is
+active.  
+
+Any of these can be customized by customizing the variable
+=ergoemacs-toggle-camel-case-chars=. 
+
+
+

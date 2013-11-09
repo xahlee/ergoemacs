@@ -373,6 +373,49 @@ Test next and prior translation."
     (ergoemacs-toggle-full-alt)
     (should mark-active)))
 
+(ert-deftest ergoemacs-test-issue-108 ()
+  "Test Issue #108."
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        (macro (edmacro-parse-keys "C-SPC M-h M-S-i" t))
+        (ergoemacs-end-of-comment-line nil)
+        (ergoemacs-back-to-indentation nil)
+        (ergoemacs-use-beginning-or-end-of-line-only t)
+        (ret))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme nil)
+    (setq ergoemacs-keyboard-layout "us")
+    (ergoemacs-mode 1)
+    (setq ret (lookup-key ergoemacs-M-o-keymap [timeout]))
+    (when ret
+      (setq ret (lookup-key ergoemacs-M-O-keymap [timeout])))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should ret)))
+
+(ert-deftest ergoemacs-test-issue-114 ()
+  "Attempts to test Issue #114."
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        (macro (edmacro-parse-keys "C-f ars C-f <backspace> M-n" t))
+        (ret t))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme nil)
+    (setq ergoemacs-keyboard-layout "colemak")
+    (ergoemacs-mode 1)
+    (ergoemacs-isearch-mode-hook)
+    (setq ret (lookup-key isearch-mode-map (read-kbd-macro
+                                  (format "<%s> s"
+                                  (if (eq system-type 'windows-nt)
+                                      "apps" "menu")))))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should ret)))
+
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-test.el ends here

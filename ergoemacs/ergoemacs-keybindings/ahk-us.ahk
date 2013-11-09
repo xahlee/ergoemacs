@@ -23,6 +23,7 @@
 ;; hotkey layout taken from http://xahlee.org/emacs/ergonomic_emacs_keybinding.html
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Changelog:
+;; Changlog moved to github.
 ;; Version 0.9:
 ;; - Added beginning and end of buffer commands.
 ;; Version 0.8:
@@ -78,17 +79,22 @@
 #SingleInstance force
 #MaxHotkeysPerInterval 9999
 #NoEnv
+#InstallKeybdHook 
 SendMode Input
-SetStoreCapslockMode, Off
 Process, priority, , High
 IniRead ToggleCtrl, ergoemacs-settings.ini,BigCtl, App
 IniRead CurrCaps, ergoemacs-settings.ini, Caps, App
+IniRead CurrRAlt, ergoemacs-settings.ini, RAlt, App
+IniRead CurrLAlt, ergoemacs-settings.ini, LAlt, App
+IniRead CurrRAltLAlt, ergoemacs-settings.ini, RAltLAlt, App
 LayLst=
 VarLst=
 CareL = 0
 CareV = 0
 CareLV = 0
 g_MarkSet=
+g_LastBol=
+g_LastEol=
 modifiers=
 skipUpDown=
 
@@ -165,7 +171,8 @@ Loop, Read, ergoemacs.ini
 }
 
 
-HotKey,Capslock,capslock-handle
+
+
 ;; HotKey,(,autopair-paren
 
 
@@ -215,10 +222,88 @@ Menu, Tray, NoStandard
 Menu, tray, add, Keyboard Layouts, :MenuKey
 Menu, tray, add, Translated Layout, :TranslateKey
 Menu, tray, add, Themes, :ThemeKey
-Menu, Tray, add, Caps to Menu in Emacs, ToggleCaps
-If (CurrCaps == "1"){
-  Menu, Tray, Check, Caps to Menu in Emacs
+Menu, Tray, add
+Menu, Caps, add, Caps Lock, ToggleCaps
+Menu, Caps, add, Control, ToggleCaps
+Menu, Caps, add, Apps Key, ToggleCaps
+Menu, Caps, add, F6, ToggleCaps
+If (CurrCaps == "Control"){
+  Menu, Caps, Check, Control
+  Hotkey, CapsLock, send-ctl
+  Hotkey, CapsLock Up, send-ctl-up
+  ;Hotkey Up, previous-line
+  ;Capslock::Ctrl
+  ;+Capslock::Capslock
+} Else If (CurrCaps == "Apps Key"){
+  Menu, Caps, Check, Apps Key
+  Hotkey, CapsLock, send-apps 
+  ;Capslock::AppsKey
+  ;+Capslock::Capslock
+} Else if (CurrCaps == "F6"){
+  Menu, Caps, Check, F6
+  Hotkey CapsLock, send-f6
+  ;Capslock::F6
+  ;+Capslock::Capslock
+} Else {
+  Menu, Caps, Check, Caps Lock
 }
+Menu, Tray, add, Caps Lock To, :Caps
+
+Menu, RAlt, add, Alt, ToggleRAlt
+Menu, RAlt, add, Control, ToggleRAlt
+Menu, RAlt, add, Apps Key, ToggleRAlt
+Menu, RAlt, add, F6, ToggleRAlt
+If (CurrRAlt == "Control"){
+  Menu, RAlt, Check, Control
+  Hotkey, RAlt, send-ctl
+  Hotkey, RAlt Up, send-ctl-up
+  } Else If (CurrRAlt == "Apps Key"){
+  Menu, RAlt, Check, Apps Key
+  Hotkey, RAlt, send-apps 
+} Else if (CurrRAlt == "F6"){
+  Menu, RAlt, Check, F6
+  Hotkey RAlt, send-f6
+} Else {
+  Menu, RAlt, Check, Alt
+}
+Menu, Tray, add, Right Alt to, :RAlt
+
+; Left Alt
+Menu, LAlt, add, Alt, ToggleLAlt
+Menu, LAlt, add, Control, ToggleLAlt
+Menu, LAlt, add, Apps Key, ToggleLAlt
+Menu, LAlt, add, F6, ToggleLAlt
+If (CurrLAlt == "Control"){
+  Menu, LAlt, Check, Control
+  Hotkey, LAlt, send-ctl
+  Hotkey, LAlt Up, send-ctl-up
+} Else If (CurrLAlt == "Apps Key"){
+  Menu, LAlt, Check, Apps Key
+  Hotkey, LAlt, send-apps 
+} Else if (CurrLAlt == "F6"){
+  Menu, LAlt, Check, F6
+  Hotkey LAlt, send-f6
+} Else {
+  Menu, LAlt, Check, Alt
+}
+
+Menu, Tray, add, Left Alt to, :LAlt
+
+Menu, RAltLAlt, add, Alt, ToggleRLA
+Menu, RAltLAlt, add, Apps Key, ToggleRLA
+Menu, RAltLAlt, add, F6, ToggleRLA
+If (CurrRAltLAlt == "Apps Key"){
+  Menu, RAltLAlt, Check, Apps Key
+  Hotkey, RAlt & LAlt, send-apps 
+} Else if (CurrRAltLAlt == "F6"){
+  Menu, RAltLAlt, Check, F6
+  Hotkey RAlt & LAlt, send-f6
+} Else {
+  Menu, RAltLAlt, Check, Alt
+}
+Menu, Tray, add, Left & Right Alt to, :RAltLAlt
+
+
 Menu, Tray, add, Space->Control, ToggleCtrl
 If (ToggleCtrl == "1"){
   Menu, Tray, Check, Space->Control
@@ -269,14 +354,6 @@ Loop %keysToDelayArray0%
   key := keysToDelayArray%A_Index% 
   Hotkey, % "*"key, DelayKeyOutput
 }
-
-capslock-handle:
-  If ((WinActive("ahk_class Emacs") || WinActive("ahk_class ConsoleWindowClass")) && CurrCaps == "1") {
-    SendInput {AppsKey}
-  } else {
-    SendInput {Capslock}
-  }
-  return
 
 
 ListenForKey:
@@ -339,6 +416,8 @@ DelayKeyOutput:
   } Else {
     SendInput % modifiers pressedKey
     g_MarkSet=
+    g_LastBol=
+    g_LastEol=
   }
   g_OtherKeyPressed := true
   Return
@@ -382,6 +461,8 @@ DelayKeyOutput:
             g_MarkSet=1
           } Else {
             g_MarkSet=
+            g_LastBol=
+            g_LastEol=
           }
        } else {
           SendInput % modifiers "{Space}"
@@ -400,12 +481,24 @@ If (ToggleCtrl == "1"){
 Reload
 return
 
+ToggleRAlt:
+IniWrite, %A_ThisMenuItem%,ergoemacs-settings.ini,RAlt,App
+Reload
+return
+
+ToggleLAlt:
+IniWrite, %A_ThisMenuItem%,ergoemacs-settings.ini,LAlt,App
+Reload
+return
+
+ToggleRLA:
+IniWrite, %A_ThisMenuItem%,ergoemacs-settings.ini,RAltLAlt,App
+Reload
+return
+
+
 ToggleCaps:
-If (CurrCaps == "1"){
-   IniWrite,0,ergoemacs-settings.ini,Caps,App
-} Else {
-   IniWrite,1,ergoemacs-settings.ini,Caps,App
-}
+IniWrite, %A_ThisMenuItem%,ergoemacs-settings.ini,Caps,App
 Reload
 return
 
@@ -458,9 +551,32 @@ forward-word:
   SendKey("{Ctrl down}{Right}{Ctrl up}",1)
   return
 
-ergoemacs-beginning-of-line-or-block:
 move-beginning-of-line:
   SendKey("{Home}",1)
+  return
+
+ergoemacs-end-of-line-or-what:
+  if (g_LastEol <> ""){
+     ;; Last Key was end of line
+     ;; Send PgDown...
+     SendKey("{PgDown}",1)    
+  } else {
+     ;; Last key was not bol send home
+     SendKey("{End}",1)
+  }
+  g_LastEol=eol
+  return
+
+ergoemacs-beginning-of-line-or-what:
+  if (g_LastBol <> ""){
+     ;; Last Key was beginning of line
+     ;; Send PgUp...
+     SendKey("{PgUp}",1)    
+  } else {
+     ;; Last key was not bol send home
+     SendKey("{Home}",1)
+  }
+  g_LastBol=bol
   return
 
 ergoemacs-end-of-line-or-block:
@@ -488,12 +604,12 @@ delete-char:
 
 
 scroll-down:
- SendKey("{PgUp}",0)
- return
+ SendKey("{PgUp}",1)
+  return
 
 
 scroll-up:
- SendKey("{PgDn}",0)
+ SendKey("{PgDn}",1)
  return
 
 
@@ -551,6 +667,14 @@ redo:
  SendKey("{Ctrl down}{y}{Ctrl up}",0)
  return
 
+
+comment-dwim:
+ ;; Word Alt+Ctrl+M is insert comment
+ If WinActive("ahk_class OpusApp"){
+   SendKey("{Alt down}{Ctrl down}{M}{Ctrl up}{Alt up}",0)
+ }
+ return
+
 ergoemacs-toggle-letter-case:
  ;; Word Shift+F3 is toggle letter case.
  ;; Maybe do somthing different in other apps.
@@ -579,7 +703,23 @@ ergoemacs-move-cursor-next-pane:
     SendKey("{F6}")
   }
   return
-  
+
+send-ctl:
+  SendKey("{Ctrl down}")
+  return
+
+send-ctl-up:
+  SendKey("{Ctrl up}")
+  return
+
+send-apps:
+  SendKey("{AppsKey}")
+  return
+
+send-f6:
+  SendKey("{F6}")
+  return
+
 GetSpaceBarHoldTime()
 {
   global g_SpacePressDownTime
@@ -638,6 +778,10 @@ GetModifiers()
 SendKey(key,Movement = 0){
   global g_MarkSet
   global g_OtherKeyPressed
+  global g_LastBol
+  global g_LastEol
+  g_LastEol=
+  g_LastBol=
   g_OtherKeyPressed := true
   If (Movement == 0){
     g_MarkSet=

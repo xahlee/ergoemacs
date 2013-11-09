@@ -3,6 +3,7 @@
 ;; Copyright (C) 2013 Matthew L. Fidler
 
 ;; Maintainer: Matthew L. Fidler
+;; Authors: Xah Lee, Matthew Fidler, Drew Adams, Ting-Yu Lin, David Capello
 ;; Keywords: convenience
 
 ;; ErgoEmacs is free software: you can redistribute it and/or modify
@@ -110,7 +111,6 @@
   "Ergoemacs C-c or C-x defined by KEY."
   (let (fn-cp fn-cx fn-both)
     ;; Create the needed functions
-
     (if (string= "C-c" key)
         (progn
           (setq fn-cp 'ergoemacs-copy-line-or-region))
@@ -127,13 +127,10 @@
      ((and ergoemacs-ctl-c-or-ctl-x-delay
            (or (region-active-p)
                (and cua--rectangle (boundp 'cua-mode) cua-mode)))
-      (setq ergoemacs-curr-prefix-arg current-prefix-arg)
-      (ergoemacs-shortcut-internal key 'normal)
-      (setq ergoemacs-push-M-O-timeout t)
-      (setq ergoemacs-M-O-prefix-keys key)
-      (setq ergoemacs-M-O-timer
-            (run-with-timer ergoemacs-ctl-c-or-ctl-x-delay nil
-                            #'ergoemacs-M-O-timeout)))
+      ;; Wait for next key...
+      (ergoemacs-shortcut-internal key 'normal nil nil
+                                   ergoemacs-ctl-c-or-ctl-x-delay
+                                   fn-cp))
      ((or (region-active-p)
           (and cua--rectangle (boundp 'cua-mode) cua-mode))
       (funcall fn-cp arg))
@@ -151,11 +148,26 @@
     (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
                            (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
 
+(defun ergoemacs-clean-nw ()
+  "Run ergoemacs in bootstrap environment in terminal."
+  (interactive)
+  (let ((emacs-exe (ergoemacs-emacs-exe)))
+    (cond
+     ((executable-find "xterm")
+      (when ergoemacs-keyboard-layout
+        (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
+      (when ergoemacs-theme
+        (setenv "ERGOEMACS_THEME" ergoemacs-theme))
+      (shell-command (format "%s -e %s -nw --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& "
+                             (executable-find "xterm") emacs-exe
+                             (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))))
+
 (defun ergoemacs-emacs-exe ()
   "Get the Emacs executable for testing purposes."
   (let* ((emacs-exe (invocation-name))
         (emacs-dir (invocation-directory))
-        (full-exe (expand-file-name emacs-exe emacs-dir)))
+        (full-exe (concat "\"" (expand-file-name emacs-exe emacs-dir)
+                          "\"")))
     (symbol-value 'full-exe)))
 
 (defun ergoemacs-cheat-sheet-file ()
@@ -348,115 +360,314 @@ See: `ergoemacs-forward-block'"
       (progn (goto-char (point-min))))))
 
 (defcustom ergoemacs-back-to-indentation t
-  "Allow `ergoemacs-beginning-of-line-or-block' to move cursor back to the beginning of the indentation.  Otherwise, it is always beginning of line."
+  "Allow `ergoemacs-beginning-of-line-or-what' to move cursor back to the beginning of the indentation.  Otherwise, it is always beginning of line."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-end-of-comment-line t
+  "Allow `ergoemacs-end-of-line-or-what' to move cursor to the
+end of line, but ignore comments.
+
+It also allows `ergoemacs-beginning-of-line-or-what' to move the
+cursor to the beginning of the comment line. 
+"
   :type 'boolean
   :group 'ergoemacs-mode)
 
 (defcustom ergoemacs-use-beginning-or-end-of-line-only 'on-repeat 
-  "Allow `ergoemacs-beginning-of-line-or-block' and `ergoemacs-end-of-line-or-block' to only go to the beginning/end of a line."
+  "Allow `ergoemacs-beginning-of-line-or-what' and `ergoemacs-end-of-line-or-what' to only go to the beginning/end of a line."
   :type '(choice
           (const t :tag "Only go to the beginning or end of a line")
           (const nil :tag "Goto beginning/end of block whenever at beginning/end of line")
           (const on-repeat :tag "Goto beginning/end of block when at beginining/end of line and have already pressed the key."))
   :group 'ergoemacs-mode)
 
+(defcustom ergoemacs-beginning-or-end-of-line-and-what 'block
+  "Change repeatable behavior of beginning/end of line.
+
+When 'buffer use `beginning-of-buffer' or `end-of-buffer'
+When 'page use `scroll-down-command' or `scroll-up-command'
+When 'block use `ergoemacs-backward-block' or `ergoemacs-forward-block'
+When 'nil don't use a repeatable command
+"
+  :type '(choice
+          (const buffer :tag "Goto beginning/end of buffer")
+          (const page :tag "Page Up")
+          (const block :tag "Goto beginning/end of block")
+          (const nil :tag "Do nothing on repeat at beginning/end of line"))
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-repeatable-beginning-or-end-of-buffer t
+  "Makes the beginning and end of buffer command repeatable.
+  Calling it more than once changes the point from the beginning
+  to the end of the buffer."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defun ergoemacs-beginning-or-end-of-buffer (&optional arg)
+  "Goto end or beginning of buffer. See `ergoemacs-end-or-beginning-of-buffer'.
+This behavior can be turned off with `ergoemacs-repeatable-beginning-or-end-of-buffer'."
+  (interactive "p")
+  (let ((ma (region-active-p)))
+    (if current-prefix-arg
+        (progn
+          ;; (setq prefix-arg current-prefix-arg)
+          (ergoemacs-shortcut-internal 'end-of-buffer))
+      (cond
+       ((and ergoemacs-repeatable-beginning-or-end-of-buffer (bobp))
+        (ergoemacs-shortcut-internal 'end-of-buffer))
+       (t (ergoemacs-shortcut-internal 'beginning-of-buffer))))
+    (when (and (not ma) (region-active-p))
+      (deactivate-mark))))
+
+(defun ergoemacs-end-or-beginning-of-buffer (&optional arg)
+  "Go to beginning or end of buffer.
+
+This calls `end-of-buffer', unless there is no prefix and the
+point is already at the beginning of the buffer.  Then it will
+call `beginning-of-buffer'. This function tries to be smart and
+if the major mode redefines the keys, use those keys instead.
+This is done by `ergoemacs-shortcut-internal'.  The repatable
+behavior can be turned off
+with`ergoemacs-repeatable-beginning-or-end-of-buffer'
+
+This will not honor `shift-select-mode'."
+  (interactive "p")
+  (let ((ma (region-active-p)))
+    (if current-prefix-arg
+        (progn
+          ;; (setq prefix-arg current-prefix-arg)
+          (ergoemacs-shortcut-internal 'end-of-buffer))
+      (cond
+       ((and ergoemacs-repeatable-beginning-or-end-of-buffer (eobp))
+        (ergoemacs-shortcut-internal 'beginning-of-buffer))
+       (t (ergoemacs-shortcut-internal 'end-of-buffer))))
+    (when (and (not ma) (region-active-p))
+      (deactivate-mark))))
+
 ;; Extends behavior of
 ;; http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/
 
-(defvar ergoemacs-beginning-of-line-or-block-last-command nil)
-(defun ergoemacs-beginning-of-line-or-block (&optional N)
-  "Move cursor to beginning of indentation, line, or text block.
+(defvar ergoemacs-beginning-of-line-or-what-last-command nil)
+(defun ergoemacs-beginning-of-line-or-what (&optional N)
+  "Move cursor to beginning of indentation, line, or text block, or beginning of buffer.
  (a text block is separated by empty lines).
 
-Move cursor to the first non-whitespace character of a line.  If
-already there move the cursor to the beginning of the line.  If
-at the beginning of the line, move to the last block.  Moving to
-the last block can be toggled with
-`ergoemacs-use-beginning-or-end-of-line-only'.  Also 
+This command moves the cursor as follows:
 
-With argument N not nil or 1, and not at the beginning of
-the line move forward N - 1 lines first If point reaches the
-beginning or end of buffer, it stops there.
- (Similar to `beginning-of-line' arguments)
+1. Move cursor to the beginning of a comment
+   (if `ergoemacs-end-of-comment-line') is true.
 
-If argument N not nil or 1, and at the beginning of the line,
-move N blocks backward.
+From:
+ (progn
+   (ergoemacs-mode 1)) ; Turn on ergoemacs-mode|
 
-Back to indentation can be turned off with `ergoemacs-back-to-indentation'.
+To:
 
-Also this function tries to use whatever the specific mode bound
-to beginning of line by using `ergoemacs-shortcut-internal'
+  (progn
+    (ergoemacs-mode 1)) ; |Turn on ergoemacs-mode
+
+2. Move to the end of the line, ignoring comments
+  (if `ergoemacs-end-of-comment-line') is true.
+
+From:
+  (progn
+    (ergoemacs-mode 1)) ; |Turn on ergoemacs-mode
+
+To:
+
+ (progn
+   (ergoemacs-mode 1))| ; Turn on ergoemacs-mode
+
+
+3. Move cursor to the first non-whitespace character of a line,
+   if `ergoemacs-back-to-indentation' is true (otherwise skip).
+
+From:
+  (progn
+    (ergoemacs-mode 1))| ; Turn on ergoemacs-mode
+
+To:
+
+ (progn
+   |(ergoemacs-mode 1)) ; Turn on ergoemacs-mode
+
+
+4. Move to the beginning of line
+
+From:
+  (progn
+    |(ergoemacs-mode 1)) ; Turn on ergoemacs-mode
+
+To:
+
+ (progn
+|   (ergoemacs-mode 1)) ; Turn on ergoemacs-mode
+
+
+5. After #4, move to (based on `ergoemacs-beginning-or-end-of-line-and-what'):
+   a. Beginning of text-block when selected ('block),
+   b. Beginning of buffer ('buffer), or
+   c. A PgUp ('page)
+
+Currently if you are at the beginning of a line, you will have to
+call this command twice to move with #3.  This behavior can be
+changed by `ergoemacs-use-beginning-or-end-of-line-only'.
+
+Also this function tries to use whatever the specific mode wants
+for these functions by using `ergoemacs-shortcut-internal'.
+
+When moving in steps #1 - #4 if N is not nil or 1, move forward
+N - 1 lines first.  If point reaches the beginning or end of
+the buffer, stop there.
+
+When calling the repeatable command of #3, this command honors
+the prefix arguments of `beginning-of-buffer',
+`ergoemacs-backward-block' and `scroll-down-command'
 "
   (interactive "^p")
-  (setq N (or N 1))
-  (if (and (or (not ergoemacs-use-beginning-or-end-of-line-only)
+  (if (and ergoemacs-beginning-or-end-of-line-and-what
+           (or (not ergoemacs-use-beginning-or-end-of-line-only)
                (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
-                    (eq last-command ergoemacs-beginning-of-line-or-block-last-command)))
+                    (eq last-command ergoemacs-beginning-of-line-or-what-last-command)))
            (= (point) (point-at-bol)))
       (progn
-        (ergoemacs-backward-block N))
-    
-    (if ergoemacs-back-to-indentation
-        (progn
-          (when (not (= 1 N))
-            (let ((line-move-visual nil))
-              (forward-line (- N 1))))
-          
-          (let ((orig-point (point))
-                ind-point bol-point)
-            
-	    (save-excursion
-              (setq prefix-arg nil)
-              (setq current-prefix-arg nil)
-              (ergoemacs-shortcut-internal 'move-beginning-of-line)
-              (setq bol-point (point)))
-            
-	    (save-excursion
-              (back-to-indentation)
-              (setq ind-point (point)))
-	    
-            (cond
-             ((and (< ind-point orig-point)
-		   (< bol-point orig-point)
-		   (= ind-point (max ind-point bol-point)))
-	      (goto-char ind-point))
-	     ((and (< ind-point orig-point)
-                   (< bol-point orig-point)
-                   (= bol-point (max ind-point bol-point)))
-              (goto-char bol-point))
-	     ((and (< bol-point orig-point)
-                   (>= ind-point orig-point))
-              (goto-char bol-point))
-	     ((and (< ind-point orig-point)
-		   (>= bol-point orig-point))
-	      (goto-char ind-point))
-	     (t
-	      (goto-char bol-point)))))
-      (ergoemacs-shortcut-internal 'move-beginning-of-line)))
+        (cond
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
+          (ergoemacs-shortcut-internal 'beginning-of-buffer))
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
+          (ergoemacs-shortcut-internal 'ergoemacs-backward-block))
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
+          (ergoemacs-shortcut-internal 'scroll-down-command)))
+        (beginning-of-line))
+    (setq N (or N 1))
+    (when (not (= 1 N))
+      (let ((line-move-visual nil))
+        (forward-line (- N 1))))
+    (let (pts)
+      (push (point-at-bol) pts)
+      (save-excursion
+        (setq prefix-arg nil)
+        (setq current-prefix-arg nil)
+        (ergoemacs-shortcut-internal 'move-beginning-of-line)
+        (push (point) pts))
+      (when ergoemacs-back-to-indentation
+        (save-excursion
+          (back-to-indentation)
+          (push (point) pts)))
+      (when ergoemacs-end-of-comment-line
+        (save-excursion
+          (when (not (eolp))
+            (forward-char 1))
+          (let ((cs (condition-case err
+                        (comment-search-backward (point-at-bol) t)
+                      (error nil))))
+            (when cs
+              (skip-syntax-forward " " (point-at-eol))
+              (unless (looking-at "$")
+                (push (point) pts))
+              (goto-char cs)
+              (skip-syntax-backward " " (point-at-bol))
+              (push (point) pts)))))   ;; Test
+      (cond
+       ((not pts)
+        (call-interactively 'move-beginning-of-line))
+       (t
+        (setq pts (sort pts '>))
+        (setq pts (remove-if (lambda(x) (>= x (point))) pts))
+        (when pts
+          (goto-char (nth 0 pts)))))))
   ;; ergoemacs shortcut changes this-command
-  (setq ergoemacs-beginning-of-line-or-block-last-command this-command))
+  (setq ergoemacs-beginning-of-line-or-what-last-command this-command))
 
-(defun ergoemacs-end-of-line-or-block (&optional N )
-  "Move cursor to end of line, or end of current or next text block.
+(defun ergoemacs-end-of-line-or-what (&optional N )
+  "Move cursor to end of line, or end of current or next text block or even end of buffer.
  (a text block is separated by empty lines).
 
-You can make this only go to the end of the line by toggling `ergoemacs-use-beginning-or-end-of-line-only'.
+1. Move cursor to the end of a line, ignoring comments
+   (if `ergoemacs-end-of-comment-line') is true.
+
+From:
+ (progn
+ |  (ergoemacs-mode 1)) ; Turn on ergoemacs-mode
+
+To:
+
+  (progn
+    (ergoemacs-mode 1))| ; Turn on ergoemacs-mode
+
+2. Move to the end of the line
+
+From:
+  (progn
+    (ergoemacs-mode 1))| ; Turn on ergoemacs-mode
+
+To:
+
+ (progn
+  (ergoemacs-mode 1)) ; Turn on ergoemacs-mode|
+
+3. After #2, move to (based on `ergoemacs-beginning-or-end-of-line-and-what'):
+   a. End of text-block when selected ('block),
+   b. End of buffer ('buffer), or
+   c. A PgDown ('page)
+
+Move point to end of current line as displayed.
+With argument ARG not nil or 1, move forward ARG - 1 lines first.
+If point reaches the beginning or end of buffer, it stops there.
 
 Attempt to honor each modes modification of beginning and end of
-line functions by using `ergoemacs-shortcut-internal'."
+line functions by using `ergoemacs-shortcut-internal'.
+
+When calling the repeatable command of #3, this command honors
+the prefix arguments of `end-of-buffer',
+`ergoemacs-forward-block' and `scroll-up-command'.
+
+"
   (interactive "^p")
-  (setq N (or N 1))
-  (if (and (or (not ergoemacs-use-beginning-or-end-of-line-only)
+  (if (and ergoemacs-beginning-or-end-of-line-and-what
+           (or (not ergoemacs-use-beginning-or-end-of-line-only)
                (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
-                    (eq last-command ergoemacs-beginning-of-line-or-block-last-command)))
+                    (eq last-command ergoemacs-beginning-of-line-or-what-last-command)))
            (= (point) (point-at-eol)))
-      (ergoemacs-forward-block N)
-    (setq N (if (= N 1) nil N))
-    (setq prefix-arg N)
-    (setq current-prefix-arg N)
-    ;; (ergoemacs-shortcut-internal 'move-end-of-line)
-    (call-interactively 'move-end-of-line))
-  (setq ergoemacs-beginning-of-line-or-block-last-command this-command))
+      (progn 
+        (cond
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
+          (ergoemacs-shortcut-internal 'end-of-buffer))
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
+          (ergoemacs-shortcut-internal 'ergoemacs-forward-block))
+         ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
+          (ergoemacs-shortcut-internal 'scroll-up-command)))
+        (end-of-line))
+    (setq N (or N 1))
+    (when (not (= 1 N))
+      (let ((line-move-visual nil))
+        (forward-line (- N 1))))
+    (let (pts)
+      (setq prefix-arg nil)
+      (setq current-prefix-arg nil)
+      (save-excursion
+        (call-interactively 'move-end-of-line)
+        (push (point) pts))
+      (when ergoemacs-end-of-comment-line
+        (save-excursion
+          ;; See http://www.emacswiki.org/emacs/EndOfLineNoComments
+          (let ((cs (condition-case err
+                        (comment-search-forward (point-at-eol) t)
+                      (error nil))))
+            (when cs
+              (goto-char cs)
+              (skip-syntax-backward " " (point-at-bol))
+              (push (point) pts)))))
+      (cond
+       ((not pts)
+        (call-interactively 'move-end-of-line))
+       (t
+	(setq pts (sort pts '<))
+	(setq pts (remove-if (lambda(x) (<= x (point))) pts))
+        (when pts
+          (goto-char (nth 0 pts)))))))
+  (setq ergoemacs-beginning-of-line-or-what-last-command this-command))
 
 ;;; TEXT SELECTION RELATED
 
@@ -603,7 +814,7 @@ Calling this command 3 times will always result in no whitespaces around cursor.
   (interactive)
   (let (cursor-point
         line-has-meat-p  ; current line contains non-white space chars
-        spaceTabNeighbor-p
+        space-tab-neighbor-p
         whitespace-begin whitespace-end
         space-or-tab-begin space-or-tab-end
         line-begin-pos line-end-pos)
@@ -611,7 +822,7 @@ Calling this command 3 times will always result in no whitespaces around cursor.
       ;; todo: might consider whitespace as defined by syntax table, and also consider whitespace chars in unicode if syntax table doesn't already considered it.
       (setq cursor-point (point))
       
-      (setq spaceTabNeighbor-p (if (or (looking-at " \\|\t") (looking-back " \\|\t")) t nil) )
+      (setq space-tab-neighbor-p (if (or (looking-at " \\|\t") (looking-back " \\|\t")) t nil) )
       (move-beginning-of-line 1) (setq line-begin-pos (point) )
       (move-end-of-line 1) (setq line-end-pos (point) )
       ;;       (re-search-backward "\n$") (setq line-begin-pos (point) )
@@ -633,7 +844,7 @@ Calling this command 3 times will always result in no whitespaces around cursor.
     
     (if line-has-meat-p
         (let (deleted-text)
-          (when spaceTabNeighbor-p
+          (when space-tab-neighbor-p
             ;; remove all whitespaces in the range
             (setq deleted-text (delete-and-extract-region space-or-tab-begin space-or-tab-end))
             ;; insert a whitespace only if we have removed something
@@ -648,35 +859,161 @@ Calling this command 3 times will always result in no whitespaces around cursor.
       ;; todo: possibly code my own delete-blank-lines here for better efficiency, because delete-blank-lines seems complex.
       )))
 
-(defun ergoemacs-toggle-letter-case ()
-  "Toggle the letter case of current word or text selection.
-Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
-  (interactive)
-  (let (p1 p2 (deactivate-mark nil) (case-fold-search nil))
-    (if (region-active-p)
-        (setq p1 (region-beginning) p2 (region-end))
-      (let ((bds (bounds-of-thing-at-point 'word) ) )
-        (setq p1 (car bds) p2 (cdr bds)) ) )
 
-    (when (and p1 p2)
+(defcustom ergoemacs-toggle-letter-case-and-spell t
+  "Auto-corrects previous word when can't toggle letter case."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-toggle-camel-case-chars
+  '((R-mode ("." "_"))
+    (emacs-lisp-mode ("-" "_"))
+    (org-mode nil)
+    (t ("_")))
+  "Characters to toggle between camelCase and extended_variables."
+  :type '(repeat
+          (list
+           (choice
+            (const :tag "Default" t)
+            (symbol :tag "Major Mode"))
+           (choice
+            (repeat (string :tag "Character"))
+            (const :tag "No camelCase conversion" nil))))
+  :group 'ergoemacs-mode)
+
+(defcustom ergoemacs-toggle-case-and-camel-case t
+  "Toggles Case and CamelCase depending on context."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defun ergoemacs-get-toggle-camel-case-chars ()
+  "Gets camel case characters to toggle between.
+Based on the value of `major-mode' and
+`ergoemacs-toggle-camel-case-chars'."
+  (let ((a (assoc major-mode ergoemacs-toggle-camel-case-chars)))
+    (unless a
+      (setq a (assoc t ergoemacs-toggle-camel-case-chars)))
+    (car (cdr a))))
+
+(defun ergoemacs-camelize-method (s &optional char)
+  "Convert under_score string S to CamelCase string."
+  (mapconcat 'identity (ergoemacs-mapcar-head
+                        '(lambda (word) (downcase word))
+                        '(lambda (word) (capitalize (downcase word)))
+                        (split-string s (or char "_"))) ""))
+
+(defun ergoemacs-camel-bounds (camel-case-chars)
+  "Return the camel-case bounds.
+This command assumes that CAMEL-CASE-CHARS is list of characters
+that can separate a variable."
+  (let* ((reg (concat "[:alpha:]"
+                      (mapconcat (lambda(x) x) camel-case-chars "")))
+         (p1 (save-excursion (skip-chars-backward reg) (point)))
+         (p2 (save-excursion (skip-chars-forward reg) (point))))
+    (if (= p1 p2) nil
+      (cons p1 p2))))
+
+(defun ergoemacs-toggle-letter-case ()
+  "Toggle the letter case/camelCase of current word or text selection.
+For words or toggles between: “all lower”, “Initial Caps”, “ALL CAPS”.
+
+When you are in a camelCase or separated variable like:
+emacs-lisp or emacs_lisp emacsLisp or EmacsLisp, toggle between
+the different forms of the variable.  This can be turned off with
+`ergoemacs-toggle-case-and-camel-case'.
+
+When not in a word, nothing is selected, and
+`ergoemacs-toggle-letter-case-and-spell' is non-nil, spell check
+the last misspelled word with
+`flyspell-auto-correct-previous-word'.
+"
+  (interactive)
+  (let (p1 p2 (deactivate-mark nil) (case-fold-search nil)
+           camel-case
+           (ccc (ergoemacs-get-toggle-camel-case-chars)))
+    (cond
+     ((region-active-p)
+      (setq p1 (region-beginning) p2 (region-end)))
+     ((and (eq last-command this-command)
+           (string-match "\\(all\\|caps\\)" (get this-command 'state)))
+      (let ((bds (bounds-of-thing-at-point 'word)))
+        (setq p1 (car bds) p2 (cdr bds))))
+     ((eq last-command this-command)
+      (let ((bds (ergoemacs-camel-bounds ccc)))
+        (setq p1 (car bds) p2 (cdr bds))
+        (setq camel-case (get this-command 'state))))
+     (t
+      (let* ((bds (if (not ccc) nil
+                    (ergoemacs-camel-bounds ccc)))
+             (txt (if (not bds) nil
+                    (filter-buffer-substring (car bds) (cdr bds)))))
+        (cond
+         ((and txt (string-match "[[:lower:]][[:upper:]]" txt))
+          (if (string-match "^[[:lower:]]" txt)
+              (setq camel-case "camel lower")
+            (setq camel-case "camel upper")))
+         ((and txt (string-match (regexp-opt ccc t) txt))
+          (setq camel-case (match-string 1 txt)))
+         (t
+          (setq bds (bounds-of-thing-at-point 'word))))
+        (setq p1 (car bds) p2 (cdr bds)))))
+    (if (not (and p1 p2))
+        (when ergoemacs-toggle-letter-case-and-spell
+          (call-interactively 'flyspell-auto-correct-previous-word))
       (when (not (eq last-command this-command))
         (save-excursion
           (goto-char p1)
           (cond
-           ((looking-at "[[:lower:]][[:lower:]]") (put this-command 'state "all lower"))
-           ((looking-at "[[:upper:]][[:upper:]]") (put this-command 'state "all caps") )
-           ((looking-at "[[:upper:]][[:lower:]]") (put this-command 'state "init caps") )
-           ((looking-at "[[:lower:]]") (put this-command 'state "all lower"))
-           ((looking-at "[[:upper:]]") (put this-command 'state "all caps") )
-           (t (put this-command 'state "all lower") ) ) ) )
-
+           (camel-case
+            (put this-command 'state camel-case))
+           ((looking-at "[[:lower:]][[:lower:]]")
+            (put this-command 'state "all lower"))
+           ((looking-at "[[:upper:]][[:upper:]]")
+            (put this-command 'state "all caps"))
+           ((looking-at "[[:upper:]][[:lower:]]")
+            (put this-command 'state "init caps"))
+           ((looking-at "[[:lower:]]")
+            (put this-command 'state "all lower"))
+           ((looking-at "[[:upper:]]")
+            (put this-command 'state "all caps"))
+           (t
+            (put this-command 'state "all lower")))))
+      
       (cond
        ((string= "all lower" (get this-command 'state))
         (upcase-initials-region p1 p2) (put this-command 'state "init caps"))
        ((string= "init caps" (get this-command 'state))
         (upcase-region p1 p2) (put this-command 'state "all caps"))
        ((string= "all caps" (get this-command 'state))
-        (downcase-region p1 p2) (put this-command 'state "all lower")) ))) )
+        (downcase-region p1 p2) (put this-command 'state "all lower"))
+       ((string= "camel lower" (get this-command 'state))
+        (upcase-region p1 (+ p1 1)) (put this-command 'state "camel upper"))
+       ((string= "camel upper" (get this-command 'state))
+        (let ((txt (filter-buffer-substring p1 p2)))
+          (delete-region p1 p2)
+          (insert (ergoemacs-un-camelcase-string txt (nth 0 ccc)))
+          (put this-command 'state (nth 0 ccc))))
+       (t ;; This cycles through the camel-case types.
+        (let ((c-char (get this-command 'state))
+              n-char)
+          (mapc
+           (lambda(char)
+             (when (eq n-char t)
+               (setq n-char char))
+             (when (string= c-char char)
+               (setq n-char t)))
+           ccc)
+          (cond
+           ((eq n-char t) ;; at last char. convert un_camel to unCamel
+            (let ((txt (filter-buffer-substring p1 p2)))
+              (delete-region p1 p2)
+              (insert (ergoemacs-camelize-method txt c-char)))
+            (put this-command 'state "camel lower"))
+           (t
+            (goto-char p1)
+            (while (search-forward c-char p2 t)
+              (replace-match n-char t t))
+            (put this-command 'state n-char)))))))))
 
 ;;; FRAME
 
@@ -856,16 +1193,163 @@ Else it is a user buffer."
   (text-scale-increase 0))
 
 ;;; org-mode functions.
+
+(defun ergoemacs-org-bold ()
+  "Call `org-emphasize' with *"
+  (interactive)
+  (org-emphasize ?*))
+
+(defun ergoemacs-org-italic ()
+  "Call `org-emphasize' with /"
+  (interactive)
+  (org-emphasize ?/))
+
+(defun ergoemacs-org-underline ()
+  "Call `org-emphasize' with _"
+  (interactive)
+  (org-emphasize ?_))
+
+(defvar ergoemacs-smart-punctuation-hooks nil
+  "`ergoemacs-smart-punctuation' hooks.")
+
+(defun ergoemacs-smart-punctuation-mode-p ()
+  "Determines if a smart paren mode is active."
+  (or (and (boundp 'smartparens-mode)
+           smartparens-mode)
+      (and (boundp 'autopair-mode)
+           autopair-mode)
+      (and (boundp 'textmate-mode)
+           textmate-mode)
+      (and (boundp 'wrap-region-mode)
+           wrap-region-mode)
+      (and (boundp 'electric-pair-mode)
+           electric-pair-mode)
+      (and (boundp 'paredit-mode)
+           paredit-mode)))
+
+(defun ergoemacs-smart-punctuation-insert-pair (pair)
+  "Inserts a matched pair like ().
+If a smart-punctuation mode is active, use it by placing the initial pair in the unread command events."
+  (if (ergoemacs-smart-punctuation-mode-p)
+      (setq unread-command-events (append (listify-key-sequence (read-kbd-macro (substring pair 0 1))) unread-command-events))
+    (insert pair)
+    (backward-char 1)))
+
+(defvar ergoemacs-smart-punctuation-pairs '("()" "[]" "{}" "\"\"")
+  "Default pairs to cycle among for `ergoemacs-smart-punctuation'")
+
+(defvar ergoemacs-smart-punctuation-next-pair 0)
+(defvar ergoemacs-smart-punctuation-last-mark nil)
+
+(defcustom ergoemacs-repeat-smart-punctuation t
+  "Makes `ergoemacs-smart-punctuation' repeatable"
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+
+
+(defun ergoemacs-smart-punctuation ()
+  "Smart Punctuation Function for `ergoemacs-mode'."
+  (interactive) 
+  (unless (run-hook-with-args-until-success 'ergoemacs-smart-punctuation-hooks)
+    (cond 
+     ((and (eq last-command this-command)
+           (looking-back (regexp-opt (mapcar (lambda(pair) (substring pair 0 1)) ergoemacs-smart-punctuation-pairs) t)))
+      (undo)
+      (when ergoemacs-smart-punctuation-last-mark
+        ;; I use set-mark because I don't want it to be added to the mark-stack.
+        (set-mark ergoemacs-smart-punctuation-last-mark))
+      (setq ergoemacs-smart-punctuation-last-mark (condition-case err
+                                                      (mark)
+                                                    (error nil)))
+      (ergoemacs-smart-punctuation-insert-pair (nth ergoemacs-smart-punctuation-next-pair
+                                                    ergoemacs-smart-punctuation-pairs)))
+     (t
+      (setq ergoemacs-smart-punctuation-last-mark (condition-case err
+                                                      (mark)
+                                                    (error nil)))
+      (ergoemacs-smart-punctuation-insert-pair (nth 0 ergoemacs-smart-punctuation-pairs))
+      (setq ergoemacs-smart-punctuation-next-pair 0)))
+    (setq ergoemacs-smart-punctuation-next-pair (+ ergoemacs-smart-punctuation-next-pair 1))
+    (unless (nth ergoemacs-smart-punctuation-next-pair ergoemacs-smart-punctuation-pairs)
+      (setq ergoemacs-smart-punctuation-next-pair 0))
+    (when ergoemacs-repeat-smart-punctuation
+      (let ((repeat-key (key-description (this-single-command-keys)))
+            (temp-map (make-sparse-keymap))
+            message-log-max)
+        (setq repeat-key (substring repeat-key (- (length repeat-key) 1)))
+        (define-key temp-map (read-kbd-macro repeat-key) this-command)
+        (set-temporary-overlay-map temp-map)
+        (when (eq (key-binding (read-kbd-macro repeat-key) t) this-command)
+          (message "Cycle with %s" (ergoemacs-pretty-key repeat-key)))))))
+
 (defun ergoemacs-org-insert-heading-respect-content (&optional reopen-or-invisible-ok)
   "When in an `org-mode' table, use `cua-set-rectangle-mark', otherwise use `org-insert-heading-respect-content'"
   (interactive "P")
   (cond
    ((save-excursion (beginning-of-line) (looking-at org-table-any-line-regexp))
-    (setq prefix-arg current-prefix-arg)
+    ;; (setq prefix-arg current-prefix-arg)
     (cua-set-rectangle-mark reopen-or-invisible-ok))
    (t
-    (setq prefix-arg current-prefix-arg)
+    ;; (setq prefix-arg current-prefix-arg)
     (org-insert-heading-respect-content reopen-or-invisible-ok))))
+
+(defcustom ergoemacs-smart-paste nil
+  "Do a smart paste.  That is repeated pastes cycle though the kill ring."
+  :type '(choice
+          (const :tag "Repeated paste cycles through last pasted items." t)
+          (const :tag "Repeated paste starts browse-kill-ring if available." browse-kill-ring)
+          (const :tag "Repeated paste, pastes same thing multiple times."))
+  :group 'ergoemacs-mode)
+
+
+(defun ergoemacs-paste-cycle (&optional arg)
+  "Run `yank-pop' or`yank'.
+This is `yank-pop' if `ergoemacs-smart-paste' is nil.
+This is `yank' if `ergoemacs-smart-paste' is t.
+
+If `browse-kill-ring' is enabled and the last command is not a
+paste, this will start `browse-kill-ring'.
+
+When in `browse-kill-ring-mode', cycle backward through the key ring.
+"
+  (interactive "P")
+  (if (eq major-mode 'browse-kill-ring-mode)
+      (if (save-excursion (re-search-backward "^----" nil t))
+          (call-interactively 'browse-kill-ring-previous)
+        (goto-char (point-max))
+        (call-interactively 'browse-kill-ring-previous))
+    (if (and (fboundp 'browse-kill-ring)
+             (not (eq last-command 'yank)))
+        (browse-kill-ring)
+      (if ergoemacs-smart-paste
+          (ergoemacs-shortcut-internal 'yank)
+        (erogemacs-shortcut-internal 'yank-pop)))))
+
+(defun ergoemacs-paste (&optional arg)
+  "Run `yank' or `yank-pop' if this command is repeated.
+This is `yank' if `ergoemacs-smart-paste' is nil.
+This is `yank-pop' if `ergoemacs-smart-paste' is t and last command is a yank.
+This is `browse-kill-ring' if `ergoemacs-smart-paste' equals 'browse-kill-ring and last command is a yank.
+
+When in `browse-kill-ring-mode', cycle forward through the key ring.
+"
+  (interactive "P")
+  (cond
+   ((and (eq major-mode 'browse-kill-ring-mode) (save-excursion (re-search-forward "^----" nil t)))
+    (call-interactively 'browse-kill-ring-forward))
+   ((eq major-mode 'browse-kill-ring-mode)
+    (goto-char (point-min)))
+   ((and (eq ergoemacs-smart-paste 'browse-kill-ring)
+         (eq last-command 'yank)
+         (fboundp 'browse-kill-ring))
+    (browse-kill-ring)
+    ;; Add unread command events another "paste"
+    (setq unread-command-events (listify-key-sequence (this-single-command-keys))))
+   ((and ergoemacs-smart-paste (eq last-command 'yank))
+    (ergoemacs-shortcut-internal 'yank-pop))
+   (t
+    (ergoemacs-shortcut-internal 'yank))))
 
 (defun ergoemacs-org-yank (&optional arg)
   "Ergoemacs org-mode paste."
@@ -917,10 +1401,12 @@ ARG is the prefix argument for either command." direction direction direction)
                     (save-excursion
                       (goto-char (region-beginning))
                       (org-at-heading-p))))))
-         (setq prefix-arg current-prefix-arg) ;; Send prefix to next function
+         ;; (setq prefix-arg current-prefix-arg)
+         ;; Send prefix to next function
          (call-interactively ',(intern (format "org-meta%s" direction))))
         (t
-         (setq prefix-arg current-prefix-arg) ;; Send prefix to next function
+         ;; (setq prefix-arg current-prefix-arg)
+         ;; Send prefix to next function
          (ergoemacs-lookup-key-and-run ,(format "<M-%s>" direction)))))))
 
 (ergoemacs-define-org-meta "left")
@@ -976,20 +1462,15 @@ ARG is the prefix argument for either command." direction direction direction)
   (if list
       (cons (funcall fn-head (car list)) (mapcar fn-rest (cdr list)))))
 
-(defun ergoemacs-camelize (s)
+(defun ergoemacs-camelize (s &optional char)
   "Convert under_score string S to CamelCase string."
   (mapconcat 'identity (mapcar
                         (lambda (word) (capitalize (downcase word)))
-                        (split-string s "_")) ""))
-(defun ergoemacs-camelize-method (s)
-  "Convert under_score string S to camelCase string."
-  (mapconcat 'identity (ergoemacs-mapcar-head
-                        '(lambda (word) (downcase word))
-                        '(lambda (word) (capitalize (downcase word)))
-                        (split-string s "_")) ""))
+                        (split-string s (or char "_"))) ""))
+
+
 
 ;; This is my camel-case switcher
-
 (defun ergoemacs-toggle-camel-case ()
   (interactive)
   (let* ((bounds (progn (if (= (cdr (bounds-of-thing-at-point 'word))
@@ -1237,6 +1718,114 @@ Guillemet -> quote, degree -> @, s-zed -> ss, upside-down ?! -> ?!."
       (delete-char 1)
       (insert (cdr sans-accent))
       (backward-char))))
+
+
+;;; Ergoemacs lookup words. from lookup-word-on-internet.el
+
+(defvar ergoemacs-all-dictionaries nil
+  "A vector of dictionaries. Used by `lookup-ergoemacs-all-dictionaries'. http://wordyenglish.com/words/dictionary_tools.html ")
+(setq ergoemacs-all-dictionaries [
+                        "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�" ; 1913 Webster, WordNet
+                        "http://www.thefreedictionary.com/�"                         ; AHD
+                        "http://www.answers.com/main/ntquery?s=�"                    ; AHD
+                        "http://en.wiktionary.org/wiki/�"
+                        "http://www.google.com/search?q=define:+�" ; google
+                        "http://www.etymonline.com/index.php?search=�" ; etymology
+                        ] )
+
+(defun ergoemacs-lookup-word-on-internet (&optional input-word site-to-use)
+  "Look up current word or text selection in a online reference site.
+This command launches/switches you to default browser.
+
+Optional argument INPUT-WORD and SITE-TO-USE can be given.
+SITE-TO-USE a is URL string in this form: 「http://en.wiktionary.org/wiki/�」.
+the 「�」 is a placeholder for the query string.
+
+If SITE-TO-USE is nil, Google Search is used.
+
+For a list of online reference sites, see:
+ URL `http://ergoemacs.org/emacs/emacs_lookup_ref.html'"
+  (interactive)
+  (let (ξword refUrl myUrl)
+    (setq ξword
+          (if input-word
+              input-word
+            (if (region-active-p)
+                (buffer-substring-no-properties (region-beginning) (region-end))
+              (thing-at-point 'word) )) )
+    
+    (setq ξword (with-temp-buffer
+                  (insert ξword)
+                  (ergoemacs-unaccent-region (point-min) (point-max) t)
+                  (goto-char (point-min))
+                  (while (re-search-forward " " nil t)
+                    (replace-match "%20"))
+                  (buffer-string)))
+    
+    (setq refUrl
+          (if site-to-use
+              site-to-use
+            "http://www.google.com/search?q=�" ))
+
+    (setq myUrl (replace-regexp-in-string "�" ξword refUrl t t))
+    (cond
+     ((string-equal system-type "windows-nt") ; any flavor of Windows
+      (browse-url-default-windows-browser myUrl))
+     ((string-equal system-type "gnu/linux")
+      (browse-url myUrl))
+     ((string-equal system-type "darwin") ; Mac
+      (browse-url myUrl)))))
+
+(defun ergoemacs-lookup-google (&optional input-word)
+  "Lookup urrent word or text selection in Google Search.
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://www.google.com/search?q=�"))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl)))
+
+(defun ergoemacs-lookup-wikipedia (&optional input-word)
+  "Lookup current word or text selection in Wikipedia.
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://en.wikipedia.org/wiki/�"))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl)))
+
+(defun ergoemacs-lookup-word-dict-org (&optional input-word)
+  "Lookup definition of current word or text selection in URL `http://dict.org/'.
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�" ))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl)))
+
+(defun ergoemacs-lookup-word-definition (&optional input-word)
+  "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'.
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://www.thefreedictionary.com/�"))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl)))
+
+(defun ergoemacs-lookup-answers.com (&optional input-word)
+  "Lookup current word or text selection in URL `http://answers.com/'.
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://www.answers.com/main/ntquery?s=�"))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl)))
+
+(defun ergoemacs-lookup-wiktionary (&optional input-word)
+  "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (let ((dictUrl "http://en.wiktionary.org/wiki/�" ))
+    (ergoemacs-lookup-word-on-internet input-word dictUrl) ) )
+
+(defun ergoemacs-lookup-all-dictionaries (&optional input-word)
+  "Lookup definition in many dictionaries.
+Current word or text selection is used as input.
+The dictionaries used are in `ergoemacs-all-dictionaries'.
+
+See also `ergoemacs-lookup-word-on-internet'."
+  (interactive)
+  (mapc (lambda (dictUrl) (ergoemacs-lookup-word-on-internet input-word dictUrl)) ergoemacs-all-dictionaries)) 
 
 
 
