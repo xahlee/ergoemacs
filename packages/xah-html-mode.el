@@ -444,7 +444,7 @@ This command does the inverse of `xhm-htmlize-precode'."
           ;; (xhm-remove-span-tag-region p1 p2)
           (xhm-dehtmlize-precode)
           )
-      
+
       (progn
         (message "doing htmlizing")
         (xhm-htmlize-precode xhm-lang-name-map) )
@@ -1151,7 +1151,7 @@ Update the <title>…</title> and <h1>…</h1> of current buffer."
              (insert εnewTitle ) )
 
       (if (search-forward "<h1>")
-          (progn 
+          (progn
             (setq p1 (point) )
             (search-forward "<")
             (setq p2 (- (point) 1) )
@@ -1431,6 +1431,16 @@ If there's a text selection, wrap p around each text block (separated by 2 newli
     (insert "<p>" (replace-regexp-in-string "\n\n+" "</p>\n\n<p>" (trim-string inputText)) "</p>")
     )
   )
+
+(defun xhm-insert-br-tag ()
+  "Add <br /> tag."
+  (interactive)
+  (xhm-wrap-html-tag "br") )
+
+(defun xhm-insert-hr-tag ()
+  "Add <hr /> tag."
+  (interactive)
+  (xhm-wrap-html-tag "hr") )
 
 (defun xhm-emacs-to-windows-kbd-notation-string (inputStr)
   "Change emacs keyboard-shortcut notation to Windows's notation.
@@ -1744,7 +1754,7 @@ This function does not `save-excursion'.
       ) )
 
 (defun xhm-wrap-html-tag (tagName &optional className)
-  "Insert/wrap a HTML tags to text selection or current word/line/text-block.
+  "Insert/wrap HTML tag to text selection or current word/line/text-block.
 When there's not text selection, the tag will be wrapped around current word/line/text-block, depending on the tag used.
 
 If current line or word is empty, then insert open/end tags and place cursor between them.
