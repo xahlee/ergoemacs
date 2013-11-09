@@ -5,7 +5,7 @@
 	     (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages"))
 
 ;; ;; Tool-bar has to be turned-off as soon as possible so the user cannot see it
-;; (tool-bar-mode 0) ;; Not sure we should have this on. The way it is right now, is rather useless for anyone who would use emacs, and i don't think it really provide any UI improvement because there's the menu already. The icons are rather very ugly. Possibly we can improve the icons, and or add a Close button to it.
+(tool-bar-mode 0) ;; Not sure we should have this on. The way it is right now, is rather useless for anyone who would use emacs, and i don't think it really provide any UI improvement because there's the menu already. The icons are rather very ugly. Possibly we can improve the icons, and or add a Close button to it.
 
 ;; Load ergoemacs-keybindings minor mode
 (load "ergoemacs-keybindings/ergoemacs-mode")
