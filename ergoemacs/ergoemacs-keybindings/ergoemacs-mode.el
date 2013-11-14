@@ -432,8 +432,9 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
                 ergoemacs-unbind-keys
                 nk)
             (remove-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
-            (setq nk (key-binding (read-kbd-macro prefix-keys) t nil (point)))
-            (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
+            (unwind-protect
+                (setq nk (key-binding (read-kbd-macro prefix-keys) t nil (point)))
+              (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist))
             (if nk
                 (setq fn nk)
               (beep)
@@ -477,8 +478,10 @@ function immediately when `window-system' is true."
                   ergoemacs-unbind-keys
                   nk)
               (remove-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
-              (setq nk (key-binding (read-kbd-macro prefix-keys) t nil (point)))
-              (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
+              (unwind-protect
+                  (setq nk (key-binding (read-kbd-macro prefix-keys) t nil (point)))
+                (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist))s
+              
               (if nk
                   (call-interactively nk)
                 (beep)
@@ -624,6 +627,7 @@ work in the terminal."
     t)
    (t nil)))
 
+;;;###autoload
 (defmacro ergoemacs-setup-keys-for-keymap (keymap)
   "Setups ergoemacs keys for a specific keymap"
   `(condition-case err
@@ -1628,12 +1632,14 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
   (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
     (setq minor-mode-map-alist (append (delete x minor-mode-map-alist) (list x)))))
 
+(defvar ergoemacs-this-command nil)
 (defun ergoemacs-pre-command-hook ()
   "Ergoemacs pre-command-hook."
   (let (deactivate-mark)
     (condition-case err
         (progn
           (ergoemacs-vars-sync)
+          (setq ergoemacs-this-command this-command)
           (when ergoemacs-mode
             ;; Raise shortcuts and modal modes.
             (ergoemacs-shuffle-keys)

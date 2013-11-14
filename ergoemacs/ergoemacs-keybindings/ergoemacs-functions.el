@@ -3,7 +3,8 @@
 ;; Copyright (C) 2013 Matthew L. Fidler
 
 ;; Maintainer: Matthew L. Fidler
-;; Authors: Xah Lee, Matthew Fidler, Drew Adams, Ting-Yu Lin, David Capello
+;; Authors: Xah Lee, Matthew Fidler, Drew Adams, Ting-Yu Lin, David
+;; Capello, Nikolaj Schumacher
 ;; Keywords: convenience
 
 ;; ErgoEmacs is free software: you can redistribute it and/or modify
@@ -183,31 +184,6 @@
       (ergoemacs-gen-svg ergoemacs-theme "kbd-ergo.svg" (concat var-dir "ergo-layouts")))
     (symbol-value 'extra-dir)))
 
-;;; Ido-ergoemacs functional fixes
-(defun ergoemacs-ido-c-o (arg)
-  "Ergoemacs ido C-o command."
-  (interactive "P")
-  (cond
-   ((memq ido-cur-item '(file dir))
-    (ido-fallback-command))
-   (t
-    (minibuffer-keyboard-quit)
-    (ido-find-file))))
-
-(defun ergoemacs-ido-prev-match-dir ()
-  "Call the correct function based on if we are completing directories or not"
-  (interactive)
-  (if (and (boundp 'item) item (eq item 'file))
-      (ido-prev-match-dir)
-    (previous-history-element 1)))
-
-(defun ergoemacs-ido-next-match-dir ()
-  "Call the correct function based on if we are completing directories or not."
-  (interactive)
-  (if (and (boundp 'item) item (eq item 'file))
-      (ido-next-match-dir)
-    (next-history-element 1)))
-
 (defun ergoemacs-next-line ()
   "Inserts an indented newline after the current line and moves the point to it."
   (interactive "P")
@@ -258,15 +234,20 @@ If narrow-to-region is in effect, then cut that region only."
   (deactivate-mark))
 
 (defun ergoemacs-cut-line-or-region (&optional arg)
-  "Cut the current line, or current text selection."
+  "Cut the current line, or current text selection.
+Use `cua-cut-rectangle' or `cua-cut-region' when `cua-mode' is
+turned on.  When region is active, use
+`ergoemacs-shortcut-internal' to remap any mode that changes
+emacs' default cut key, C-w."
   (interactive "P")
   (cond
+   ;; FIXME: figure out how to lookup shortcuts and still support cua.
    ((and cua--rectangle (boundp 'cua-mode) cua-mode)
     (cua-cut-rectangle arg))
    ((and (region-active-p) (boundp 'cua-mode) cua-mode)
     (cua-cut-region arg))
-   ((region-active-p)
-    (kill-region (region-beginning) (region-end)))
+   ((region-active-p) ;; In case something else is bound to C-w.
+    (ergoemacs-shortcut-internal 'kill-region))
    (t
     (kill-region (line-beginning-position) (line-beginning-position 2))))
   (deactivate-mark))
@@ -742,23 +723,26 @@ Subsequent calls expands the selection to larger semantic unit."
 
 (defun ergoemacs-kill-line-backward (&optional number)
   "Kill text between the beginning of the line to the cursor position.
-If there's no text, delete the previous line ending."
+If there's no text, delete the previous line ending.
+Use `ergoemacs-shortcut-internal' in case kill line was remapped."
   (interactive "p")
   (if (and (= number 1) (looking-back "\n"))
       (delete-char -1)
-    (kill-line (- 1 number))))
+    (setq current-prefix-arg (- 1 number))
+    (ergoemacs-shortcut-internal 'kill-line)))
 
 (defun ergoemacs-move-cursor-next-pane (&optional number)
-  "Move cursor to the next pane."
-  (interactive "p")
-  (other-window (or number 1)))
+  "Move cursor to the next pane.
+Use `ergoemacs-shortcut-internal' for maximum mode compatibility."
+  (interactive "p") ;; Other window is bound to C-x o
+  (ergoemacs-shortcut-internal 'other-window))
 
 (defun ergoemacs-move-cursor-previous-pane (&optional number)
-  "Move cursor to the previous pane."
-  (interactive)
-  (other-window (if number
-                    (- 0 number)
-                  -1)))
+  "Move cursor to the previous pane.
+Use `ergoemacs-shortcut-interal' for maximum mode compatibility."
+  (interactive "p")
+  (setq current-prefix-arg (if number (- 0 number) -1))
+  (ergoemacs-shortcut-internal 'other-window))
 
 (defun ergoemacs-unfill-paragraph ()
   "Replace newline char in current paragraph by space.
@@ -766,13 +750,14 @@ This command does the reverse of `fill-paragraph'.
 See also: `compact-uncompact-block'"
   (interactive)
   (let ((fill-column 90002000))
-    (fill-paragraph nil)))
+    (setq current-prefix-arg nil);; Fill paragraph is bound it M-q.
+    (ergoemacs-shortcut-internal 'fill-paragraph)))
 
 (defun ergoemacs-unfill-region (start end)
   "Replace newline char in region by space.
 This command does the reverse of `fill-region'.
 See also: `ergoemacs-compact-uncompact-block'"
-  (interactive "r")
+  (interactive "r") ;; Fill region is only bound to emacs menu.
   (let ((fill-column 90002000))
     (fill-region start end)))
 
@@ -781,28 +766,26 @@ See also: `ergoemacs-compact-uncompact-block'"
 This command is similar to a toggle of `fill-paragraph'.
 When there is a text selection, act on the region."
   (interactive)
-  
   ;; This command symbol has a property “'stateIsCompact-p”.
-  (let (currentStateIsCompact (bigFillColumnVal 4333999) (deactivate-mark nil))
+  (let (current-state-is-compact (big-fill-column-val 4333999) (deactivate-mark nil))
     
     (save-excursion
       ;; Determine whether the text is currently compact.
-      (setq currentStateIsCompact
+      (setq current-state-is-compact
             (if (eq last-command this-command)
-                (get this-command 'stateIsCompact-p)
+                (get this-command 'state-is-compact-p)
               (if (> (- (line-end-position) (line-beginning-position)) fill-column) t nil) ) )
       
       (if (region-active-p)
-          (if currentStateIsCompact
+          (if current-state-is-compact
               (fill-region (region-beginning) (region-end))
-            (let ((fill-column bigFillColumnVal))
+            (let ((fill-column big-fill-column-val))
               (fill-region (region-beginning) (region-end))) )
-        (if currentStateIsCompact
-            (fill-paragraph nil)
-          (let ((fill-column bigFillColumnVal))
-            (fill-paragraph nil)) ) )
-      
-      (put this-command 'stateIsCompact-p (if currentStateIsCompact nil t)))))
+        (if current-state-is-compact
+            (ergoemacs-shortcut-internal 'fill-paragraph)
+          (let ((fill-column big-fill-column-val))
+            (ergoemacs-shortcut-internal 'fill-paragraph))))
+      (put this-command 'stateIsCompact-p (if current-state-is-compact nil t)))))
 
 (defun ergoemacs-shrink-whitespaces ()
   "Remove white spaces around cursor to just one or none.
@@ -866,9 +849,35 @@ Calling this command 3 times will always result in no whitespaces around cursor.
   :group 'ergoemacs-mode)
 
 (defcustom ergoemacs-toggle-camel-case-chars
-  '((R-mode ("." "_"))
+  '((LaTeX-mode nil)
+    (R-mode ("." "_"))
+    (bbcode-mode nil)
+    (confluence-mode nil)
+    (css-mode nil)
+    (dired-mode nil)
     (emacs-lisp-mode ("-" "_"))
+    (fundamental-mode nil)
+    (html-mode nil)
+    (latex-mode nil)
+    (markup-mode nil)
+    (mediawiki-draft-mode nil)
+    (mediawiki-mode nil)
+    (message-mode nil)
+    (muse-mode nil)
+    (nxhtml-mode nil)
+    (nxhtml-mode nil)
+    (nxml-mode nil)
+    (oddmuse-mode nil)
     (org-mode nil)
+    (rst-mode nil)
+    (texinfo-mode nil)
+    (text-mode nil)
+    (wiki-mode nil)
+    (wikipedia-mode nil)
+    (xah-css-mode nil)
+    (xah-html-mode nil)
+    (xbbcode-mode nil)
+    (yaoddmuse-mode nil)
     (t ("_")))
   "Characters to toggle between camelCase and extended_variables."
   :type '(repeat
@@ -906,7 +915,7 @@ Based on the value of `major-mode' and
   "Return the camel-case bounds.
 This command assumes that CAMEL-CASE-CHARS is list of characters
 that can separate a variable."
-  (let* ((reg (concat "[:alpha:]"
+  (let* ((reg (concat "[:alpha:]0-9"
                       (mapconcat (lambda(x) x) camel-case-chars "")))
          (p1 (save-excursion (skip-chars-backward reg) (point)))
          (p2 (save-excursion (skip-chars-forward reg) (point))))
@@ -952,6 +961,10 @@ the last misspelled word with
           (if (string-match "^[[:lower:]]" txt)
               (setq camel-case "camel lower")
             (setq camel-case "camel upper")))
+         ((and txt (string-match (format "^%s" (regexp-opt ccc t)) txt)
+               (not (string-match (regexp-opt ccc t) (substring txt 1))))
+          ;; Assume variables such as _temp are not camel case variables.
+          (setq bds (bounds-of-thing-at-point 'word)))
          ((and txt (string-match (regexp-opt ccc t) txt))
           (setq camel-case (match-string 1 txt)))
          (t
@@ -1442,7 +1455,7 @@ ARG is the prefix argument for either command." direction direction direction)
 ;; Camel Case
 ;; ==================================================
 
-;; These functions were taken from:
+;; These functions were taken from and then modified. 
 ;; http://www.emacswiki.org/emacs/CamelCase
 
 (defun ergoemacs-un-camelcase-string (s &optional sep start)
@@ -1450,10 +1463,16 @@ ARG is the prefix argument for either command." direction direction direction)
     Default for SEP is a hyphen \"-\".
     If third argument START is non-nil, convert words after that
     index in STRING."
-  (let ((case-fold-search nil))
-    (while (string-match "[A-Z]" s (or start 1))
-      (setq s (replace-match (concat (or sep "-")
-                                     (downcase (match-string 0 s)))
+  (let ((case-fold-search nil)
+        new-start)
+    (while (string-match "[A-Z]" s (or new-start start 1))
+      (setq new-start (+ 1 (match-end 0)))
+      (setq s (replace-match (concat (or sep "-") (match-string 0 s))
+                             t nil s)))
+    (setq new-start nil)
+    (while (string-match "[0-9]+" s (or new-start start 1))
+      (setq new-start (+ 1 (match-end 0)))
+      (setq s (replace-match (concat (or sep "-") (match-string 0 s))
                              t nil s)))
     (downcase s)))
 

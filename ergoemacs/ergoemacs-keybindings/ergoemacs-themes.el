@@ -97,7 +97,7 @@
     ("M-X" ergoemacs-cut-all "✂ all")
     
     ;; undo and redo
-    ("M-Z" redo "↷ redo")
+    ("M-Z" (undo-tree-redo redo) "↷ redo")
     ("M-z" undo "↶ undo")
     
     ;; Kill line
@@ -203,7 +203,7 @@
     ("<apps> x" ergoemacs-cut-line-or-region "✂ region")
     ("<apps> c" ergoemacs-copy-line-or-region "copy")
     ("<apps> v" ergoemacs-paste "paste")
-    ("<apps> b" redo "↷ redo")
+    ("<apps> b" (undo-tree-redo redo) "↷ redo")
     ;; ("<apps> u" ergoemacs-smart-punctuation "()")
     ("<apps> t" switch-to-buffer "switch buf")
     ("<apps> z" undo "↶ undo")
@@ -223,8 +223,7 @@
     ("<apps> n T" org-agenda "agenda")
     
     ;; but some modes don't honor it...
-    ("<apps> r" goto-map "Goto")
-    )
+    ("<apps> r" goto-map "Goto"))
   
   "Ergoemacs that vary from keyboard types.  By default these keybindings are based on QWERTY."
   :type '(repeat
@@ -269,8 +268,8 @@
   `(
     ;; General Shortcuts
     ("<M-backspace>" (undo-tree-undo undo) "↶ undo")
-    ("<f5>" (undo-tree-undo undo) "↶ undo")
-    ("C-z" (undo-tree-undo undo) "↶ undo")
+    ("<f5>" undo "↶ undo")
+    ("C-z" undo "↶ undo")
 
     ("<C-f5>" (undo-tree-redo redo) "↷ redo")
     ("<M-f5>" (undo-tree-redo redo) "↷ redo")
@@ -320,10 +319,11 @@
     ("<C-left>" backward-word "← word")
     ("<C-right>" forward-word "→ word")
 
-    ("<C-up>" ergoemacs-backward-block "← ¶")
+    ;; ("<C-up>" ergoemacs-backward-block "← ¶")
     ("<M-up>" ergoemacs-backward-block "→ ¶")
-    ("<C-down>" ergoemacs-forward-block "→ ¶")
+    ;; ("<C-down>" ergoemacs-forward-block "→ ¶")
     ("<M-down>" ergoemacs-forward-block "→ ¶")
+    ("M-RET" newline-and-indent "Newline & Indent")
 
     ;; C-H is search and replace.
 
@@ -347,8 +347,8 @@
     ("<M-left>" ergoemacs-backward-open-bracket) ; Alt+←
     ("<M-right>" ergoemacs-forward-close-bracket) ; Alt+→
     ("<M-up>" ergoemacs-backward-block) ; Alt+↑
-    ("<S-down-mouse-1>" mouse-save-then-kill) ;; Allow shift selection
-    
+    ;; Allow shift selection
+    ("<S-down-mouse-1>" mouse-save-then-kill)
     ("<S-mouse-1>" ignore)
     
     ("<f11>" previous-line "Previous")
@@ -417,7 +417,7 @@
     ("C-x <timeout>" ergoemacs-cut-line-or-region)
     ("C-x C-b" ibuffer)
     ("C-x" ergoemacs-ctl-x "Cut")
-    ("C-y" redo "↷ redo")
+    ("C-y" (undo-tree-redo redo) "↷ redo")
     
     ("M-S-<next>" forward-page)
     ("M-S-<prior>" backward-page)
@@ -526,31 +526,12 @@
       ("S-<f12>" eshell-next-matching-input-from-input)
       ("<M-f12>" eshell-next-matching-input-from-input)))
     
-    ;; Iswitchdb hook
-    (iswitchb-minibuffer-setup-hook
-     (("<f11>" iswitchb-prev-match)
-      ("<f12>" iswitchb-next-match)
-      ("S-<f11>" iswitchb-prev-match)
-      ("<M-f11>" iswitchb-prev-match)
-      ("S-<f12>" iswitchb-next-match)
-      ("<M-f12>" iswitchb-next-match)))
-    
-    ;; Ido minibuffer setup hook
-    (ido-minibuffer-setup-hook
-     (("C-o" ergoemacs-ido-c-o)
-      (forward-char ido-next-match minor-mode-overriding-map-alist)
-      (backward-char ido-prev-match minor-mode-overriding-map-alist)
-      (previous-line ergoemacs-ido-next-match-dir minor-mode-overriding-map-alist)
-      (next-line ergoemacs-ido-prev-match-dir minor-mode-overriding-map-alist)
-      ("<f11>" previous-history-element )
-      ("<f12>" next-history-element)
-      ("S-<f11>" previous-matching-history-element)
-      ("<M-f11>" previous-matching-history-element)
-      ("S-<f12>" next-matching-history-element)
-      ("<M-f12>" next-matching-history-element)))
-
     (ido-mode
      ((execute-extended-command smex nil remap)))
+    
+    ;; (ido-setup-hook ; Add M-RET to select text in ido-mode.  More
+    ;;                 ; ergonomically friendly
+    ;;  (("M-RET" ido-select-text ido-common-completion-map)))
     
     ;; Info Mode hooks
     (Info-mode-hook
@@ -572,6 +553,9 @@
       (switch-to-buffer helm-mini nil remap)
       (find-file helm-find-files nil remap)
       (eshell-pcomplete helm-esh-pcomplete nil remap)
+      (occur helm-occur nil remap)
+      (info helm-info nil remap)
+      (ac-isearch ac-complete-with-helm nil reamp)
       (grep helm-do-grep nil remap)))
     
     (helm-before-initialize-hook
@@ -581,7 +565,7 @@
       ("M-S-RET" "C-u M-RET" helm-map)
       ("<M-S-return>" "C-u M-RET" helm-map)))
     
-    (auto-complete-mode-hook ac-completing-map))
+    (auto-complete-mode-hook ac-completing-map ac-menu-map))
   "Key bindings that are applied as hooks to specific modes."
   :type '(repeat
           (list :tag "Keys for a particular minor/major mode"
