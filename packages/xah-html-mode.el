@@ -51,15 +51,15 @@
 )
 (setq xhm-html5-tag-names
 '(
-
-("a" . ["l"])
+  ;; most frequently used should be on top. todo
 ("abbr" . ["w"])
-("address" . ["w"])
 ("applet" . ["l"])
-("area" . ["l"])
 ("article" . ["b"])
+("address" . ["w"])
 ("aside" . ["b"])
 ("audio" . ["l"])
+("area" . ["l"])
+("a" . ["l"])
 ("b" . ["w"])
 ("base" . ["l"])
 ("basefont" . ["l"])

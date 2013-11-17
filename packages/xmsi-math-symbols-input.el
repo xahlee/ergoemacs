@@ -55,6 +55,7 @@
 
 ;;; HISTORY
 
+;; v1.5.8, 2013-11-17 • added cycles (xmsi-add-cycle ["#" "♯" "№"])
 ;; v1.5.7, 2013-11-12 • added cycles for several symbols related to {equal, equivalence, congruence, similarity, identity}, and also for {hyphen, minus sign, en-dash, …}. Type tilde 「~」 and press shift space to cycle. Also try on equal sign 「=」 and minus sign 「-」.
 ;; v1.5.6, 2013-09-26 • added complete Double struck letters. AA→𝔸, BB→𝔹, …
 ;; v1.5.5, 2013-09-09 • removed abbrevs for full width letters and digits. Rational: they are rarely used.
@@ -121,7 +122,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.5.7")
+(setq xmsi-version "v1.5.8")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
@@ -860,7 +861,6 @@
 (puthash "flat" "♭" xmsi-abrvs)
 (puthash "natural" "♮" xmsi-abrvs)
 (puthash "sharp" "♯" xmsi-abrvs)
-(puthash "#" "♯" xmsi-abrvs)
 )
 
 (progn
@@ -1140,6 +1140,8 @@
 (xmsi-add-cycle ["-" "–" "−" "〜"])
 (xmsi-add-cycle [ "-" "‐" "‑"  "–"  "‒"])
 (xmsi-add-cycle ["—"  "―" ])
+
+(xmsi-add-cycle ["#" "♯" "№"])
 
 ;; cycle black white chars
 (xmsi-add-cycle ["■" "□"])
