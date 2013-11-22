@@ -102,7 +102,8 @@
     conf-xdefaults-mode conf-space-mode conf-javaprop-mode
     conf-ppd-mode mail-mode
     ebrowse-tree-mode diff-mode fundamental-mode emacs-lisp-byte-code-mode
-    R-transcript-mode S-transcript-mode XLS-mode tar-mode)
+    R-transcript-mode S-transcript-mode XLS-mode tar-mode
+    git-commit-mode git-rebase-mode image-mode)
   "List of major modes excluded from ergoemacs' Languages menu."
   :type '(repeat (symbol :tag "Excluded Major Mode"))
   :group 'ergoemacs-mode)
@@ -155,7 +156,9 @@ All other modes are assumed to be minor modes or unimportant.
      (lambda(elt)
        (unless (memq (cdr elt) modes)
          (when (and (functionp (cdr elt))
-                    (string-match "-mode$" (symbol-name (cdr elt))))
+                    (string-match "-mode$" (condition-case err
+                                               (symbol-name (cdr elt))
+                                             (error ""))))
            (unless (or (memq (cdr elt) ergoemacs-excluded-major-modes)
                        (member (downcase (symbol-name (cdr elt))) added-modes))
              (let* ((name (ergoemacs-get-major-mode-name (cdr elt)))

@@ -236,21 +236,34 @@ If narrow-to-region is in effect, then cut that region only."
 (defun ergoemacs-cut-line-or-region (&optional arg)
   "Cut the current line, or current text selection.
 Use `cua-cut-rectangle' or `cua-cut-region' when `cua-mode' is
-turned on.  When region is active, use
+turned on.
+
+Otherwise, when a region is active, use
 `ergoemacs-shortcut-internal' to remap any mode that changes
-emacs' default cut key, C-w."
+emacs' default cut key, C-w (`kill-region').
+
+When region is not active, move to the beginning of the line and
+use `kill-line'.  If looking at the end of the line, run
+`kill-line' again. The prefix arguments will be preserved for the
+first `kill-line', but not the second.
+
+Note that `ergoemacs-shortcut-internal' will remap mode-specific
+changes to `kill-line' to allow it to work as expected in
+major-modes like `org-mode'. "
   (interactive "P")
-  (cond
-   ;; FIXME: figure out how to lookup shortcuts and still support cua.
-   ((and cua--rectangle (boundp 'cua-mode) cua-mode)
-    (cua-cut-rectangle arg))
+  (cond   
    ((and (region-active-p) (boundp 'cua-mode) cua-mode)
-    (cua-cut-region arg))
+    (cua-cut-region arg)
+    (deactivate-mark))
    ((region-active-p) ;; In case something else is bound to C-w.
-    (ergoemacs-shortcut-internal 'kill-region))
+    (ergoemacs-shortcut-internal 'kill-region)
+    (deactivate-mark))
    (t
-    (kill-region (line-beginning-position) (line-beginning-position 2))))
-  (deactivate-mark))
+    (when (not (= (point) (point-at-bol)))
+      (beginning-of-line))
+    ;; Keep prefix args.
+    (let ((kill-whole-line t))
+      (ergoemacs-shortcut-internal 'kill-line)))))
 
 ;;; CURSOR MOVEMENT
 
@@ -610,7 +623,9 @@ the prefix arguments of `end-of-buffer',
            (or (not ergoemacs-use-beginning-or-end-of-line-only)
                (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
                     (eq last-command ergoemacs-beginning-of-line-or-what-last-command)))
-           (= (point) (point-at-eol)))
+           (or (= (point) (point-at-eol))
+               (and (eq 'scroll-up-command last-command)
+                    (= (point) (point-at-bol)))))
       (progn 
         (cond
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
@@ -618,8 +633,8 @@ the prefix arguments of `end-of-buffer',
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
           (ergoemacs-shortcut-internal 'ergoemacs-forward-block))
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
-          (ergoemacs-shortcut-internal 'scroll-up-command)))
-        (end-of-line))
+          (ergoemacs-shortcut-internal 'scroll-up-command)
+          (beginning-of-line))))
     (setq N (or N 1))
     (when (not (= 1 N))
       (let ((line-move-visual nil))
@@ -850,7 +865,7 @@ Calling this command 3 times will always result in no whitespaces around cursor.
 
 (defcustom ergoemacs-toggle-camel-case-chars
   '((LaTeX-mode nil)
-    (R-mode ("." "_"))
+    (ess-mode ("." "_"))
     (bbcode-mode nil)
     (confluence-mode nil)
     (css-mode nil)
@@ -944,6 +959,7 @@ the last misspelled word with
      ((region-active-p)
       (setq p1 (region-beginning) p2 (region-end)))
      ((and (eq last-command this-command)
+           (get this-command 'state)
            (string-match "\\(all\\|caps\\)" (get this-command 'state)))
       (let ((bds (bounds-of-thing-at-point 'word)))
         (setq p1 (car bds) p2 (cdr bds))))
@@ -1205,6 +1221,75 @@ Else it is a user buffer."
   (interactive)
   (text-scale-increase 0))
 
+;;; helm-mode functions
+
+;;; This comes from https://github.com/emacs-helm/helm/issues/340
+(defcustom ergoemacs-helm-ido-style-return t
+  "Allows ido-style return in `helm-mode'"
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defun ergoemacs-helm-ff-expand-dir (candidate)
+  "Allows return to expand a directory like in `ido-find-file'.
+This requires `ergoemacs-mode' to be non-nil and
+`ergoemacs-helm-ido-style-return' to be non-nil."
+  (let* ((follow (buffer-local-value
+                  'helm-follow-mode
+                  (get-buffer-create helm-buffer)))
+         (insert-in-minibuffer
+          #'(lambda (fname)
+              (with-selected-window (minibuffer-window)
+                (unless follow
+                  (delete-minibuffer-contents)
+                  (set-text-properties 0 (length fname)
+                                       nil fname)
+                  (insert fname))))))
+    (if (and ergoemacs-helm-ido-style-return ergoemacs-mode
+             (file-directory-p candidate))
+        (progn
+          (when (string= (helm-basename candidate) "..")
+            (setq helm-ff-last-expanded helm-ff-default-directory))
+          (funcall insert-in-minibuffer (file-name-as-directory
+                                         (expand-file-name candidate))))
+      (helm-exit-minibuffer))))
+
+(defun ergoemacs-helm-ff-persistent-expand-dir ()
+  "Makes `eroemacs-helm-ff-expand-dir' the default action for
+expanding helm-files."
+  (interactive)
+  (helm-attrset 'expand-dir 'ergoemacs-helm-ff-expand-dir)
+  (helm-execute-persistent-action 'expand-dir))
+
+
+(defun ergoemacs-helm-ff-dired-dir (candidate)
+  "Determines if a persistent action is called on directories.
+When `ergoemacs-mode' is enabled with
+ `ergoemacs-helm-ido-style-return' non-nil then:
+- `helm-execute-persistent-action' is called on files.
+- `helm-exit-minibuffer' is called on directories.
+
+Otherwise `helm-execute-persistent-action' is called.
+"
+  (interactive)
+  (if (and ergoemacs-helm-ido-style-return ergoemacs-mode
+           (file-directory-p candidate))
+      (helm-exit-minibuffer)
+    (helm-execute-persistent-action)))
+
+(defun ergoemacs-helm-ff-execute-dired-dir ()
+  "Allow <M-return> to execute dired on directories in `helm-mode'.
+This requires `ergoemacs-mode' to be enabled with 
+`ergoemacs-helm-ido-style-return' to be non-nil."
+  (interactive)
+  (helm-attrset 'dired-dir 'ergoemacs-helm-ff-dired-dir)
+  (helm-execute-persistent-action 'dired-dir))
+
+;; (define-key helm-find-files-map (kbd "<M-return>")
+;;   'ergoemacs-helm-ff-execute-dired-dir)
+
+;; (define-key helm-find-files-map (kbd "RET")
+;;   'ergoemacs-helm-ff-persistent-expand-dir)
+
 ;;; org-mode functions.
 
 (defun ergoemacs-org-bold ()
@@ -1337,7 +1422,7 @@ When in `browse-kill-ring-mode', cycle backward through the key ring.
         (browse-kill-ring)
       (if ergoemacs-smart-paste
           (ergoemacs-shortcut-internal 'yank)
-        (erogemacs-shortcut-internal 'yank-pop)))))
+        (ergoemacs-shortcut-internal 'yank-pop)))))
 
 (defun ergoemacs-paste (&optional arg)
   "Run `yank' or `yank-pop' if this command is repeated.

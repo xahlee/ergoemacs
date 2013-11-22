@@ -28,8 +28,8 @@
 
 ;;; Code:
 
-(defvar ergoemacs-maps-only-install-shortcuts '(isearch-mode-map)
-  "List of keymaps where the full ergoemacs keymap is not installed.")
+(defvar ergoemacs-full-maps '(helm-map)
+  "List of keymaps where the full ergoemacs keymap is fully installed (ie they use an overriding keymap).")
 
 ;; Ergoemacs keys
 
@@ -562,8 +562,13 @@
      (("C-w" helm-keyboard-quit helm-map)
       ("C-z" nil helm-map)
       ("M-RET" helm-execute-persistent-action helm-map)
+      ("<M-return>" helm-execute-persistent-action helm-map)
       ("M-S-RET" "C-u M-RET" helm-map)
-      ("<M-S-return>" "C-u M-RET" helm-map)))
+      ("<M-S-return>" "C-u M-RET" helm-map)
+      ("RET" ergoemacs-helm-ff-persistent-expand-dir helm-find-files-map)
+      ("<return>" ergoemacs-helm-ff-persistent-expand-dir helm-find-files-map)
+      ("M-RET" ergoemacs-helm-ff-execute-dired-dir helm-find-files-map)
+      ("<M-return>" ergoemacs-helm-ff-execute-dired-dir helm-find-files-map)))
     
     (auto-complete-mode-hook ac-completing-map ac-menu-map))
   "Key bindings that are applied as hooks to specific modes."
@@ -1429,6 +1434,7 @@ Some exceptions we don't want to unset.
   (ergoemacs-key "M-*" 'mc/mark-next-like-this "Mark Next")
   (ergoemacs-key "M-&" 'mc/edit-lines "Edit Lines")
   (ergoemacs-key "M-," 'ace-jump-mode "Jump")
+  (ergoemacs-key "M-<" 'zap-to-char "Zap")
   (ergoemacs-key "M-g" 'kill-line "⌦ line")
   (ergoemacs-key "M-b" 'ergoemacs-kill-line-backward "⌫ line")
   ;; (ergoemacs-key "M-," 'ergoemacs-smart-punctuation "Toggle ()")
@@ -1436,7 +1442,7 @@ Some exceptions we don't want to unset.
   (ergoemacs-key "M-m" 'ergoemacs-beginning-of-line-or-what "← line/*" )
   (ergoemacs-key "M-t" 'isearch-backward "← isearch")
   (ergoemacs-key "M-T" 'isearch-backward-regexp "← reg isearch")
-  (ergoemacs-key "M-Y" 'isearch-backward-regexp "→ reg isearch")
+  (ergoemacs-key "M-Y" 'isearch-forward-regexp "→ reg isearch")
   
   (ergoemacs-key "M-H" nil)
   (ergoemacs-key "M-I" nil)
