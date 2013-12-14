@@ -55,6 +55,7 @@
 
 ;;; HISTORY
 
+;; v1.5.9, 2013-12-14 • changed “c1” to ①, by not requiring “c”. So, now 「1」 → 「①」, and up to 20, also 「0」 → 「⓪」. Before, these number transforms to the corresponding unicode code point, and for 1 to 31 they are ASCII control chars. Number still convert to corresponding unicode code point, other than ones changed here.
 ;; v1.5.8, 2013-11-17 • added cycles (xmsi-add-cycle ["#" "♯" "№"])
 ;; v1.5.7, 2013-11-12 • added cycles for several symbols related to {equal, equivalence, congruence, similarity, identity}, and also for {hyphen, minus sign, en-dash, …}. Type tilde 「~」 and press shift space to cycle. Also try on equal sign 「=」 and minus sign 「-」.
 ;; v1.5.6, 2013-09-26 • added complete Double struck letters. AA→𝔸, BB→𝔹, …
@@ -122,7 +123,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.5.8")
+(setq xmsi-version "v1.5.9")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
@@ -817,16 +818,27 @@
 
 (progn
   ;; number forms
-  (puthash "c1" "①" xmsi-abrvs)
-  (puthash "c2" "②" xmsi-abrvs)
-  (puthash "c3" "③" xmsi-abrvs)
-  (puthash "c4" "④" xmsi-abrvs)
-  (puthash "c5" "⑤" xmsi-abrvs)
-  (puthash "c6" "⑥" xmsi-abrvs)
-  (puthash "c7" "⑦" xmsi-abrvs)
-  (puthash "c8" "⑧" xmsi-abrvs)
-  (puthash "c9" "⑨" xmsi-abrvs)
-  (puthash "c0" "⓪" xmsi-abrvs)
+  (puthash "0" "⓪" xmsi-abrvs)          ; circled digit, circled number
+  (puthash "1" "①" xmsi-abrvs)
+  (puthash "2" "②" xmsi-abrvs)
+  (puthash "3" "③" xmsi-abrvs)
+  (puthash "4" "④" xmsi-abrvs)
+  (puthash "5" "⑤" xmsi-abrvs)
+  (puthash "6" "⑥" xmsi-abrvs)
+  (puthash "7" "⑦" xmsi-abrvs)
+  (puthash "8" "⑧" xmsi-abrvs)
+  (puthash "9" "⑨" xmsi-abrvs)
+  (puthash "10" "⑩" xmsi-abrvs)
+  (puthash "11" "⑪" xmsi-abrvs)
+  (puthash "12" "⑫" xmsi-abrvs)
+  (puthash "13" "⑬" xmsi-abrvs)
+  (puthash "14" "⑭" xmsi-abrvs)
+  (puthash "15" "⑮" xmsi-abrvs)
+  (puthash "16" "⑯" xmsi-abrvs)
+  (puthash "17" "⑰" xmsi-abrvs)
+  (puthash "18" "⑱" xmsi-abrvs)
+  (puthash "19" "⑲" xmsi-abrvs)
+  (puthash "20" "⑳" xmsi-abrvs)
 
   (puthash "1." "⒈" xmsi-abrvs)
   (puthash "2." "⒉" xmsi-abrvs)
