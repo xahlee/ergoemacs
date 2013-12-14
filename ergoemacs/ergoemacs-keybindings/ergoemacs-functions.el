@@ -129,9 +129,13 @@
            (or (region-active-p)
                (and cua--rectangle (boundp 'cua-mode) cua-mode)))
       ;; Wait for next key...
-      (ergoemacs-shortcut-internal key 'normal nil nil
-                                   ergoemacs-ctl-c-or-ctl-x-delay
-                                   fn-cp))
+      (let ((next-key
+             (with-timeout (ergoemacs-ctl-c-or-ctl-x-delay nil)
+               (eval (macroexpand `(key-description [,(read-key)]))))))
+        (if next-key
+            (progn
+              (ergoemacs-read (concat key " " next-key) 'normal))
+          (funcall fn-cp arg))))
      ((or (region-active-p)
           (and cua--rectangle (boundp 'cua-mode) cua-mode))
       (funcall fn-cp arg))
@@ -146,7 +150,7 @@
       (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
     (when ergoemacs-theme
       (setenv "ERGOEMACS_THEME" ergoemacs-theme))
-    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
+    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\" --load=\"ergoemacs-test\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
                            (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
 
 (defun ergoemacs-clean-nw ()
@@ -624,7 +628,11 @@ the prefix arguments of `end-of-buffer',
                (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
                     (eq last-command ergoemacs-beginning-of-line-or-what-last-command)))
            (or (= (point) (point-at-eol))
-               (and (eq 'scroll-up-command last-command)
+               (and
+                (or
+                 (eq
+                  (ergoemacs-with-global (let (ergoemacs-mode ergoemacs-unbind-keys) (key-binding (read-kbd-macro "<next>"))))
+                  last-command))
                     (= (point) (point-at-bol)))))
       (progn 
         (cond
@@ -974,14 +982,14 @@ the last misspelled word with
              (txt (if (not bds) nil
                     (filter-buffer-substring (car bds) (cdr bds)))))
         (cond
+         ((and txt (or (string-match (format "^%s" (regexp-opt ccc t)) txt)
+                       (string-match (format "%s\\{2,\\}" (regexp-opt ccc t)) txt)))
+          ;; Assume variables such as _temp are not camel case variables.
+          (setq bds (bounds-of-thing-at-point 'word)))
          ((and txt (string-match "[[:lower:]][[:upper:]]" txt))
           (if (string-match "^[[:lower:]]" txt)
               (setq camel-case "camel lower")
             (setq camel-case "camel upper")))
-         ((and txt (string-match (format "^%s" (regexp-opt ccc t)) txt)
-               (not (string-match (regexp-opt ccc t) (substring txt 1))))
-          ;; Assume variables such as _temp are not camel case variables.
-          (setq bds (bounds-of-thing-at-point 'word)))
          ((and txt (string-match (regexp-opt ccc t) txt))
           (setq camel-case (match-string 1 txt)))
          (t
@@ -1331,8 +1339,43 @@ This requires `ergoemacs-mode' to be enabled with
 If a smart-punctuation mode is active, use it by placing the initial pair in the unread command events."
   (if (ergoemacs-smart-punctuation-mode-p)
       (setq unread-command-events (append (listify-key-sequence (read-kbd-macro (substring pair 0 1))) unread-command-events))
-    (insert pair)
-    (backward-char 1)))
+    (if (region-active-p)
+        (let ((p1 (region-beginning))
+              (p2 (region-end)))
+          (goto-char p2)
+          (insert (substring pair 1 2))
+          (goto-char p1)
+          (insert (substring pair 0 1))
+          (goto-char (+ p2 2)))
+      (insert pair)
+      (backward-char 1))))
+
+(defun ergoemacs-smart-paren ()
+  "Insert ()"
+  (interactive)
+  (ergoemacs-smart-punctuation-insert-pair "()"))
+
+(defun ergoemacs-smart-bracket ()
+  "Insert []"
+  (interactive)
+  (ergoemacs-smart-punctuation-insert-pair "[]"))
+
+(defun ergoemacs-smart-curly ()
+  "Insert {}"
+  (interactive)
+  (ergoemacs-smart-punctuation-insert-pair "{}"))
+
+(defun ergoemacs-smart-quote ()
+  "Insert \"\""
+  (interactive)
+  (ergoemacs-smart-punctuation-insert-pair "\"\""))
+
+(defun ergoemacs-smart-apostrophe ()
+  "Insert ''"
+  (interactive)
+  (ergoemacs-smart-punctuation-insert-pair "''"))
+
+
 
 (defvar ergoemacs-smart-punctuation-pairs '("()" "[]" "{}" "\"\"")
   "Default pairs to cycle among for `ergoemacs-smart-punctuation'")
@@ -1344,8 +1387,6 @@ If a smart-punctuation mode is active, use it by placing the initial pair in the
   "Makes `ergoemacs-smart-punctuation' repeatable"
   :type 'boolean
   :group 'ergoemacs-mode)
-
-
 
 (defun ergoemacs-smart-punctuation ()
   "Smart Punctuation Function for `ergoemacs-mode'."

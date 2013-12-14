@@ -146,10 +146,11 @@
 (add-to-list 'load-path ergoemacs-dir)
 
 
-(load "ergoemacs-layouts")
+(unless (featurep 'ergoemacs-layouts)
+  (load "ergoemacs-layouts"))
 
 ;; Ergoemacs-keybindings version
-(defconst ergoemacs-mode-version "5.13.11"
+(defconst ergoemacs-mode-version "5.13.12-1"
   "Ergoemacs-keybindings minor mode version number.")
 
 (defconst ergoemacs-mode-changes "Delete window Alt+0 changed to Alt+2.
@@ -406,6 +407,7 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
 
 (defvar ergoemacs-shortcut-keys nil)
 (defvar ergoemacs-unbind-keys nil)
+(defvar ergoemacs-read-input-keys nil)
 
 (defvar ergoemacs-M-O-prefix-keys nil)
 (defvar ergoemacs-M-O-function nil)
@@ -427,7 +429,8 @@ May install a fast repeat key based on `ergoemacs-repeat-movement-commands',  `e
       (setq unread-command-events (cons 'exit unread-command-events)))
      (ergoemacs-M-O-prefix-keys
       (let (fn)
-        (let (ergoemacs-shortcut-keys)
+        (let (ergoemacs-shortcut-keys
+              ergoemacs-read-input-keys)
           (setq fn (key-binding
                     (read-kbd-macro
                      (format "%s <timeout>"
@@ -508,8 +511,10 @@ work in the terminal."
   (interactive "P")
   (ergoemacs-M-o arg ergoemacs-M-O-keymap))
 
-(load "ergoemacs-themes")
-(load "ergoemacs-unbind")
+(unless (featurep 'ergoemacs-themes)
+  (load "ergoemacs-themes"))
+(unless (featurep 'ergoemacs-unbind)
+  (load "ergoemacs-unbind"))
 
 ;;; ergoemacs-keymap
 
@@ -520,13 +525,20 @@ work in the terminal."
 (defvar ergoemacs-shortcut-keymap (make-sparse-keymap)
   "ErgoEmacs minor mode shortcut keymap")
 
+(defvar ergoemacs-read-input-keymap (make-sparse-keymap)
+  "Ergoemacs minor mode shortcut input keymap.")
+
 (defvar ergoemacs-shortcut-override-keymap (make-sparse-keymap)
   "Keymap for overriding keymap.")
 
-(load "ergoemacs-modal")
-(load "ergoemacs-functions")
-(load "ergoemacs-translate")
-(load "ergoemacs-shortcuts")
+(unless (featurep 'ergoemacs-modal)
+  (load "ergoemacs-modal"))
+(unless (featurep 'ergoemacs-functions)
+  (load "ergoemacs-functions"))
+(unless (featurep 'ergoemacs-translate)
+  (load "ergoemacs-translate"))
+(unless (featurep 'ergoemacs-shortcuts)
+  (load "ergoemacs-shortcuts"))
 
 
 (defvar ergoemacs-backward-compatability-variables
@@ -579,7 +591,8 @@ work in the terminal."
   (ergoemacs-debug-flush))
 
 (require 'lookup-word-on-internet nil "NOERROR")
-(load "ergoemacs-extras")
+(unless (featurep 'ergoemacs-extras)
+  (load "ergoemacs-extras"))
 
 ;; ErgoEmacs hooks
 
@@ -882,6 +895,13 @@ depending the state of `ergoemacs-mode' variable."
       (when x
         (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
       (push (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap) ergoemacs-emulation-mode-map-alist))
+    ;; Add ergoemacs-read-input-keymap
+    (let ((x (assq 'ergoemacs-read-input-keys
+                   ergoemacs-emulation-mode-map-alist)))
+      (when x
+        (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
+      (push (cons 'ergoemacs-read-input-keys ergoemacs-read-input-keymap)
+            ergoemacs-emulation-mode-map-alist))
     ;; Add ergoemacs-unbind
     (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
       (when x
@@ -1099,6 +1119,8 @@ bindings the keymap is:
                (funcall (intern-soft (format "ergoemacs-%s-hook" major-mode))))))
          (buffer-list))
         (setq ergoemacs-shortcut-keys t)
+        (setq ergoemacs-read-input-keys t) ; Hasn't completely been
+                                             ; fixed.
         (setq ergoemacs-unbind-keys t)
         (add-hook 'pre-command-hook 'ergoemacs-pre-command-hook)
         (add-hook 'minibuffer-setup-hook #'ergoemacs-minibuffer-setup)
@@ -1164,6 +1186,7 @@ bindings the keymap is:
       (when x
         (setq minor-mode-map-alist (delq x minor-mode-map-alist))))
     (setq ergoemacs-shortcut-keys nil)
+    (setq ergoemacs-read-input-keys nil)
     (setq ergoemacs-unbind-keys nil)
     (setq ergoemacs-emulation-mode-map-alist nil)
     (ergoemacs-hook-modes) ;; Remove hooks and advices.
@@ -1177,6 +1200,8 @@ bindings the keymap is:
   (ergoemacs-debug "post-command-hook: %s" post-command-hook)
   (ergoemacs-debug "pre-command-hook: %s" pre-command-hook)
   (ergoemacs-debug "ergoemacs-shortcut-keys: %s" ergoemacs-shortcut-keys)
+  (ergoemacs-debug "ergoemacs-read-input-keys: %s"
+                   ergoemacs-read-input-keys)
   (ergoemacs-debug "ergoemacs-unbind-keys: %s" ergoemacs-unbind-keys)
   (ergoemacs-debug "ergoemacs-mode %s" ergoemacs-mode)
   (ergoemacs-debug "ergoemacs-save-variables-state %s" ergoemacs-save-variables-state)
@@ -1229,7 +1254,8 @@ bindings the keymap is:
 
 
 
-(load "ergoemacs-advices")
+(unless (featurep 'ergoemacs-advices)
+  (load "ergoemacs-advices"))
 
 (defcustom ergoemacs-ignore-prev-global t
   "If non-nil, the ergoemacs-mode will ignore previously defined global keybindings."
@@ -1297,9 +1323,12 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
   (ergoemacs-load-aliases))
 
 (defun ergoemacs-vars-sync ()
-  "Sync variables. `ergoemacs-mode' `ergoemacs-shortcut-keys', `ergoemacs-unbind-keys'."
+  "Sync variables.
+`ergoemacs-mode' `ergoemacs-shortcut-keys', `ergoemacs-read-input-keys'
+`ergoemacs-unbind-keys'."
   (if (assq 'ergoemacs-mode minor-mode-map-alist)
-      (when (or ergoemacs-mode ergoemacs-shortcut-keys ergoemacs-unbind-keys
+      (when (or ergoemacs-mode ergoemacs-shortcut-keys
+                ergoemacs-unbind-keys
                 ergoemacs-save-variables)
         (unless ergoemacs-mode
           (setq ergoemacs-mode t)
@@ -1334,7 +1363,10 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
        (and x (setq ergoemacs-emulation-mode-map-alist
                     (cons x (delq x ergoemacs-emulation-mode-map-alist ))))))
    ;; Promoted from least to most important
-   '(ergoemacs-shortcut-keys ergoemacs-shortcut-override-mode ergoemacs-modal))
+   '(ergoemacs-shortcut-keys
+     ergoemacs-shortcut-override-mode
+     ergoemacs-modal
+     ergoemacs-read-input-keys))
   ;; Demote
   (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
     (setq minor-mode-map-alist (append (delete x minor-mode-map-alist) (list x)))))
@@ -1342,10 +1374,17 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
 (defvar ergoemacs-this-command nil)
 (defun ergoemacs-pre-command-hook ()
   "Ergoemacs pre-command-hook."
+  (when (and (not ergoemacs-read-input-keys)
+             ergoemacs-mark-active)
+    (setq mark-active t))
+  (setq ergoemacs-mark-active nil)
   (let (deactivate-mark)
     (condition-case err
         (progn
           (ergoemacs-vars-sync)
+          (when (and (not ergoemacs-read-input-keys)
+                     (not unread-command-events))
+            (setq ergoemacs-read-input-keys t))
           (setq ergoemacs-this-command this-command)
           (when ergoemacs-mode
             ;; Raise shortcuts and modal modes.

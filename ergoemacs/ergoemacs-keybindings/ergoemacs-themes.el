@@ -27,6 +27,9 @@
 ;; 
 
 ;;; Code:
+(autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
+(autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
+(autoload 'wdired-exit "wdired" "ergoemacs-autoload." t)
 
 (defvar ergoemacs-full-maps '(helm-map)
   "List of keymaps where the full ergoemacs keymap is fully installed (ie they use an overriding keymap).")
@@ -166,6 +169,7 @@
     ("<apps> <f3>" ergoemacs-copy-all "copy all")
     
     ("<apps> <return>" execute-extended-command "M-x")
+    ("<apps> RET" execute-extended-command "M-x")
     ;;("<apps> <backspace>" )  Delete/cut text-block.
     
     ("<apps> TAB" indent-region "indent-region")  ;; Already in CUA
@@ -193,9 +197,9 @@
     ("<apps> h Z" ergoemacs-clean-nw)
 
     ("<apps> i"  ergoemacs-toggle-full-alt-shift "Alt+Shift")
-    ("<apps> k" ergoemacs-toggle-full-alt "Alt+mode")
     ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
     ("<apps> s" save-buffer "Save")
+    ("<apps> C-s" write-file "Save As")
     ("<apps> o" find-file "Open")
 
     ("<apps> g" universal-argument "C-u")
@@ -221,6 +225,79 @@
     ("<apps> n s" shell "shell" t)
     ("<apps> n t" org-capure "capture")
     ("<apps> n T" org-agenda "agenda")
+    
+    ;; Smart punctuation
+    ;; `http://xahlee.info/comp/computer_language_char_distribution.html'
+    ;; |------+-----------+---------+-----------------------|
+    ;; | Rank | Character | Percent | Defined               |
+    ;; |------+-----------+---------+-----------------------|
+    ;; |    1 | ,         |   12.1% | No; Already unchorded |
+    ;; |    2 | _         |    8.0% | Yes                   |
+    ;; |    3 | "         |    8.0% | Yes                   |
+    ;; |    4 | (         |    7.7% | Yes                   |
+    ;; |    5 | )         |    7.7% | By pair               |
+    ;; |    6 | .         |    7.4% | No; Already unchorded |
+    ;; |    7 | ;         |    4.8% | No; Already unchorded |
+    ;; |    8 | -         |    4.4% | Yes                   |
+    ;; |    9 | =         |    4.3% | Yes                   |
+    ;; |   10 | '         |    3.9% | Yes (by pair)         |
+    ;; |   11 | /         |    3.8% | No; Already unchorded |
+    ;; |   12 | *         |    3.5% | Yes                   |
+    ;; |   13 | :         |    3.2% | Yes                   |
+    ;; |   14 | {         |    3.2% | By pair               |
+    ;; |   15 | }         |    3.2% | By pair               |
+    ;; |   16 | >         |    2.4% | Yes                   |
+    ;; |   17 | $         |    2.2% | Yes                   |
+    ;; |   18 | #         |    1.7% | Yes                   |
+    ;; |   19 | +         |    1.2% | Yes                   |
+    ;; |   20 | \         |    1.1% | No; Already unchorded |
+    ;; |   21 | [         |    1.0% | Yes (by pair)         |
+    ;; |   22 | ]         |    1.0% | Yes                   |
+    ;; |   23 | <         |    1.0% | Yes                   |
+    ;; |   24 | &         |    0.9% | Yes                   |
+    ;; |   25 | @         |    0.7% | Yes                   |
+    ;; |   26 | |         |    0.5% | Yes                   |
+    ;; |   27 | !         |    0.5% | Yes                   |
+    ;; |   28 | %         |    0.3% | Yes                   |
+    ;; |   29 | ?         |    0.2% | No; Already unchorded |
+    ;; |   30 | `         |    0.1% | Yes                   |
+    ;; |   31 | ^         |    0.1% | Yes                   |
+    ;; |   32 | ~         |    0.1% | Yes                   |
+    ;; |------+-----------+---------+-----------------------|
+
+    ;; No pinkies are used in this setup.
+    ("<apps> k o" ("#" nil) "#")
+    ("<apps> k l" ("$" nil) "$")
+    ("<apps> k ." (":" nil) ":")
+
+    ("<apps> k w" ("^" nil) "^")
+    ("<apps> k s" ("*" nil) "*")
+    ("<apps> k x" ("~" nil) "~")
+    
+    ("<apps> k i" ergoemacs-smart-bracket "[]")
+    ("<apps> k k" ergoemacs-smart-paren "()")
+    ("<apps> k ," ergoemacs-smart-curly "{}")
+    
+    ("<apps> k j" ergoemacs-smart-quote "\"\"")
+    ("<apps> k u" ergoemacs-smart-apostrophe "''")
+    ("<apps> k m" ("`" nil) "`")
+
+    ("<apps> k y" ("?" nil) "?")
+    ("<apps> k h" ("%" nil) "%")
+    ("<apps> k n" ("@" nil) "@")
+    
+    ("<apps> k r" (">" nil) ">")
+    ("<apps> k f" ("_" nil) "_")
+    ("<apps> k v" ("<" nil) "<")
+    
+    ("<apps> k e" ("+" nil) "+")
+    ("<apps> k d" ("=" nil) "=")
+    ("<apps> k c" ("-" nil) "-")
+
+    ("<apps> k t" ("&" nil) "&")
+    ("<apps> k g" ("|" nil) "|")
+    ("<apps> k b" ("!" nil) "!")
+    
     
     ;; but some modes don't honor it...
     ("<apps> r" goto-map "Goto"))
@@ -462,9 +539,7 @@
     (browse-kill-ring-hook
      (("<f11>" browse-kill-ring-previous)
       ("<f12>" browse-kill-ring-forward)
-      (keboard-quit  browse-kill-ring-quit)
-      ("ESC" browse-kill-ring-quit)
-      ("<escape>" browse-kill-ring-quit)
+      (keyboard-quit  browse-kill-ring-quit)
       (isearch-forward browse-kill-ring-search-forward)
       (isearch-backward browse-kill-ring-search-backward)
       (previous-line browse-kill-ring-previous)
@@ -529,15 +604,12 @@
     (ido-mode
      ((execute-extended-command smex nil remap)))
     
-    ;; (ido-setup-hook ; Add M-RET to select text in ido-mode.  More
-    ;;                 ; ergonomically friendly
-    ;;  (("M-RET" ido-select-text ido-common-completion-map)))
-    
     ;; Info Mode hooks
     (Info-mode-hook
      (("<backspace>" Info-history-back)
       ("<S-backspace>" Info-history-forward)))
-    
+
+    ;; Example remapping.
     (SAS-mode-hook
      (("<apps> j j" ess-sas-goto-log nil t)
       ("<apps> j u" ess-sas-goto-lst nil t)
@@ -546,7 +618,14 @@
       ("<apps> j ," ess-sas-data-view-insight nil t)
       ("<apps> j m" ess-sas-graph-view nil t)
       ("<apps> j n" ess-sas-goto-shell nil t)))
-    
+
+    ;; Dired
+    (dired-mode-hook
+     (("C-c C-c" wdired-change-to-wdired-mode dired-mode-map)))
+
+    (wdired-mode-hook
+     ((keyboard-quit wdired-exit wdired-mode-map)))
+
     ;; Helm mode hooks
     (helm-mode
      ((execute-extended-command helm-M-x nil remap)
@@ -1440,11 +1519,12 @@ Some exceptions we don't want to unset.
   ;; (ergoemacs-key "M-," 'ergoemacs-smart-punctuation "Toggle ()")
   (ergoemacs-key "M-." 'ergoemacs-end-of-line-or-what "→ line/*")
   (ergoemacs-key "M-m" 'ergoemacs-beginning-of-line-or-what "← line/*" )
-  (ergoemacs-key "M-t" 'isearch-backward "← isearch")
-  (ergoemacs-key "M-T" 'isearch-backward-regexp "← reg isearch")
-  (ergoemacs-key "M-Y" 'isearch-forward-regexp "→ reg isearch")
+  (ergoemacs-key "M-y" 'isearch-backward "← isearch")
+  (ergoemacs-key "M-Y" 'isearch-backward-regexp "← reg isearch")
+  (ergoemacs-key "M-h" 'isearch-forward "→ isearch")
+  (ergoemacs-key "M-H" 'isearch-forward-regexp "→ reg isearch")
   
-  (ergoemacs-key "M-H" nil)
+  (ergoemacs-key "M-T" nil)
   (ergoemacs-key "M-I" nil)
   (ergoemacs-key "M-K" nil)
   (ergoemacs-key "M-U" nil)
@@ -1459,7 +1539,7 @@ Some exceptions we don't want to unset.
   ;; (ergoemacs-key "M-t" 'execute-extended-command "M-x")
   ;; (ergoemacs-key "M-a" 'ergo-call-keyward-completion "compl")
   (ergoemacs-key "M-9" 'er/contract-region "→region←")
-  (ergoemacs-key "M-h" 'execute-extended-command "M-x"))
+  (ergoemacs-key "M-t" 'execute-extended-command "M-x"))
 
 (make-obsolete-variable 'ergoemacs-variant 'ergoemacs-theme
                         "ergoemacs-mode 5.8.0.1")
