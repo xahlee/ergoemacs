@@ -129,6 +129,8 @@
 
  "length"
 
+"forEach"
+
 "Math.floor"
 
 "console.log"
