@@ -1230,12 +1230,12 @@ bindings the keymap is:
   "Set a key in the ergoemacs local map."
   ;; install keymap if not already installed
   (interactive)
-  (let (major ergoemacs-local-keymap)
+  (unless ergoemacs-local-keymap
+    (set (make-local-variable 'ergoemacs-local-keymap) (make-sparse-keymap)))
+  (let (major)
     (eval (macroexpand `(setq major ',(intern (format "ergoemacs--emulation-for-%s-local" major-mode)))))
     (set (make-local-variable major) t)
     (progn
-      (unless ergoemacs-local-keymap
-        (set (make-local-variable 'ergoemacs-local-keymap) (make-sparse-keymap)))
       ;; add key
       (define-key ergoemacs-local-keymap key command)
       (let ((x (assq major ergoemacs-emulation-mode-map-alist)))
@@ -1399,7 +1399,8 @@ However instead of using M-a `eval-buffer', you could use M-a `eb'"
                   (error nil))
                 (setq this-command key-binding))))
             (unless ergoemacs-modal
-              (ergoemacs-install-shortcuts-up))
+              (when (eq saved-overriding-map t) 
+                (ergoemacs-install-shortcuts-up)))
             (when (and (not ergoemacs-show-true-bindings)
                        (memq this-command ergoemacs-describe-keybindings-functions))
               (ergoemacs-shortcut-override-mode 1))))

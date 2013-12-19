@@ -201,12 +201,15 @@
       (ergoemacs-debug-flush))))
 
 (defmacro ergoemacs-with-global (&rest body)
-  "With global keymap, not ergoemacs keymaps.
-In theory `ergoemacs-mode' and `ergoemacs-unbind-keys' should
-also be nil, but this is used in `ergoemacs-shortcut-internal'
-which allows a shortcut to ergoemacs keys as well, so these
-variables are handled in `ergoemacs-shortcut-internal'.
-"
+  "With global keymap, not ergoemacs keymaps."
+  `(ergoemacs-without-emulation
+    (let (ergoemacs-mode ergoemacs-unbind-keys)
+      ,@body)))
+
+(defmacro ergoemacs-without-emulation (&rest body)
+  "Without keys defined at `ergoemacs-emulation-mode-map-alist'.
+Also turns off other things like `overriding-terminal-local-map'
+and `overriding-local-map'"
   `(let (overriding-terminal-local-map
          overriding-local-map
          ergoemacs-overlays overlay overlay-keymap
@@ -275,7 +278,7 @@ active.
                 (t
                  ""))
                (ergoemacs-pretty-key key)))
-    (setq next-key (eval (macroexpand `(key-description [,(read-key)]))))
+    (setq next-key (eval (macroexpand `(key-description [,(read-key)])))) 
     ;; M-a -> C-a
     ;; C-a -> M-a
     (setq ctl-to-alt
@@ -358,7 +361,7 @@ active.
           (setq ergoemacs-first-variant nil)
           (setq ergoemacs-single-command-keys new-key-vector)
           (setq prefix-arg current-prefix-arg)
-          (setq unread-command-events (listify-key-sequence new-key-vector)))
+          (setq unread-command-events (append (listify-key-sequence new-key-vector) unread-command-events)))
          (t
           (setq ergoemacs-first-variant nil)
           (setq fn (or (command-remapping fn (point)) fn))
@@ -451,7 +454,6 @@ active.
                                         ; functions
                           (where-is-internal def (current-global-map)))
                (gethash def ergoemacs-where-is-global-hash)))
-      
       (puthash (read-kbd-macro (key-description key) t)
                (list def 'global) ergoemacs-command-shortcuts-hash)
       (define-key ergoemacs-shortcut-keymap key 'ergoemacs-shortcut))     
@@ -623,8 +625,7 @@ active.
               (this-command-keys-vector () (if (equal this-command ',ergoemacs-shortcut-send-fn) ,(read-kbd-macro key t) (funcall ,(symbol-function 'this-command-keys-vector)))))
            (setq new-unread (listify-key-sequence (this-command-keys)))
            (ergoemacs-with-global
-            (let (ergoemacs-mode ergoemacs-unbind-keys)
-              (call-interactively ergoemacs-shortcut-send-fn nil ,(read-kbd-macro key t)))))))
+            (call-interactively ergoemacs-shortcut-send-fn nil ,(read-kbd-macro key t))))))
       ;; Some commands, like isearch, put commands in
       ;; `unread-command-events'; Try to handle these.
       (when (and unread-command-events
@@ -632,8 +633,7 @@ active.
         (setq unread-command-events old-unread))))
    (t
     (ergoemacs-with-global
-     (let (ergoemacs-mode ergoemacs-unbind-keys)
-       (call-interactively ergoemacs-shortcut-send-fn))))))
+     (call-interactively ergoemacs-shortcut-send-fn)))))
 
 (defun ergoemacs-menu-send-prefix (prefix-key untranslated-key type)
   "Extracts maps for PREFIX-KEY UNTRANSLATED-KEY of TYPE."
@@ -703,11 +703,11 @@ work-around for a particular key in `ergoemacs-emulation-mode-map-alist'
           ergoemacs-read-input-keys
           ergoemacs-shortcut-override-mode)
       (setq cmd1 (key-binding (or ergoemacs-single-command-keys (this-single-command-keys))))
-      (ergoemacs-with-global 
+      (ergoemacs-without-emulation
        (setq cmd2 (key-binding (or ergoemacs-single-command-keys (this-single-command-keys))))))
     (if (not (equal cmd1 cmd2))
         (progn
-          (setq ergoemacs-shortcut-send-key (key-description (this-command-keys-vector))
+          (setq ergoemacs-shortcut-send-key (key-description (this-single-command-keys))
                 ergoemacs-shortcut-send-fn cmd1)
           
           (when ergoemacs-single-command-keys
@@ -764,6 +764,8 @@ work-around for a particular key in `ergoemacs-emulation-mode-map-alist'
 (defvar ergoemacs-shortcut-send-key nil)
 (defvar ergoemacs-shortcut-send-fn nil)
 (defvar ergoemacs-shortcut-send-timer nil)
+
+(defvar ergoemacs-debug-shortcuts nil)
 (defun ergoemacs-shortcut-internal (key &optional chorded repeat keymap-key timeout timeout-fn)
   "Ergoemacs Shortcut.
 
@@ -810,6 +812,22 @@ When KEY is a function, lookup the corresponding binding of that
 function if it is bound globally.  For example
 `beginning-of-line' becomes `org-beginning-of-line' in `org-mode'
 "
+  (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+    (ergoemacs-debug-heading "ergoemacs-shortcut %s"
+                             (key-description (this-command-keys)))
+    (ergoemacs-debug
+     "
+|----------|-------|
+| argument | value |
+|----------|-------|
+| key      | %s |
+| chorded  | %s |
+| repeat   | %s |
+| keymap-key | %s |
+| timeout  | %s |
+| timeout-fn | %s |
+|----------|-------|"
+     key chorded repeat keymap-key timeout timeout-fn))
   (setq ergoemacs-shortcut-send-key nil
         ergoemacs-shortcut-send-fn nil
         ergoemacs-shortcut-send-timer nil)
@@ -824,12 +842,18 @@ function if it is bound globally.  For example
      ((condition-case err ;; This is a function (possibly global)
           (interactive-form key)
         (error nil))
+      (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+        (ergoemacs-debug "This is a function (possibly global)"))
       ;; Lookup ergoemacs key bindings.
       (if (memq key ergoemacs-shortcuts-do-not-lookup)
           (progn
+            (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+              (ergoemacs-debug "Do not lookup this function, just pass it directly."))
             (setq fn (list (or ergoemacs-single-command-keys (this-single-command-keys))
                            key))
             (setq shared-do-it t))
+        (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+          (ergoemacs-debug "Looking up possible function remaps."))
         (mapc
          (lambda(cur-key)
            (setq new-fn (condition-case err
@@ -851,7 +875,7 @@ function if it is bound globally.  For example
           (gethash key ergoemacs-where-is-global-hash)))
         
         (setq new-fn nil)
-        (ergoemacs-with-global
+        (ergoemacs-without-emulation
          (mapc
           (lambda(cur-key)
             (unless (string-match "\\(s-\\|A-\\|H-\\)"
@@ -899,6 +923,9 @@ function if it is bound globally.  For example
            (gethash key ergoemacs-where-is-global-hash)))))
       (cond
        (fn-override
+        (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+          (ergoemacs-debug "Use Function Override: %s" fn)
+          (ergoemacs-debug "Function List: %s" fn-lst))
         (set fn fn-override))
        (fn-lst
         ;; FIXME: If new functions exist, give the user the option to use
@@ -908,7 +935,7 @@ function if it is bound globally.  For example
         (setq fn (nth 0 fn-lst)))
        (t  ; Could not find another function, just use the function
            ; passed to `ergoemacs-shortcut'
-        (ergoemacs-with-global
+        (ergoemacs-without-emulation
             (setq fn (list key
                        (read-kbd-macro
                         (key-description
@@ -919,7 +946,7 @@ function if it is bound globally.  For example
      ((or (not chorded)
           (memq chorded '(repeat repeat-global global-repeat global))) ;; lookup keybinding for the function keys.
       (remove-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
-      (ergoemacs-with-global
+      (ergoemacs-without-emulation
           (setq fn (list (key-binding (read-kbd-macro key))
                          (read-kbd-macro key t))))
       (setq shared-do-it t))
@@ -961,8 +988,9 @@ function if it is bound globally.  For example
                          ;; Add key if it changed.
                          (not (eq key (nth 0 fn)))))
                (when  do-it
-                 (ergoemacs-debug "Shortcut %s to %s %s" (key-description keymap-key)
-                                  (nth 0 fn) (nth 1 fn))
+                 (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+                   (ergoemacs-debug "Shortcut %s to %s %s" (key-description keymap-key)
+                                  (nth 0 fn) (nth 1 fn)))
                  (cond
                   ((and (boundp 'ergoemacs-orig-keymap) ergoemacs-orig-keymap)
                    (if (not (memq (nth 0 fn) ergoemacs-send-fn-keys-fns))
@@ -1059,7 +1087,9 @@ sets `this-command' to `%s'. The hook
     (when ergoemacs-shortcut-send-timer
       (setq ergoemacs-M-O-timer
             (run-with-timer ergoemacs-M-O-delay nil
-                            #'ergoemacs-shortcut-timeout)))))
+                            #'ergoemacs-shortcut-timeout))))
+  (when (and ergoemacs-debug-shortcuts (member key ergoemacs-debug-shortcuts))
+    (ergoemacs-debug-flush)))
 
 (defcustom ergoemacs-repeat-ctl-c-ctl-c t
   "Repeat C-c C-c"
@@ -1175,7 +1205,8 @@ Setup C-c and C-x keys to be described properly.")
   (let ((inhibit-read-only t)
         hashkey lookup override-text-map override orig-map)
     (cond
-     (overriding-terminal-local-map
+     ((and overriding-terminal-local-map
+           (eq saved-overriding-map t))
       (when (eq (lookup-key
                  overriding-terminal-local-map
                  (read-kbd-macro "<ergoemacs>")) 'ignore)
@@ -1236,7 +1267,8 @@ The keymaps are:
   (let ((inhibit-read-only t)
         hashkey lookup override-text-map override orig-map)
     (cond
-     (overriding-terminal-local-map
+     ((and overriding-terminal-local-map
+           (eq saved-overriding-map t))
       (when (not
              (eq (lookup-key
                   overriding-terminal-local-map

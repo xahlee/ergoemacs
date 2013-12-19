@@ -2,6 +2,7 @@
 #+AUTHOR: Xah Lee, David Capello, and Matthew Fidler
 #+LANGUAGE:  en
 #+STARTUP: oddeven
+* Library Information
 
 
 ErgoEmacs keybindings improves GNU Emacs for people who did not grew
@@ -467,3 +468,11 @@ One can enable movement without key-chords as follows:
     insert the character
   - Shift and the key is the unshifted command.  Therefore [Menu] [i]
     [i] [Shift+k] would be Page Up followed by down one character.
+* Functions
+** Interactive Functions
+
+** Internal Functions
+* Variables
+** Customizable Variables
+
+** Internal Variables

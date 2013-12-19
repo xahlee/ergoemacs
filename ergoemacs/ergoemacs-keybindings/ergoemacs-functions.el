@@ -545,7 +545,7 @@ the prefix arguments of `beginning-of-buffer',
     (let (pts)
       (push (point-at-bol) pts)
       (save-excursion
-        (setq prefix-arg nil)
+        ;; (setq prefix-arg nil)
         (setq current-prefix-arg nil)
         (ergoemacs-shortcut-internal 'move-beginning-of-line)
         (push (point) pts))
@@ -631,7 +631,8 @@ the prefix arguments of `end-of-buffer',
                (and
                 (or
                  (eq
-                  (ergoemacs-with-global (let (ergoemacs-mode ergoemacs-unbind-keys) (key-binding (read-kbd-macro "<next>"))))
+                  (ergoemacs-with-global
+                   (key-binding (read-kbd-macro "<next>")))
                   last-command))
                     (= (point) (point-at-bol)))))
       (progn 
@@ -648,7 +649,7 @@ the prefix arguments of `end-of-buffer',
       (let ((line-move-visual nil))
         (forward-line (- N 1))))
     (let (pts)
-      (setq prefix-arg nil)
+      ;; (setq prefix-arg nil)
       (setq current-prefix-arg nil)
       (save-excursion
         (call-interactively 'move-end-of-line)
@@ -1485,7 +1486,7 @@ When in `browse-kill-ring-mode', cycle forward through the key ring.
          (fboundp 'browse-kill-ring))
     (browse-kill-ring)
     ;; Add unread command events another "paste"
-    (setq unread-command-events (listify-key-sequence (this-single-command-keys))))
+    (setq unread-command-events (append (listify-key-sequence (this-single-command-keys)) unread-command-events)))
    ((and ergoemacs-smart-paste (eq last-command 'yank))
     (ergoemacs-shortcut-internal 'yank-pop))
    (t
