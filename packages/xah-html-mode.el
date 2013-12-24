@@ -257,6 +257,7 @@
            ("html6" . ["xah-html6-mode" "html6"])
            ("java" . ["java-mode" "java"])
            ("js" . ["js-mode" "js"])
+           ("nodejs" . ["js-mode" "js"])
            ("lsl" . ["xlsl-mode" "lsl"])
            ("latex" . ["latex-mode" "txt"])
            ("ocaml" . ["tuareg-mode" "ocaml"])
@@ -266,7 +267,7 @@
            ("povray" . ["pov-mode" "pov"])
            ("powershell" . ["powershell-mode" "ps1"])
            ("python" . ["python-mode" "py"])
-           ("python3" . ["python-mode" "py3"])
+           ("python3" . ["python-mode" "py3.py"])
            ("qi" . ["shen-mode" "qi"])
            ("ruby" . ["ruby-mode" "rb"])
            ("scala" . ["scala-mode" "scala"])
@@ -1599,6 +1600,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ;; case in find string shouldn't matter.
                        ["ctrl" "<kbd>Ctrl</kbd>"]
                        ["altgr" "<kbd>AltGr</kbd>"]
+                       ["compose" "<kbd>⎄ Compose</kbd>"]
                        ["alt" "<kbd>Alt</kbd>"]
                        ["shift" "<kbd>⇧ Shift</kbd>"]
                        ["cmd" "<kbd>⌘ Cmd</kbd>"]
@@ -1606,7 +1608,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["opt" "<kbd>⌥ Opt</kbd>"]
                        ["win" "<kbd>❖ Win</kbd>"]
                        ["menu" "<kbd>▤ Menu</kbd>"]
-                       ["meta" "<kbd>Meta</kbd>"]
+                       ["meta" "<kbd>◆ Meta</kbd>"]
                        ["super" "<kbd>❖ Super</kbd>"]
                        ["hyper" "<kbd>Hyper</kbd>"]
 

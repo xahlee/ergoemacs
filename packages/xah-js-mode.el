@@ -208,10 +208,17 @@
 
 ;; syntax table
 (defvar xjs-syntax-table nil "Syntax table for `xah-js-mode'.")
+
+;; (setq xjs-syntax-table
+;;       (let ((synTable (make-syntax-table)))
+;;   (modify-syntax-entry ?\/ ". 12b" synTable)
+;;   (modify-syntax-entry ?\n "> b" synTable)
+;;         synTable))
+
 (setq xjs-syntax-table
       (let ((synTable (make-syntax-table)))
-  (modify-syntax-entry ?\/ ". 12b" synTable)
-  (modify-syntax-entry ?\n "> b" synTable)
+        (c-populate-syntax-table synTable) ; todo: rid of dependence
+        (modify-syntax-entry ?$ "_" synTable)
         synTable))
 
 
