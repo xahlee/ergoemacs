@@ -14,6 +14,7 @@
 
 ;;; HISTORY
 
+;; version 0.2, 2013-12-25 added array methods and string method highlighting
 ;; version 0.1, 2013-08-21 first version
 
 (defvar xah-js-mode-hook nil "Standard hook for `xah-js-mode'")
@@ -51,7 +52,6 @@
 "while"
 "with"
 
-"push"
 "substring"
 "undefined"
 
@@ -152,6 +152,57 @@
 
 ) )
 
+(defvar xjs-js-array-methods nil "a list of JavaScript array methods.")
+(setq xjs-js-array-methods '(
+"concat"
+"every"
+"filter"
+"forEach"
+"indexOf"
+"join"
+"lastIndexOf"
+"length"
+"map"
+"pop"
+"push"
+"reduce"
+"reduceRight"
+"reverse"
+"shift"
+"slice"
+"some"
+"sort"
+"splice"
+"toLocalString"
+"toString"
+"unshift"
+) )
+
+(defvar xjs-js-str-methods nil "a list of JavaScript string methods.")
+(setq xjs-js-str-methods '(
+"length"
+"concat"
+"trim"
+"slice"
+"substr"
+"substring"
+"indexOf"
+"lastIndexOf"
+"search"
+"replace"
+"match"
+"split"
+"toUpperCase"
+"toLowerCase"
+"toLocaleUpperCase"
+"toLocaleLowerCase"
+"charAt"
+"charCodeAt"
+"toString"
+"toValueOf"
+"localeCompare"
+) )
+
 (defvar xjs-dom-words nil "a list of keywords more or less related to emacs system.")
 (setq xjs-dom-words '(
 "addEventListener"
@@ -177,11 +228,16 @@
           (emacsBuiltins (regexp-opt xjs-keyword-builtin 'symbols) )
           (jsLangWords (regexp-opt xjs-js-lang-words 'symbols) )
           (jsVars1 (regexp-opt xjs-js-vars-1 'symbols) )
+          (jsArrayMethods (regexp-opt xjs-js-array-methods 'symbols) )
+          (jsStrMethods (regexp-opt xjs-js-str-methods 'symbols) )
+
 )
         `(
           (,domWords . font-lock-function-name-face)
           (,emacsBuiltins . font-lock-type-face)
           (,jsLangWords . font-lock-keyword-face)
+          (,jsArrayMethods . font-lock-keyword-face)
+          (,jsStrMethods . font-lock-keyword-face)
           (,jsVars1 . font-lock-variable-name-face)
           ) ) )
 
@@ -209,17 +265,19 @@
 ;; syntax table
 (defvar xjs-syntax-table nil "Syntax table for `xah-js-mode'.")
 
-;; (setq xjs-syntax-table
-;;       (let ((synTable (make-syntax-table)))
-;;   (modify-syntax-entry ?\/ ". 12b" synTable)
-;;   (modify-syntax-entry ?\n "> b" synTable)
-;;         synTable))
+ ;; (setq xjs-syntax-table
+ ;;       (let ((synTable (make-syntax-table)))
+ ;;   (modify-syntax-entry ?\/ ". 12b" synTable)
+ ;;   (modify-syntax-entry ?\n "> b" synTable)
+ ;;         synTable))
+
+(require 'cc-mode)
 
 (setq xjs-syntax-table
-      (let ((synTable (make-syntax-table)))
-        (c-populate-syntax-table synTable) ; todo: rid of dependence
-        (modify-syntax-entry ?$ "_" synTable)
-        synTable))
+     (let ((synTable (make-syntax-table)))
+       (c-populate-syntax-table synTable) ; todo: rid of dependence
+       (modify-syntax-entry ?$ "_" synTable)
+       synTable))
 
 
 
