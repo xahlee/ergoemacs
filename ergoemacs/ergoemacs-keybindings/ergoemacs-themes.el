@@ -196,7 +196,7 @@
     ("<apps> h z" ergoemacs-clean)
     ("<apps> h Z" ergoemacs-clean-nw)
 
-    ("<apps> i"  ergoemacs-toggle-full-alt-shift "Alt+Shift")
+    ;; ("<apps> i"  ergoemacs-toggle-full-alt-shift "Alt+Shift")
     ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
     ("<apps> s" save-buffer "Save")
     ("<apps> C-s" write-file "Save As")
@@ -535,6 +535,9 @@
       ("<M-left>" ergoemacs-org-metaleft nil)
       ("<M-right>" ergoemacs-org-metaright nil)))
 
+    (org-read-date-minibuffer-setup-hook
+     ((keyboard-quit minibuffer-keyboard-quit minibuffer-local-map)) t)
+
     ;; Browse Kill ring support
     (browse-kill-ring-hook
      (("<f11>" browse-kill-ring-previous)
@@ -603,6 +606,9 @@
     
     (ido-mode
      ((execute-extended-command smex nil remap)))
+
+    (ergoemacs-mode
+     ((describe-key ergoemacs-describe-key nil remap)))
     
     ;; Info Mode hooks
     (Info-mode-hook
@@ -671,7 +677,10 @@
                         (choice
                          (const :tag "Translate key" t)
                          (const :tag "Raw key" nil)
-                         (const :tag "Remap key" remap)))))))
+                         (const :tag "Remap key" remap)))))
+                (choice
+                 (symbol :tag "Always setup" t)
+                 (symbol :tag "Setup once" nil))))
   :set 'ergoemacs-set-default
   :group 'ergoemacs-standard-layout)
 
@@ -1122,7 +1131,10 @@ DIFFERENCES are the differences from the layout based on the functions.  These a
                                (choice
                                 (const :tag "Translate key" t)
                                 (const :tag "Raw key" nil)
-                                (const :tag "Remap key" remap)))))))
+                                (const :tag "Remap key" remap)))))
+                       (choice
+                        (symbol :tag "Always setup" t)
+                        (symbol :tag "Setup once" nil))))
          :set 'ergoemacs-set-default
          :group ',(intern (format "ergoemacs-%s-theme" name)))
        (defcustom ,(intern (format "ergoemacs-redundant-keys-%s" name))
@@ -1362,7 +1374,7 @@ Some exceptions we don't want to unset.
 
   (ergoemacs-key "M-h" 'beginning-of-buffer "↑ buffer")
   (ergoemacs-key "M-H" 'end-of-buffer "↓ buffer")
-  (ergoemacs-key "M-RET" '(cabbage-next-line ergoemacs-next-line) "Next Line")
+  (ergoemacs-key "M-RET" '(cabbage-next-line ergoemacs-open-line) "Next Line")
 
   (ergoemacs-key "M-1" 'cabbage-enlargement-enlarge)
   (ergoemacs-key "M-C-1" 'cabbage-enlargement-restore)

@@ -267,7 +267,7 @@
            ("povray" . ["pov-mode" "pov"])
            ("powershell" . ["powershell-mode" "ps1"])
            ("python" . ["python-mode" "py"])
-           ("python3" . ["python-mode" "py3.py"])
+           ("python3" . ["python-mode" "py3"])
            ("qi" . ["shen-mode" "qi"])
            ("ruby" . ["ruby-mode" "rb"])
            ("scala" . ["scala-mode" "scala"])

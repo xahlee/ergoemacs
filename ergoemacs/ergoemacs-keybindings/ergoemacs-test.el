@@ -499,6 +499,161 @@ Test next and prior translation."
       (kill-buffer (current-buffer)))
     (should ret)))
 
+(ert-deftest ergoemacs-test-shift-selection ()
+  "Test that shift selection works properly.
+Issue #137."
+  (let (ret)
+    (save-excursion
+      (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+      (insert ergoemacs-test-lorem-ipsum)
+      (goto-char (point-min))
+      (execute-kbd-macro (edmacro-parse-keys "<S-down> <S-down>" t))
+      (call-interactively 'ergoemacs-cut-line-or-region)
+      (setq ret (= (point) (point-min)))
+      (kill-buffer (current-buffer)))
+    (should ret)))
+
+(ert-deftest ergoemacs-test-translations ()
+  "Test that unicode translations work.
+See Issue #138."
+  (let (ret
+        unread-command-events)
+    (ergoemacs-read nil nil nil (read-kbd-macro "C-x 8 !"))
+    (setq ret (equal (listify-key-sequence (read-kbd-macro "¡")) unread-command-events))
+    (should ret)))
+
+(ert-deftest ergoemacs-test-multi-translations ()
+  "Test that multicode unicode translations work.
+See Issue #140."
+  (let (ret
+        unread-command-events)
+    (ergoemacs-read nil nil nil (read-kbd-macro "C-x 8 \" A"))
+    (setq ret (equal (listify-key-sequence (read-kbd-macro "Ä")) unread-command-events))
+    (should ret)))
+
+(ert-deftest ergoemacs-test-shortcut ()
+  "Test that shortcuts don't eat or duplicate key-strokes. (Issue #141)"
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        (macro (edmacro-parse-keys (format "<%s> e e M-u"
+                                           (if (eq system-type 'windows-nt)
+                                               "apps" "menu")) t))
+        (ret nil))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme nil)
+    (setq ergoemacs-keyboard-layout "colemak")
+    (ergoemacs-mode 1)
+    (save-excursion
+      (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+      (insert ergoemacs-test-lorem-ipsum)
+      (goto-char (point-max))
+      (beginning-of-line)
+      (execute-kbd-macro macro)
+      (when (looking-at "ulla pariatur.")
+        (setq ret t))
+      (kill-buffer (current-buffer)))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should (equal ret t))))
+
+
+(defvar ergoemacs-test-misspelled-mark-should-fail
+  (condition-case err
+      (with-temp-buffer
+        (insert "mart")
+        (with-timeout (2 ':failed)
+          (flyspell-buffer)
+          ':passed))
+    (error ':failed)))
+
+(ert-deftest ergoemacs-test-misspelled-mark ()
+  "Test for mark working with flyspell misspelled word.
+Should test issue #142"
+  :expected-result ergoemacs-test-misspelled-mark-should-fail
+  (if (eq ergoemacs-test-misspelled-mark-should-fail ':failed)
+      (should nil)
+    (let ((old-ergoemacs-theme ergoemacs-theme)
+          (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+          (macro (edmacro-parse-keys (format "M-SPC M-y M-x"
+                                             (if (eq system-type 'windows-nt)
+                                                 "apps" "menu")) t))
+          (ret nil))
+      (ergoemacs-mode -1)
+      (setq ergoemacs-theme nil)
+      (setq ergoemacs-keyboard-layout "colemak")
+      (ergoemacs-mode 1)
+      (save-excursion
+        (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+        (insert ergoemacs-test-lorem-ipsum)
+        (flyspell-buffer)
+        (goto-char (point-max))
+        (beginning-of-line)
+        (execute-kbd-macro macro)
+        (when (looking-at " in culpa qui")
+          (setq ret t))
+        (kill-buffer (current-buffer)))
+      (ergoemacs-mode -1)
+      (setq ergoemacs-theme old-ergoemacs-theme)
+      (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+      (ergoemacs-mode 1)
+      (should (equal ret t)))))
+
+(ert-deftest ergoemacs-test-shift-select-subword ()
+  "Test for mark working with shift-selection of `subword-forward'."
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        (macro (edmacro-parse-keys (format "M-Y M-x"
+                                           (if (eq system-type 'windows-nt)
+                                               "apps" "menu")) t))
+        (ret nil))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme "reduction")
+    (setq ergoemacs-keyboard-layout "colemak")
+    (ergoemacs-mode 1)
+    (save-excursion
+      (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+      (insert ergoemacs-test-lorem-ipsum)
+      (subword-mode 1)
+      (goto-char (point-max))
+      (beginning-of-line)
+      (execute-kbd-macro macro)
+      (when (looking-at " in culpa qui")
+        (setq ret t))
+      (kill-buffer (current-buffer)))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should (equal ret t))))
+
+(ert-deftest ergoemacs-test-apps-e-t-_ ()
+  "Test that colemak <apps> e t sends _.
+Should test for Issue #143."
+  (let ((old-ergoemacs-theme ergoemacs-theme)
+        (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+        unread-command-events
+        (ret nil))
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme "reduction")
+    (setq ergoemacs-keyboard-layout "colemak")
+    (ergoemacs-mode 1)
+    (ergoemacs-read nil nil nil
+                    (read-kbd-macro
+                     (format "<%s> e t"
+                             (if (eq system-type 'windows-nt)
+                                 "apps" "menu"))))
+    (setq ret (equal (listify-key-sequence (read-kbd-macro "_"))
+                     unread-command-events))
+    (message "%s;%s" (listify-key-sequence (read-kbd-macro "_"))
+             unread-command-events)
+    (ergoemacs-mode -1)
+    (setq ergoemacs-theme old-ergoemacs-theme)
+    (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+    (ergoemacs-mode 1)
+    (should (equal ret t))))
+
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-test.el ends here
