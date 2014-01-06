@@ -518,7 +518,7 @@ Issue #137."
 See Issue #138."
   (let (ret
         unread-command-events)
-    (ergoemacs-read nil nil nil (read-kbd-macro "C-x 8 !"))
+    (ergoemacs-read (read-kbd-macro "C-x 8 !"))
     (setq ret (equal (listify-key-sequence (read-kbd-macro "¡")) unread-command-events))
     (should ret)))
 
@@ -527,7 +527,7 @@ See Issue #138."
 See Issue #140."
   (let (ret
         unread-command-events)
-    (ergoemacs-read nil nil nil (read-kbd-macro "C-x 8 \" A"))
+    (ergoemacs-read (read-kbd-macro "C-x 8 \" A"))
     (setq ret (equal (listify-key-sequence (read-kbd-macro "Ä")) unread-command-events))
     (should ret)))
 
@@ -639,8 +639,7 @@ Should test for Issue #143."
     (setq ergoemacs-theme "reduction")
     (setq ergoemacs-keyboard-layout "colemak")
     (ergoemacs-mode 1)
-    (ergoemacs-read nil nil nil
-                    (read-kbd-macro
+    (ergoemacs-read (read-kbd-macro
                      (format "<%s> e t"
                              (if (eq system-type 'windows-nt)
                                  "apps" "menu"))))
@@ -653,6 +652,52 @@ Should test for Issue #143."
     (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
     (ergoemacs-mode 1)
     (should (equal ret t))))
+
+(ert-deftest ergoemacs-test-ignore-global-definitions-on-remap ()
+  "If someone sets a key on the global keymap, ignore it.
+Addresses Issue #145."
+  (let ((old-global-map (current-global-map))
+        ret
+        new-global-map)
+    (setq new-global-map (copy-keymap (current-global-map)))
+    (define-key new-global-map (read-kbd-macro "M-q") 'ergoemacs-cut-line-or-region)
+    (unwind-protect
+        (with-temp-buffer
+          (use-global-map new-global-map)
+          (setq ret (ergoemacs-shortcut-remap-list 'fill-paragraph)))
+      (use-global-map old-global-map))
+    (should (not ret))))
+
+(define-derived-mode ergoemacs-test-major-mode fundamental-mode "ET"
+  "Major mode for testing some issues with `ergoemacs-mode'.
+\\{ergoemacs-test-major-mode-map}"
+  (define-key ergoemacs-test-major-mode-map (read-kbd-macro "C-s") 'save-buffer))
+
+(add-hook 'ergoemacs-test-major-mode-hook
+          '(lambda()
+             (interactive)
+             (define-key ergoemacs-test-major-mode-map
+               (read-kbd-macro "C-w") 'ergoemacs-close-current-buffer)))
+
+(ert-deftest ergoemacs-test-ignore-ctrl-w ()
+  "Ignore user-defined C-w in major-mode `ergoemacs-test-major-mode'.
+Part of addressing Issue #147."
+  (let (ret
+        (ergoemacs-use-function-remapping t))
+    (with-temp-buffer
+      (ergoemacs-test-major-mode)
+      (setq ret (ergoemacs-shortcut-remap-list 'kill-region)))
+    (should (not ret))))
+
+(ert-deftest ergoemacs-test-keep-ctrl-s ()
+  "Keep mode-defined C-s in major-mode `ergoemacs-test-major-mode'.
+Part of addressing Issue #147."
+  (let (ret
+        (ergoemacs-use-function-remapping t))
+    (with-temp-buffer
+      (ergoemacs-test-major-mode)
+      (setq ret (ergoemacs-shortcut-remap-list 'isearch-forward)))
+    (eq (nth 0 (nth 0 ret)) 'save-buffer)))
 
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
