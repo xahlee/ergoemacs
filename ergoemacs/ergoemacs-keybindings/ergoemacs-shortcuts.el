@@ -232,7 +232,8 @@ and `overriding-local-map'"
            ;; such a smart-parens mode.
            (ergoemacs-remove-shortcuts)
            ,@body)
-       (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist)
+       (when ergoemacs-mode
+         (add-hook 'emulation-mode-map-alists 'ergoemacs-emulation-mode-map-alist))
        ;; The shortcuts will be put back in post command hook.
        ;; Putting them back here will end up in an infinite loop. 
        ;;(ergoemacs-install-shortcuts-up)
@@ -587,7 +588,12 @@ It can be: 'ctl-to-alt 'unchorded 'normal"
                    (if ergoemacs-describe-key
                        "Describe Key: " "")
                    (if key (ergoemacs-pretty-key key) "")
-                   (ergoemacs-pretty-key next-key)))
+                   (ergoemacs-pretty-key
+                    (cond
+                     ((and (eq type 'unchorded)
+                           (not (string-match "M-" next-key)))
+                      (concat "C-" next-key))
+                     (t next-key)))))
         (setq ergoemacs-describe-key nil)))))
   (when ergoemacs-single-command-keys 
     (setq ergoemacs-read-input-keys nil)))
