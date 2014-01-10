@@ -50,7 +50,7 @@
 (defun replace-pairs-region (p1 p2 pairs)
   "Replace multiple PAIRS of find/replace strings in region P1 P2.
 
-PAIRS should be a sequence of pairs, ℯℊ [[findStr1 replaceStr1] [findStr2 replaceStr2] …] It can be list or vector, for the elements or the entire argument.  
+PAIRS should be a sequence of pairs [[findStr1 replaceStr1] [findStr2 replaceStr2] …] It can be list or vector, for the elements or the entire argument.  
 
 The find strings are not case sensitive. If you want case sensitive, set `case-fold-search' to nil. Like this: (let ((case-fold-search nil)) (replace-pairs-region …))
 

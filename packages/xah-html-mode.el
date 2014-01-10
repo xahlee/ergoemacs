@@ -1068,10 +1068,12 @@ For robust solution you might use: 「lynx -dump -display_charset=utf-8 URL」."
     (setq outputStr
           (let ((case-fold-search t) (tempStr inputStr))
 (setq tempStr (replace-regexp-pairs-in-string tempStr '(
+[" class=\"[-a-z0-9]+\" "  " "]
+[" id=\"[-a-z0-9]+\" "  " "]
+[" data-accessed=\"[-a-z0-9]+\">" ">"]
 ["<a href=\"\\([^\"]+?\\)\">\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
 ["<img src=\"\\([^\"]+?\\)\" alt=\"\\([^\"]+?\\)\" width=\"[0-9]+\" height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
 ["<[a-z0-9]+ */?>" ""]
-["<[a-z0-9]+ class=\"[^\"]+\">" ""]
 ["</[a-z0-9]+>" ""]
 
 ["&amp;" "&"]
@@ -1224,7 +1226,7 @@ The order of lines for {title, author, date/time, url} needs not be in that orde
     (setq ξdate (fix-datetimestamp ξdate))
 
     (setq ξurl (trim-string ξurl))
-    (setq ξurl (with-temp-buffer (insert ξurl) (xhm-source-url-linkify 2) (buffer-string)))
+    (setq ξurl (with-temp-buffer (insert ξurl) (xhm-source-url-linkify 1) (buffer-string)))
 
     (delete-region p1 p2 )
     (insert (concat "<cite>" ξtitle "</cite>") " " "<time>" ξdate "</time>"  " By " ξauthor ". @ " ξurl)
