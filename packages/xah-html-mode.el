@@ -15,6 +15,7 @@
 
 ;;; HISTORY
 
+;; 0.6.7, 2014-01-10 bug-fix on xhm-extract-url. Now, if the url start with 「http」, don't result in 「http://http://」
 ;; 0.6.6, 2013-06-20 critical bug-fix on xhm-htmlize-or-de-precode. Before, it'll just remove html entities for & < >.
 ;; 0.6.5, 2013-05-10 improved on “xhm-make-citation”
 ;; 0.6.4, 2013-04-29 added xhm-change-current-tag
@@ -1111,14 +1112,17 @@ WARNING: this function extract all text of the form 「<a … href=\"…\" …>�
       (goto-char 1)
       (while (re-search-forward "<img.+?src=\"\\([^\"]+?\\)\".+?>" nil "NOERROR")
         (setq urlList (cons (match-string 1) urlList))
-        )
-      )
+        ) )
+(print urlList)
     (setq urlList (reverse urlList) )
     (when convert-relative-URL-p
       (setq urlList
             (mapcar
              (lambda (ξx)
-               (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name) )) )
+               (if (string-match "http" ξx ) 
+                   (progn ξx)
+                 (progn (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name) )))
+                 ) )
              urlList) ) )
 
     (when (called-interactively-p 'any)
