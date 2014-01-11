@@ -15,6 +15,7 @@
 
 ;;; HISTORY
 
+;; 0.6.8, 2014-01-11 added xhm-html-to-text. modified xhm-remove-html-tags.
 ;; 0.6.7, 2014-01-10 bug-fix on xhm-extract-url. Now, if the url start with 「http」, don't result in 「http://http://」
 ;; 0.6.6, 2013-06-20 critical bug-fix on xhm-htmlize-or-de-precode. Before, it'll just remove html entities for & < >.
 ;; 0.6.5, 2013-05-10 improved on “xhm-make-citation”
@@ -1055,8 +1056,7 @@ Work on current text block or text selection. (a “text block” is text betwee
 
 When called in lisp code, if ξstring is non-nil, returns a changed string.  If ξstring nil, change the text in the region between positions ξfrom ξto.
 
-WARNING: this command currently does not cover all html tags or convert all html entities.
-For robust solution you might use: 「lynx -dump -display_charset=utf-8 URL」."
+WARNING: this command does not cover all HTML tags or convert all HTML entities. For robust solution you might use: 「lynx -dump -display_charset=utf-8 URL」."
   (interactive
    (if (region-active-p)
        (list nil (region-beginning) (region-end))
@@ -1069,22 +1069,64 @@ For robust solution you might use: 「lynx -dump -display_charset=utf-8 URL」."
     (setq outputStr
           (let ((case-fold-search t) (tempStr inputStr))
 (setq tempStr (replace-regexp-pairs-in-string tempStr '(
-[" class=\"[-a-z0-9]+\" "  " "]
-[" id=\"[-a-z0-9]+\" "  " "]
-[" data-accessed=\"[-a-z0-9]+\">" ">"]
-["<a href=\"\\([^\"]+?\\)\">\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
-["<img src=\"\\([^\"]+?\\)\" alt=\"\\([^\"]+?\\)\" width=\"[0-9]+\" height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
+["<!doctype html>" ""]
+["<meta charset=\"utf-8\" />" ""]
+[" class=\"[-_a-z0-9]+\" *"  " "]
+[" id=\"[-_a-z0-9]+\" *"  " "]
+[" title=\"\\([^\"]+?\\)\" *"  " "]
+[" data-accessed=\"[-0-9]+\" *"  " "]
+[" width=\"[0-9]+%?\" *"  " "]
+[" height=\"[0-9]+%?\" *"  " "]
+
+["<link rel=\"stylesheet\" href=\"\\([^\"]+?\\)\" />" ""]
+["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2"]
+["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" */?>" ""]
+
 ["<[a-z0-9]+ */?>" ""]
 ["</[a-z0-9]+>" ""]
-
 ["&amp;" "&"]
 ["&lt;" "<"]
 ["&gt;" ">"]
-
 )))
-
 tempStr
-             )  )
+ ) )
+
+    (if workOnStringP
+        outputStr
+      (save-excursion
+        (delete-region ξfrom ξto)
+        (goto-char ξfrom)
+        (insert outputStr) )) ) )
+
+(defun xhm-html-to-text (ξstring &optional ξfrom ξto)
+"Convert html to plain text on text selection or current text block."
+  (interactive
+   (if (region-active-p)
+       (list nil (region-beginning) (region-end))
+     (let ((bds (get-selection-or-unit 'block)) )
+       (list nil (elt bds 1) (elt bds 2))) ) )
+
+  (let (workOnStringP inputStr outputStr)
+    (setq workOnStringP (if ξstring t nil))
+    (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
+    (setq outputStr
+          (let ((case-fold-search t) (tempStr inputStr))
+(setq tempStr (replace-regexp-pairs-in-string tempStr '(
+["<script>\\([^\\<]+?\\)</script>" ""]
+["<li>" "<li> •" ]
+["<h2>" "────────── ────────── ────────── ────────── ──────────
+<h2>" ]
+["<h3>" "────────── ────────── ──────────
+<h3>" ]
+["<h4>" "────────── ──────────
+<h4>" ]
+["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
+["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" +width=\"[0-9]+\" +height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
+)))
+tempStr
+ ) )
+
+(setq outputStr (xhm-remove-html-tags outputStr) )
 
     (if workOnStringP
         outputStr
