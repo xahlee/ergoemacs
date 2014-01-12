@@ -15,6 +15,7 @@
 
 ;;; HISTORY
 
+;; 0.6.9, 2014-01-11 xhm-make-link-defunct behavier changed slightly. See inline doc.
 ;; 0.6.8, 2014-01-11 added xhm-html-to-text. modified xhm-remove-html-tags.
 ;; 0.6.7, 2014-01-10 bug-fix on xhm-extract-url. Now, if the url start with 「http」, don't result in 「http://http://」
 ;; 0.6.6, 2013-06-20 critical bug-fix on xhm-htmlize-or-de-precode. Before, it'll just remove html entities for & < >.
@@ -1161,7 +1162,7 @@ WARNING: this function extract all text of the form 「<a … href=\"…\" …>�
       (setq urlList
             (mapcar
              (lambda (ξx)
-               (if (string-match "http" ξx ) 
+               (if (string-match "http" ξx )
                    (progn ξx)
                  (progn (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name) )))
                  ) )
@@ -1282,13 +1283,17 @@ The order of lines for {title, author, date/time, url} needs not be in that orde
   "Make the html link under cursor to a defunct form.
 Example:
 If cursor is inside this tag
-<a class=\"sorc\" href=\"http://example.com/\" data-accessed=\"2008-12-26\">…</a>
+ <a class=\"sorc\" href=\"http://example.com/\" data-accessed=\"2008-12-26\">…</a>
  (and inside the opening tag.)
 
 It becomes:
+
+ <s data-accessed=\"2006-03-11\" data-defunct-date=\"2014-01-11\">http://www.math.ca/cgi/kabol/search.pl</s>
+
+old version output:
 <s class=\"deadurl\" title=\"accessed:2008-12-26; defunct:2008-12-26; http://example.com\">…</s>"
   (interactive)
-  (let (p1 p2 wholeLinkStr newLinkStr ξurl titleStr)
+  (let (p1 p2 wholeLinkStr newLinkStr ξurl accessedDate)
     (save-excursion
       ;; get the boundary of opening tag
       (forward-char 3)
@@ -1306,10 +1311,10 @@ It becomes:
         (search-forward-regexp  "href=\"\\([^\"]+?\\)\"")
         (setq ξurl (match-string 1))
 
-        (search-forward-regexp  "data-accessed=\"\\([^\"]+?\\)\"")
-        (setq titleStr (match-string 1))
+        (search-forward-regexp  "data-accessed=\"\\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\)\"")
+        (setq accessedDate (match-string 1))
 
-        (setq newLinkStr (format "<s class=\"deadurl\" title=\"accessed:%s; defunct:%s\">%s</s>" titleStr (format-time-string "%Y-%m-%d") ξurl ) )))
+        (setq newLinkStr (format "<s data-accessed=\"%s\" data-defunct-date=\"%s\">%s</s>" accessedDate (format-time-string "%Y-%m-%d") ξurl ) )))
 
     (delete-region p1 p2)
     (insert newLinkStr)))
