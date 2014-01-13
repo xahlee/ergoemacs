@@ -106,13 +106,13 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 
     (setq charArray [" " "_" "-"])
 
-    ;; when called first time, set statet to 0 
+    ;; when called first time, set statet to 0
     (setq currentState
-          (if (equal last-command this-command ) 
+          (if (equal last-command this-command )
             (get 'xah-cycle-hyphen-underscore-space 'state)
             0 )
           )
-    
+
       (setq nextState (% (+ currentState 1) (length charArray)))
       (setq changeFrom (elt charArray currentState ))
       (setq changeTo (elt charArray nextState ))
@@ -617,12 +617,26 @@ Examples of changes:
 
       ) ))
 
+(defun xah-replace-profanity ()
+  "Replace fuck shit scumbag … in current line or text selection.
+"
+  (interactive)
+  (let* ((bds (get-selection-or-unit 'line))
+         (p1 (elt bds 1))
+         (p2 (elt bds 2)))
+    (replace-pairs-region p1 p2 '(
+["fuck" "f��k"]
+["shit" "sh�t"]
+["motherfucker" "momf��ker"]
+)) ) )
+
 (defun xah-escape-quotes ()
   "Replace 「\"」 by 「\\\"」 in current line or text selection."
   (interactive)
   (let* ((bds (get-selection-or-unit 'line))
          (p1 (elt bds 1))
          (p2 (elt bds 2)))
+    ;; todo: might also call replace-quote
     (replace-pairs-region p1 p2 '(["\"" "\\\""])) ) )
 
 (defun xah-unescape-quotes ()

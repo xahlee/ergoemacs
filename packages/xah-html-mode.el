@@ -1114,7 +1114,7 @@ tempStr
           (let ((case-fold-search t) (tempStr inputStr))
 (setq tempStr (replace-regexp-pairs-in-string tempStr '(
 ["<script>\\([^\\<]+?\\)</script>" ""]
-["<li>" "<li> •" ]
+["<li>" "<li>• " ]
 ["<h2>" "────────── ────────── ────────── ────────── ──────────
 <h2>" ]
 ["<h3>" "────────── ────────── ──────────
