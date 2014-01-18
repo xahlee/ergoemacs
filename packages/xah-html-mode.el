@@ -1069,26 +1069,39 @@ WARNING: this command does not cover all HTML tags or convert all HTML entities.
     (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
     (setq outputStr
           (let ((case-fold-search t) (tempStr inputStr))
+
 (setq tempStr (replace-regexp-pairs-in-string tempStr '(
-["<!doctype html>" ""]
-["<meta charset=\"utf-8\" />" ""]
-[" class=\"[-_a-z0-9]+\" *"  " "]
-[" id=\"[-_a-z0-9]+\" *"  " "]
-[" title=\"\\([^\"]+?\\)\" *"  " "]
-[" data-accessed=\"[-0-9]+\" *"  " "]
-[" width=\"[0-9]+%?\" *"  " "]
-[" height=\"[0-9]+%?\" *"  " "]
-
-["<link rel=\"stylesheet\" href=\"\\([^\"]+?\\)\" />" ""]
-["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2"]
-["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" */?>" ""]
-
-["<[a-z0-9]+ */?>" ""]
+["<script>\\([^\\<]+?\\)</script>" ""]
+["<[^>]+?>" ""]
 ["</[a-z0-9]+>" ""]
 ["&amp;" "&"]
 ["&lt;" "<"]
 ["&gt;" ">"]
-)))
+)
+
+;; '(
+;; ["<!doctype html>" ""]
+;; ["<meta charset=\"utf-8\" />" ""]
+;; [" class=\"[-_a-z0-9]+\" *"  " "]
+;; [" id=\"[-_a-z0-9]+\" *"  " "]
+;; [" title=\"\\([^\"]+?\\)\" *"  " "]
+;; [" data-accessed=\"[-0-9]+\" *"  " "]
+;; [" width=\"[0-9]+%?\" *"  " "]
+;; [" height=\"[0-9]+%?\" *"  " "]
+
+;; ["<link rel=\"stylesheet\" href=\"\\([^\"]+?\\)\" />" ""]
+;; ["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2"]
+;; ["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" */?>" ""]
+
+;; ["<[a-z0-9]+ */?>" ""]
+;; ["</[a-z0-9]+>" ""]
+;; ["&amp;" "&"]
+;; ["&lt;" "<"]
+;; ["&gt;" ">"]
+;; )
+
+))
+
 tempStr
  ) )
 
@@ -1098,6 +1111,43 @@ tempStr
         (delete-region ξfrom ξto)
         (goto-char ξfrom)
         (insert outputStr) )) ) )
+
+;; (defun xhm-html-to-text (ξstring &optional ξfrom ξto)
+;; "Convert html to plain text on text selection or current text block."
+;;   (interactive
+;;    (if (region-active-p)
+;;        (list nil (region-beginning) (region-end))
+;;      (let ((bds (get-selection-or-unit 'block)) )
+;;        (list nil (elt bds 1) (elt bds 2))) ) )
+
+;;   (let (workOnStringP inputStr outputStr)
+;;     (setq workOnStringP (if ξstring t nil))
+;;     (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
+;;     (setq outputStr
+;;           (let ((case-fold-search t) (tempStr inputStr))
+;; (setq tempStr (replace-regexp-pairs-in-string tempStr '(
+;; ["<script>\\([^\\<]+?\\)</script>" ""]
+;; ["<li>" "<li>• " ]
+;; ["<h2>" "────────── ────────── ────────── ────────── ──────────
+;; <h2>" ]
+;; ["<h3>" "────────── ────────── ──────────
+;; <h3>" ]
+;; ["<h4>" "────────── ──────────
+;; <h4>" ]
+;; ["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
+;; ["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" +width=\"[0-9]+\" +height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
+;; )))
+;; tempStr
+;;  ) )
+
+;; (setq outputStr (xhm-remove-html-tags outputStr) )
+
+;;     (if workOnStringP
+;;         outputStr
+;;       (save-excursion
+;;         (delete-region ξfrom ξto)
+;;         (goto-char ξfrom)
+;;         (insert outputStr) )) ) )
 
 (defun xhm-html-to-text (ξstring &optional ξfrom ξto)
 "Convert html to plain text on text selection or current text block."
@@ -1110,22 +1160,29 @@ tempStr
   (let (workOnStringP inputStr outputStr)
     (setq workOnStringP (if ξstring t nil))
     (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
+
     (setq outputStr
-          (let ((case-fold-search t) (tempStr inputStr))
-(setq tempStr (replace-regexp-pairs-in-string tempStr '(
-["<script>\\([^\\<]+?\\)</script>" ""]
-["<li>" "<li>• " ]
-["<h2>" "────────── ────────── ────────── ────────── ──────────
+          (with-temp-buffer
+            (insert inputStr)
+            (goto-char 1)
+            (let ((case-fold-search nil) )
+              (replace-pairs-region 1 (point-max) 
+ '(
+   ["<script>\\([^\\<]+?\\)</script>" ""]
+   ["<li>" "<li>• " ]
+   ["<h2>" "────────── ────────── ────────── ────────── ──────────
 <h2>" ]
-["<h3>" "────────── ────────── ──────────
+   ["<h3>" "────────── ────────── ──────────
 <h3>" ]
-["<h4>" "────────── ──────────
+   ["<h4>" "────────── ──────────
 <h4>" ]
-["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
-["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" +width=\"[0-9]+\" +height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
-)))
-tempStr
- ) )
+   ["<a +href=\"\\([^\"]+?\\)\" *>\\([^<]+?\\)</a>" "\\2 〔 \\1 〕"]
+   ["<img +src=\"\\([^\"]+?\\)\" +alt=\"\\([^\"]+?\\)\" +width=\"[0-9]+\" +height=\"[0-9]+\" */?>" "〔IMAGE “\\2” \\1 〕"]
+   ))
+              )
+            ;; (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name) ))
+            (buffer-substring 1 (point-max))
+            ) )
 
 (setq outputStr (xhm-remove-html-tags outputStr) )
 
@@ -1156,7 +1213,7 @@ WARNING: this function extract all text of the form 「<a … href=\"…\" …>�
       (while (re-search-forward "<img.+?src=\"\\([^\"]+?\\)\".+?>" nil "NOERROR")
         (setq urlList (cons (match-string 1) urlList))
         ) )
-(print urlList)
+(message "%S" urlList )
     (setq urlList (reverse urlList) )
     (when convert-relative-URL-p
       (setq urlList
