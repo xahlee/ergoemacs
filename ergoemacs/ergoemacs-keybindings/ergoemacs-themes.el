@@ -197,7 +197,7 @@
     ("<apps> h Z" ergoemacs-clean-nw)
 
     ;; ("<apps> i"  ergoemacs-toggle-full-alt-shift "Alt+Shift")
-    ("<apps> m" ergoemacs-ctl-c-ctl-c "C-c C-c")
+    ("<apps> m" ("C-c C-c" nil) "C-c C-c")
     ("<apps> s" save-buffer "Save")
     ("<apps> C-s" write-file "Save As")
     ("<apps> o" find-file "Open")
@@ -259,7 +259,7 @@
     ;; |   26 | |         |    0.5% | Yes                   |
     ;; |   27 | !         |    0.5% | Yes                   |
     ;; |   28 | %         |    0.3% | Yes                   |
-    ;; |   29 | ?         |    0.2% | No; Already unchorded |
+    ;; |   29 | ?         |    0.2% | Yes                   |
     ;; |   30 | `         |    0.1% | Yes                   |
     ;; |   31 | ^         |    0.1% | Yes                   |
     ;; |   32 | ~         |    0.1% | Yes                   |
@@ -568,6 +568,8 @@
       ("<f12>" iswitchb-next-match iswitchb-mode-map)
       ("S-<f11>" iswitchb-prev-match iswitchb-mode-map)
       ("S-<f12>" iswitchb-next-match iswitchb-mode-map)
+      (backward-char iswitchb-prev-match iswitchb-mode-map)
+      (forward-char  iswitchb-next-match iswitchb-mode-map)
       (ergoemacs-toggle-letter-case iswitchb-toggle-regexp iswitchb-mode-map)
       (ergoemacs-toggle-camel-case iswitchb-toggle-case iswitchb-mode-map))
      t)
@@ -651,12 +653,6 @@
       (info helm-info nil remap)
       (ac-isearch ac-complete-with-helm nil reamp)
       (grep helm-do-grep nil remap)))
-
-    ;; Icicles remapping
-    ;; Thanks to Nikolay Kudryavtsev
-    (icicle-mode
-     ((next-history-element icicle-next-candidate-per-mode remap))
-     ((previous-history-element icicle-previous-candidate-per-mode remap)))
     
     (helm-before-initialize-hook
      (("C-w" helm-keyboard-quit helm-map)
