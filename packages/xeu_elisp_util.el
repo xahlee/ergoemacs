@@ -45,6 +45,8 @@
 
 ;;; HISTORY
 
+
+;; version 1.4.20, 2014-01-21 “unit-at-cursor” with 'filepath argument now also consider single quote as delimiter
 ;; version 1.4.19, 2013-05-10 “get-html-file-title” moved to xah-html-mode.el and name is now “xhm-get-html-file-title”
 ;; version 1.4.18, 2013-02-22 removed delete-subdirs-by-regex and delete-files-by-regex . These are either buggy or very inefficient. Pending work.
 ;; version 1.4.17, 2013-01-27 for unit-at-cursor for arg 'filepath, added no-break space as delimiter.
@@ -154,10 +156,10 @@ The main differences are:
           (let (p0)
             (setq p0 (point))
             ;; chars that are likely to be delimiters of full path, e.g. space, tabs, brakets.
-             (skip-chars-backward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\`")
+             (skip-chars-backward "^  \"\t\n'|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\`")
              (setq p1 (point))
              (goto-char p0)
-             (skip-chars-forward "^  \"\t\n|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\'")
+             (skip-chars-forward "^  \"\t\n'|()[]{}<>〔〕“”〈〉《》【】〖〗«»‹›·。\\'")
              (setq p2 (point)))
           )
 
