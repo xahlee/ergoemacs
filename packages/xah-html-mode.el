@@ -15,6 +15,7 @@
 
 ;;; HISTORY
 
+;; 0.7.0, 2014-01-26 xhm-wrap-html-tag now will always do a class. (no need for prefix arg anymore). Also, now the default tag is “div” instead of “span”
 ;; 0.6.9, 2014-01-11 xhm-make-link-defunct behavier changed slightly. See inline doc.
 ;; 0.6.8, 2014-01-11 added xhm-html-to-text. modified xhm-remove-html-tags.
 ;; 0.6.7, 2014-01-10 bug-fix on xhm-extract-url. Now, if the url start with 「http」, don't result in 「http://http://」
@@ -283,6 +284,9 @@
 
            ("slim" . ["slim-mode" "slim"])
            ("yaml" . ["yaml-mode" "yaml"])
+           ("haml" . ["haml-mode" "haml"])
+           ("sass" . ["sass-mode" "sass"])
+           ("scss" . ["css-mode" "css"])
 
            ) )
 
@@ -1870,13 +1874,13 @@ This function does not `save-excursion'.
 When there's not text selection, the tag will be wrapped around current word/line/text-block, depending on the tag used.
 
 If current line or word is empty, then insert open/end tags and place cursor between them.
-
-If `universal-argument' is called first, then also prompt for a “class” attribute. Empty value means don't add the attribute.
 "
+;; If `universal-argument' is called first, then also prompt for a “class” attribute. Empty value means don't add the attribute.
   (interactive
    (list
-    (ido-completing-read "HTML tag:" xhm-html5-tag-list "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "span")
-    (if current-prefix-arg
+    (ido-completing-read "HTML tag:" xhm-html5-tag-list "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "div")
+    (if t
+;; current-prefix-arg
         (read-string "class:" nil xhm-class-input-history "")
       nil ) ) )
   (let (bds p1 p2
