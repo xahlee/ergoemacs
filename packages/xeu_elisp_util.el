@@ -330,7 +330,7 @@ e.g. 「c:/Users/lisa/web/a/b」 -  「c:/Users/lisa/web/」 ⇒ 「a/b」"
   (let ((p2length (length path2)))
     (if (string= (substring path1 0 p2length) path2 )
         (substring path1 p2length)
-      (error "error code 2gabc: beginning doesn't match: 「%s」 「%s」" path1 path2) ) ) )
+      (error "error 34689: beginning doesn't match: 「%s」 「%s」" path1 path2) ) ) )
 
 (defun hash-to-list (hashtable)
   "Return a list that represent the hashtable.

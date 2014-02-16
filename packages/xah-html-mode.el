@@ -1302,19 +1302,20 @@ The order of lines for {title, author, date/time, url} needs not be in that orde
 
     (setq myList (split-string inputText "[[:space:]]*\n[[:space:]]*" t) )
 
-    (let (x)
+    (let (εx (case-fold-search t))
       (while (> (length myList) 0)
-        (setq x (pop myList) )
+        (setq εx (pop myList) )
         (cond
-         ((string-match "^https?://" x ) (setq ξurl x))
-         ((string-match "^ *[bB]y " x ) (setq ξauthor x))
-         ((is-datetimestamp-p x) (setq ξdate x))
-         (t (setq ξtitle x))
+         ((string-match "^https?://" εx ) (setq ξurl εx))
+         ((string-match "^ *[bB]y " εx ) (setq ξauthor εx))
+         ((string-match "^ *author[: ]" εx ) (setq ξauthor εx))
+         ((is-datetimestamp-p εx) (setq ξdate εx))
+         (t (setq ξtitle εx))
          )
         )
       )
 
-(message "title %s\n author %s\n date %s\n url %s" ξtitle ξauthor ξdate ξurl)
+(message "title:「%s」\n author:「%s」\n date:「%s」\n url:「%s」" ξtitle ξauthor ξdate ξurl)
 
     (when (null ξtitle) (error "I can't find “title”"))
     (when (null ξauthor) (error "I can't find “author”"))
@@ -1739,6 +1740,23 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["tab" "<kbd>Tab ↹</kbd>"]
                        ["esc" "<kbd>Esc</kbd>"]
 
+                       ["Home" "<kbd>↖ Home</kbd>"]
+                       ["End" "<kbd>↘ End</kbd>"]
+                       ["PageUp" "<kbd>⇞ Page △</kbd>"]
+                       ["Page Up" "<kbd>⇞ Page △</kbd>"]
+                       ["PgUp" "<kbd>⇞ Page △</kbd>"]
+                       ["PageDown" "<kbd>⇟ Page ▽</kbd>"]
+                       ["Page Down" "<kbd>⇟ Page ▽</kbd>"]
+                       ["PgDn" "<kbd>⇟ Page ▽</kbd>"]
+                       ["insert" "<kbd>Insert</kbd>"]
+                       ["ins" "<kbd>Insert</kbd>"]
+                       ["pause" "<kbd>Pause</kbd>"]
+                       ["PrtScn" "<kbd>PrtScn</kbd>"]
+                       ["prtsc" "<kbd>PrtScn</kbd>"]
+                       ["prntscr" "<kbd>PrtScn</kbd>"]
+                       ["scrlk" "<kbd>Scroll Lock</kbd>"]
+                       ["Fn" "<kbd>Fn</kbd>"]
+
                        ["copy" "<kbd>Copy</kbd>"]
                        ["cut" "<kbd>✂ Cut</kbd>"]
                        ["paste" "<kbd>Paste</kbd>"]
@@ -1770,7 +1788,6 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["F7" "<kbd>F7</kbd>"]
                        ["F8" "<kbd>F8</kbd>"]
                        ["F9" "<kbd>F9</kbd>"]
-                       ["Fn" "<kbd>Fn</kbd>"]
 
                        ["kp0" "<kbd>Keypad 0</kbd>"]
                        ["kp1" "<kbd>Keypad 1</kbd>"]
@@ -1792,18 +1809,6 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["→" "<kbd>→</kbd>"]
                        ["↑" "<kbd>↑</kbd>"]
                        ["↓" "<kbd>↓</kbd>"]
-                       ["Home" "<kbd>↖ Home</kbd>"]
-                       ["End" "<kbd>↘ End</kbd>"]
-                       ["PageUp" "<kbd>⇞ Page △</kbd>"]
-                       ["Page Up" "<kbd>⇞ Page △</kbd>"]
-                       ["PgUp" "<kbd>⇞ Page △</kbd>"]
-                       ["PageDown" "<kbd>⇟ Page ▽</kbd>"]
-                       ["Page Down" "<kbd>⇟ Page ▽</kbd>"]
-                       ["PgDn" "<kbd>⇟ Page ▽</kbd>"]
-                       ["insert" "<kbd>Insert</kbd>"]
-                       ["ins" "<kbd>Insert</kbd>"]
-                       ["pause" "<kbd>Pause</kbd>"]
-                       ["PrtScn" "<kbd>PrtScn</kbd>"]
 
                        ["‹key›" "<kbd>‹key›</kbd>"]
                        ])
