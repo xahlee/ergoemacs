@@ -637,7 +637,8 @@
 (defun ergoemacs-undefined (&optional arg)
   "Ergoemacs Undefined key, tells where to perform the old action."
   (interactive "P")
-  (let* ((key (key-description (or ergoemacs-single-command-keys (this-single-command-keys))))
+  (let* ((key-kbd (or ergoemacs-single-command-keys (this-single-command-keys)))
+         (key (key-description key-kbd))
          (fn (assoc key ergoemacs-emacs-default-bindings))
          tmp
          (local-fn nil)
@@ -652,14 +653,14 @@
     (cond
      ((progn
         ;; See if this is present in the `ergoemacs-shortcut-keymap'
-        (setq local-fn (lookup-key ergoemacs-shortcut-keymap (read-kbd-macro key)))
+        (setq local-fn (lookup-key ergoemacs-shortcut-keymap key-kbd))
         (unless (functionp local-fn)
           ;; Lookup in ergoemacs-keymap
-          (setq local-fn (lookup-key ergoemacs-keymap (read-kbd-macro key))))
+          (setq local-fn (lookup-key ergoemacs-keymap key-kbd)))
         (functionp local-fn))
       (ergoemacs-debug "WARNING: The command %s is undefined when if shouldn't be..." local-fn)
       (ergoemacs-vars-sync) ;; Try to fix issue.
-      (setq tmp (key-binding (read-kbd-macro key)))
+      (setq tmp (key-binding key-kbd))
       (when (and tmp (not (equal tmp 'ergoemacs-undefined)))
         (setq local-fn tmp))
       (when (featurep 'keyfreq)
@@ -690,11 +691,9 @@
                  (condition-case err
                      (keymapp local-fn)
                    (error nil)))
-            (setq local-fn (lookup-key local-fn
-                                       (read-kbd-macro key)))
+            (setq local-fn (lookup-key local-fn key-kbd))
           (if (current-local-map)
-              (setq local-fn (lookup-key (current-local-map)
-                                         (read-kbd-macro key)))
+              (setq local-fn (lookup-key (current-local-map) key-kbd))
             (setq local-fn nil)))
         (functionp local-fn))
       (setq this-command local-fn) ; Don't record this command.
@@ -720,7 +719,7 @@
      (t
       ;; Not locally defined, complain.
       (beep)
-      (ergoemacs-where-is-old-binding (this-single-command-keys)))))
+      (ergoemacs-where-is-old-binding key-kbd))))
   (setq ergoemacs-describe-key nil))
 
 (defun ergoemacs-unbind-setup-keymap ()
@@ -979,7 +978,8 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
 
 (defun ergoemacs-pretty-key (code)
   "Creates Pretty keyboard binding from kbd CODE from M- to Alt+"
-  (let (deactivate-mark
+  (if (not code) ""
+    (let (deactivate-mark
         (ret (replace-regexp-in-string
               " +$" "" (replace-regexp-in-string "^ +" "" code)))
         (case-fold-search nil)) 
@@ -1026,7 +1026,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
                              "Alt+") t))
           (goto-char (point-min))
           (while (search-forward "C-" nil t)
-            (replace-match "Ctrl+" t))
+            (replace-match "Ctl+" t))
           (goto-char (point-min))
           (while (search-forward "S-" nil t)
             (replace-match (format "%sShift+"
@@ -1043,11 +1043,12 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
             (replace-match (format "%sTab"
                                    (ergoemacs-unicode-char "↹" "")) t))
           (goto-char (point-min))
-          (while (re-search-forward "\\(menu\\|apps\\)>" nil t)
+          (while (re-search-forward "\\(menu\\|apps\\)" nil t)
             (unless (or (save-match-data (looking-at "-bar"))
-                        (save-match-data (not (looking-back "-"))))
-              (replace-match (format "%sMenu>"
-                                     (ergoemacs-unicode-char "▤" "")) t)))
+                        ;; (save-match-data (not (looking-back "-")))
+                        )
+              (replace-match (format "%s"
+                                     (ergoemacs-unicode-char "▤" "Menu")) t)))
           (goto-char (point-min))
           (while (re-search-forward "prior>" nil t)
             (replace-match "PgUp>" t))
@@ -1071,10 +1072,10 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
             (while (re-search-forward ".Shift[+]" nil t)
               (replace-match "⇧"))
             (goto-char (point-min))
-            (while (re-search-forward "Ctrl[+]" nil t)
+            (while (re-search-forward "Ctl[+]" nil t)
               (replace-match "^")))
           (setq ret (buffer-string)))))
-    (symbol-value 'ret)))
+    (symbol-value 'ret))))
 
 (defun ergoemacs-pretty-key-rep-internal ()
   (let (case-fold-search)

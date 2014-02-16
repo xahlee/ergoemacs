@@ -64,8 +64,8 @@
     ("M-H" ergoemacs-end-of-line-or-what "→ line/*")
     
     ;; Move by screen (page up/down)
-    ("M-I" scroll-down "↑ page")
-    ("M-K" scroll-up "↓ page")
+    ("M-I" (scroll-down-command scroll-down) "↑ page")
+    ("M-K" (scroll-up-command scroll-up) "↓ page")
     
     ;; Move to beginning/ending of file
     ("M-n" ergoemacs-beginning-or-end-of-buffer "↑ Top*")
@@ -202,7 +202,7 @@
     ("<apps> C-s" write-file "Save As")
     ("<apps> o" find-file "Open")
 
-    ("<apps> g" universal-argument "C-u")
+    ("<apps> g" ergoemacs-unchorded-universal-argument "Arg U")
     ("<apps> w" ergoemacs-close-current-buffer "Close")
     ("<apps> x" ergoemacs-cut-line-or-region "✂ region")
     ("<apps> c" ergoemacs-copy-line-or-region "copy")
@@ -214,6 +214,7 @@
 
     ("<apps> n a" org-agenda "agenda")
     ("<apps> n A" org-capture "capture")
+    ("<apps> n C-a" org-capture "capture")
     ("<apps> n c" calc "calc" t)
     ("<apps> n d" dired-jump "dired" t)
     ("<apps> n e" eshell "eshell" t)
@@ -343,6 +344,9 @@
 
 (defcustom ergoemacs-fixed-layout
   `(
+    ;; Ergoemacs-mode replacements
+    ("C-u" ergoemacs-universal-argument "Arg")
+    
     ;; General Shortcuts
     ("<M-backspace>" (undo-tree-undo undo) "↶ undo")
     ("<f5>" undo "↶ undo")
@@ -446,7 +450,7 @@
     ("<f3>" ergoemacs-copy-line-or-region "copy")
     
     
-    ("<f6>" ergoemacs-toggle-full-alt "Alt mode")
+    ("<f6>" ergoemacs-unchorded-alt-modal "Alt mode")
     ("C-+" text-scale-increase "+Font Size")
     ("C--" text-scale-decrease "-Font Size")
     ("C-." keyboard-quit "Quit")
@@ -556,6 +560,7 @@
       ("<f12>" isearch-ring-advance isearch-mode-map)
       ("S-<f11>" isearch-ring-advance isearch-mode-map)
       ("S-<f12>" isearch-ring-retreat isearch-mode-map)
+      ("<f2>" isearch-edit-string isearch-mode-map)
       ("C-S-f" isearch-occur isearch-mode-map)
       ("C-M-f" isearch-occur isearch-mode-map)
       (ergoemacs-paste isearch-yank-kill isearch-mode-map)
@@ -1173,6 +1178,14 @@ Some exceptions we don't want to unset.
          :type (ergoemacs-get-themes-type)
          :set 'ergoemacs-set-default
          :group 'ergoemacs-mode))))
+
+(ergoemacs-deftheme lvl0
+  "Level 0 Ergoemacs, Emacs keys only."
+  nil
+  (setq ergoemacs-fixed-layout-tmp '())
+  (setq ergoemacs-variable-layout-tmp
+        '(("<apps>" 'execute-extended-command)))
+  (setq ergoemacs-redundant-keys-tmp '()))
 
 
 (ergoemacs-deftheme lvl1

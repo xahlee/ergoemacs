@@ -83,6 +83,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
     ad-do-it))
 (ad-activate 'define-key)
 
+(defvar ergoemacs-global-override-keymap (make-sparse-keymap))
 ;;; Advices enabled or disabled with ergoemacs-mode
 (defadvice global-set-key (around ergoemacs-global-set-key-advice (key command))
   "This let you use `global-set-key' as usual when `ergoemacs-mode' is enabled."
@@ -91,47 +92,18 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
   (when ergoemacs-global-not-changed-cache
     (delete (key-description key) ergoemacs-global-not-changed-cache))
   (let ((no-ergoemacs-advice t))
-    (when (lookup-key ergoemacs-unbind-keymap key)
+    ;; Put in the overriding keymap
+    (define-key ergoemacs-global-override-keymap key command)
+    (when (condition-case err
+              (interactive-form (lookup-key ergoemacs-unbind-keymap key))
+            (error nil))
       (define-key ergoemacs-unbind-keymap key nil)
       (unless (string-match "^C-[xc]" (key-description key))
         (define-key ergoemacs-shortcut-keymap key nil))))
   (let ((x (assq 'ergoemacs-shortcut-keys ergoemacs-emulation-mode-map-alist)))
     (when x
       (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
-    (push (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap) ergoemacs-emulation-mode-map-alist))
-  (if (string-match "<\\(apps\\|menu\\)>" (key-description key))
-      (let ((no-ergoemacs-advice t))
-        (when command
-          ;; Make prefixes possible
-          (when (integerp (lookup-key ergoemacs-keymap key))
-            (let ((key-as-vector (read-kbd-macro (key-description key) t))
-                  (prefix-vector (make-vector (lookup-key ergoemacs-keymap key) nil))
-                  (i 0))
-              (while (< i (length prefix-vector))
-                (aset prefix-vector i (elt key-as-vector i))
-                (setq i (+ 1 i)))
-              (define-key ergoemacs-keymap prefix-vector nil)))
-          ;; Take care of prefix
-          (when (lookup-key ergoemacs-keymap key)
-            (define-key ergoemacs-keymap key nil))
-          (when (lookup-key ergoemacs-shortcut-keymap key)
-            (define-key ergoemacs-shortcut-keymap key nil))
-          ;; commands.
-          (define-key ergoemacs-keymap key command)))
-    (if (and ergoemacs-fix-M-O
-             (string= "M-O" (key-description key)))
-        (let ((no-ergoemacs-advice t))
-          (define-key ergoemacs-keymap key 'ergoemacs-M-O)
-          (define-key ergoemacs-M-O-keymap [timeout] command))
-      (if (and ergoemacs-fix-M-O
-               (string= "M-o" (key-description key)))
-          (let ((no-ergoemacs-advice t))
-            (define-key ergoemacs-keymap key 'ergoemacs-M-o)
-            (define-key ergoemacs-M-o-keymap [timeout] command)))
-      (let ((no-ergoemacs-advice t))
-        (condition-case err
-            (define-key ergoemacs-keymap key nil)
-          (error (ergoemacs-debug "Key %s not found in erogemacs-keymap (probably a shortcut).  Did not remove it from the map." (key-description key))))))))
+    (push (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap) ergoemacs-emulation-mode-map-alist)))
 
 (add-to-list 'ergoemacs-advices 'ergoemacs-global-set-key-advice)
 
@@ -143,6 +115,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
   (when ergoemacs-global-not-changed-cache
     (delete (key-description key) ergoemacs-global-not-changed-cache))
   (let ((no-ergoemacs-advice t))
+    (define-key ergoemacs-global-override-keymap key nil)
     (define-key ergoemacs-keymap key nil)))
 
 (add-to-list 'ergoemacs-advices 'ergoemacs-global-unset-key-advice)
@@ -256,26 +229,6 @@ This require `ergoemacs-mode' to be enabled as well as
        (t
         ad-do-it)))
     (ad-activate 'helm-ff-auto-expand-to-home-or-root)))
-
-
-(defadvice keyboard-quit (around ergoemacs-keyboard-quit)
-  "Ergoemacs keyboard-quit advice.
-Performs `keyboard-quit' in most circumstances unless a minor
-mode defines a more appropriate quit key like `browse-kill-ring'.  The default ergoemacs-theme defines `keyboard-quit' to be `browse-kill-ring-quit'."
-  (let (defined-fn
-         ergoemacs-shortcut-keys
-         ergoemacs-read-input-keys
-         ergoemacs-shortcut-override-mode
-         ergoemacs-mode)
-    (setq defined-fn (ergoemacs-key-fn-lookup 'keyboard-quit))
-    (setq defined-fn (condition-case err (key-binding defined-fn)
-                       (error nil)))
-    (cond
-     (defined-fn
-       (call-interactively defined-fn))
-     (t
-      ad-do-it))))
-(add-to-list 'ergoemacs-advices 'keyboard-quit)
 
 
 (defadvice run-mode-hooks (around ergoemacs-run-hooks)

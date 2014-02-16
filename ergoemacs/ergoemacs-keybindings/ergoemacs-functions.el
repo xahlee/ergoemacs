@@ -121,26 +121,26 @@
      ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-copy-cut)
       (funcall fn-cp arg))
      ((eq ergoemacs-handle-ctl-c-or-ctl-x 'only-C-c-and-C-x)
-      (ergoemacs-read key 'normal))
+      (ergoemacs-read-key key 'normal))
      (this-command-keys-shift-translated
       ;; Shift translated keys are C-c and C-x only.
-      (ergoemacs-read key 'normal))
+      (ergoemacs-read-key key 'normal))
      ((and ergoemacs-ctl-c-or-ctl-x-delay
            (or (region-active-p)
-               (and cua--rectangle (boundp 'cua-mode) cua-mode)))
+               (and (boundp 'cua--rectangle) cua--rectangle (boundp 'cua-mode) cua-mode)))
       ;; Wait for next key...
       (let ((next-key
              (with-timeout (ergoemacs-ctl-c-or-ctl-x-delay nil)
                (eval (macroexpand `(key-description [,(read-key)]))))))
         (if next-key
             (progn
-              (ergoemacs-read (concat key " " next-key) 'normal))
+              (ergoemacs-read-key (concat key " " next-key) 'normal))
           (funcall fn-cp arg))))
      ((or (region-active-p)
           (and cua--rectangle (boundp 'cua-mode) cua-mode))
       (funcall fn-cp arg))
      (t
-      (ergoemacs-read key 'normal)))))
+      (ergoemacs-read-key key 'normal)))))
 
 (defun ergoemacs-clean ()
   "Run ergoemacs in a bootstrap environment."
@@ -150,7 +150,7 @@
       (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
     (when ergoemacs-theme
       (setenv "ERGOEMACS_THEME" ergoemacs-theme))
-    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\" --load=\"ergoemacs-test\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
+    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
                            (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
 
 (defun ergoemacs-clean-nw ()
@@ -989,8 +989,10 @@ the last misspelled word with
                     (filter-buffer-substring (car bds) (cdr bds)))))
         (cond
          
-         ((or (memq (get-text-property (car bds) 'face) '(font-lock-string-face font-lock-doc-face font-lock-comment-face))
-              (memq (get-text-property (car bds) 'face) '(font-lock-string-face font-lock-doc-face font-lock-comment-face)))
+         ((or (and (car bds)
+                   (memq (get-text-property (car bds) 'face) '(font-lock-string-face font-lock-doc-face font-lock-comment-face)))
+              (and (car bds)
+                   (memq (get-text-property (car bds) 'face) '(font-lock-string-face font-lock-doc-face font-lock-comment-face))))
           ;; In comment/string.
           (setq bds (bounds-of-thing-at-point 'word)))
          ((and txt (or (string-match (format "^%s" (regexp-opt ccc t)) txt)
