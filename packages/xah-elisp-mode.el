@@ -19,11 +19,10 @@
 
 ;;; HISTORY
 
+;; version 0.2, 2014-02-18 lots more keywords, and stuff.
 ;; version 0.1, 2013-03-23 first version
 
-
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
-
 
 (defvar xem-elisp-lang-words nil "a list of elisp keyword more or less related to elisp the language.")
 (setq xem-elisp-lang-words '(
@@ -191,6 +190,8 @@
 "insert"
 "interactive"
 "kbd"
+"kill-region"
+"kill-ring-save"
 "kill-all-local-variables"
 "kill-buffer"
 "line-beginning-position"
