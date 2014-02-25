@@ -221,6 +221,7 @@
 "region-active-p"
 "region-beginning"
 "region-end"
+"remove-hook"
 "rename-file"
 "repeat"
 "replace-match"

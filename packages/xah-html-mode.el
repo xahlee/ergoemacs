@@ -1760,7 +1760,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["copy" "<kbd>Copy</kbd>"]
                        ["cut" "<kbd>✂ Cut</kbd>"]
                        ["paste" "<kbd>Paste</kbd>"]
-                       ["undo" "<kbd>⎌</kbd>"]
+                       ["undo" "<kbd>⎌ Undo</kbd>"]
                        ["redo" "<kbd>↷</kbd>"]
 
                        ["F10" "<kbd>F10</kbd>"]
