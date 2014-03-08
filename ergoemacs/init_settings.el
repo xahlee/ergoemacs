@@ -225,13 +225,6 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
           )) )
 
 
-;; make the formfeed char display as a line
-;; 2011-07-14 commented out due to a display problem with whitespace-mode
-;; http://groups.google.com/group/gnu.emacs.help/browse_frm/thread/12e5a1e6a8b22c14/c642875edeb7ea20
-(setq pp^L-^L-string "                                                           ")
-;; (pretty-control-l-mode 1) ;; it has conflicts with “whitespace-mode” settings
-
-
 ;; For htmlize.el.
 ;; Rationale: use unicode whenever possible, since it's widely supported today.
 (setq htmlize-convert-nonascii-to-entities nil) ; make htmlize generate unicode directly instead of html entities
@@ -258,11 +251,13 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 ;;   ;; If you edit it by hand, you could mess it up, so be careful.
 ;;   ;; Your init file should contain only one such instance.
 ;;   ;; If there is more than one, they won't work right.
-;;  '(completions-common-part ((t (:inherit default :foreground "red"))))
+;;  ;; '(completions-common-part ((t (:inherit default :foreground "red"))))
 ;;  ;; '(diredp-ignored-file-name ((t (:foreground "#bebebe"))))
-;;  '(diredp-compressed-file-suffix ((t (:foreground "#7b68ee"))))
-;;  '(diredp-ignored-file-name ((t (:foreground "#aaaaaa"))))
+;;  ;; '(diredp-compressed-file-suffix ((t (:foreground "#7b68ee"))))
+;;  ;; '(diredp-ignored-file-name ((t (:foreground "#aaaaaa"))))
 ;;  ;; '(isearch ((((class color) (min-colors 88) (background light)) (:background "black" :foreground "white"))))
-;;  '(show-paren-match ((((class color) (background light)) (:background "azure2"))))
-;; )
+;;  ;; '(show-paren-match ((((class color) (background light)) (:background "azure2"))))
+;;  )
+
+
 
