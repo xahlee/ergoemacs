@@ -1,10 +1,11 @@
 ;;; smex.el --- M-x interface with Ido-style fuzzy matching.
 
-;; Copyright (C) 2009-2012 Cornelius Mika
+;; Copyright (C) 2009-2014 Cornelius Mika and contributors
 ;;
-;; Author: Cornelius Mika <cornelius.mika@gmail.com>
+;; Author: Cornelius Mika <cornelius.mika@gmail.com> and contributors
 ;; URL: http://github.com/nonsequitur/smex/
-;; Version: 2.0
+;; Version: 20140131.1006
+;; X-Original-Version: 3.0
 ;; Keywords: convenience, usability
 
 ;; This file is not part of GNU Emacs.
@@ -59,11 +60,6 @@ Must be set before initializing Smex."
   :type 'string
   :group 'smex)
 
-(defcustom smex-key-advice-ignore-menu-bar nil
-  "If non-nil, `smex-key-advice' ignores `menu-bar' bindings"
-  :type 'boolean
-  :group 'smex)
-
 (defcustom smex-flex-matching t
   "Enables Ido flex matching. On by default.
 Set this to nil to disable fuzzy matching."
@@ -77,6 +73,12 @@ Set this to nil to disable fuzzy matching."
 (defvar smex-history)
 (defvar smex-command-count 0)
 (defvar smex-custom-action nil)
+
+;; Check if Smex is supported
+(when (equal (cons 1 1)
+             (ignore-errors
+               (subr-arity (symbol-function 'execute-extended-command))))
+  (error "Your Emacs has a non-elisp version of `execute-extended-command', which is incompatible with Smex"))
 
 ;;--------------------------------------------------------------------------------
 ;; Smex Interface
@@ -94,34 +96,30 @@ Set this to nil to disable fuzzy matching."
     (smex-read-and-run smex-ido-cache)))
 
 (defsubst smex-already-running ()
-  (and (boundp 'ido-choice-list) (eql ido-choice-list smex-ido-cache)))
+  (and (boundp 'ido-choice-list)
+       (eql ido-choice-list smex-ido-cache)
+       (minibuffer-window-active-p (selected-window))))
 
 (defsubst smex-update-and-rerun ()
   (smex-do-with-selected-item
    (lambda (ignore) (smex-update) (smex-read-and-run smex-ido-cache ido-text))))
 
 (defun smex-read-and-run (commands &optional initial-input)
-  (let ((chosen-item (intern (smex-completing-read commands initial-input))))
+  (let* ((chosen-item-name (smex-completing-read commands initial-input))
+         (chosen-item (intern chosen-item-name)))
     (if smex-custom-action
         (let ((action smex-custom-action))
           (setq smex-custom-action nil)
           (funcall action chosen-item))
       (unwind-protect
-          (progn (setq prefix-arg current-prefix-arg)
-                 (setq this-command chosen-item)
-                 (command-execute chosen-item 'record))
-        (smex-rank chosen-item)
-        (smex-show-key-advice chosen-item)
-        ;; Todo: Is there a better way to manipulate 'last-repeatable-command'
-        ;; from the inside of an interactively called function?
-        (run-at-time 0.01 nil (lambda (cmd) (setq last-repeatable-command cmd))
-                     chosen-item)))))
+          (execute-extended-command current-prefix-arg chosen-item-name)
+        (smex-rank chosen-item)))))
 
 (defun smex-major-mode-commands ()
   "Like `smex', but limited to commands that are relevant to the active major mode."
   (interactive)
-  (let ((commands (delete-dups (append (extract-commands-from-keymap (current-local-map))
-                                       (extract-commands-from-features major-mode)))))
+  (let ((commands (delete-dups (append (smex-extract-commands-from-keymap (current-local-map))
+                                       (smex-extract-commands-from-features major-mode)))))
     (setq commands (smex-sort-according-to-cache commands))
     (setq commands (mapcar #'symbol-name commands))
     (smex-read-and-run commands)))
@@ -131,9 +129,10 @@ Set this to nil to disable fuzzy matching."
         (ido-setup-hook (cons 'smex-prepare-ido-bindings ido-setup-hook))
         (ido-enable-prefix nil)
         (ido-enable-flex-matching smex-flex-matching)
-        (ido-max-prospects 10))
+        (ido-max-prospects 10)
+        (minibuffer-completion-table choices))
     (ido-completing-read (smex-prompt-with-prefix-arg) choices nil nil
-                         initial-input nil (car choices))))
+                         initial-input 'extended-command-history (car choices))))
 
 (defun smex-prompt-with-prefix-arg ()
   (if (not current-prefix-arg)
@@ -149,6 +148,7 @@ Set this to nil to disable fuzzy matching."
      smex-prompt-string)))
 
 (defun smex-prepare-ido-bindings ()
+  (define-key ido-completion-map (kbd "TAB") 'minibuffer-complete)
   (define-key ido-completion-map (kbd "C-h f") 'smex-describe-function)
   (define-key ido-completion-map (kbd "C-h w") 'smex-where-is)
   (define-key ido-completion-map (kbd "M-.") 'smex-find-function)
@@ -246,14 +246,14 @@ Set this to nil to disable fuzzy matching."
           (condition-case nil
               (setq smex-history (read (current-buffer))
                     smex-data    (read (current-buffer)))
-            (error (if (save-file-not-empty-p)
+            (error (if (smex-save-file-not-empty-p)
                        (error "Invalid data in smex-save-file (%s). Can't restore history."
                               smex-save-file)
                      (if (not (boundp 'smex-history)) (setq smex-history))
                      (if (not (boundp 'smex-data))    (setq smex-data))))))
       (setq smex-history nil smex-data nil))))
 
-(defsubst save-file-not-empty-p ()
+(defsubst smex-save-file-not-empty-p ()
   (string-match-p "\[^[:space:]\]" (buffer-string)))
 
 (defun smex-save-history ()
@@ -396,59 +396,21 @@ Returns nil when reaching the end of the list."
   (interactive)
   (smex-do-with-selected-item 'find-function))
 
-(defvar smex-old-message nil
-  "A temporary storage used by `smex-show-key-advice'")
-
-(defun smex-show-key-advice (command)
-  "Shows the keybinding for command, if available. Like `execute-extended-command'."
-  (let ((advice (smex-key-advice command)))
-    (when advice
-      (if (current-message)
-          (progn
-            (run-at-time 2 nil (lambda (advice)
-                                 (setq smex-old-message (current-message))
-                                 (smex-unlogged-message advice)) advice)
-
-            (run-at-time 4.5 nil (lambda (advice)
-                                 (if (equal (current-message) advice)
-                                     (smex-unlogged-message smex-old-message))) advice))
-        (smex-unlogged-message advice)))))
-
-(defun smex-key-advice (command)
-  (let ((keys (where-is-internal command)))
-    (if smex-key-advice-ignore-menu-bar
-        (setq keys (smex-filter-out-menu-bar-bindings keys)))
-    (if keys
-        (format "You can run the command `%s' with %s"
-                command
-                (mapconcat 'key-description keys ", ")))))
-
-(defsubst smex-filter-out-menu-bar-bindings (keys)
-  (delq nil (mapcar (lambda (key-vec)
-                      (unless (equal (aref key-vec 0) 'menu-bar)
-                        key-vec))
-                    keys)))
-
-(defun smex-unlogged-message (string)
-  "Bypasses logging in *Messages*"
-  (let (message-log-max)
-    (message "%s" string)))
-
-(defun extract-commands-from-keymap (map)
+(defun smex-extract-commands-from-keymap (map)
   (let (commands)
-    (parse-keymap map)
+    (smex-parse-keymap map commands)
     commands))
 
-(defun parse-keymap (map)
+(defun smex-parse-keymap (map commands)
   (map-keymap (lambda (binding element)
                 (if (and (listp element) (eq 'keymap (car element)))
-                    (parse-keymap element)
+                    (smex-parse-keymap element commands)
                           ; Strings are commands, too. Reject them.
                   (if (and (symbolp element) (commandp element))
-                      (setq commands (cons element commands)))))
+                      (push element commands))))
               map))
 
-(defun extract-commands-from-features (mode)
+(defun smex-extract-commands-from-features (mode)
   (let ((library-path (symbol-file mode))
         (mode-name (symbol-name mode))
         commands)
