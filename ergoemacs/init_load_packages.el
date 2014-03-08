@@ -79,27 +79,28 @@
 (require 'dired+)
 
 ;;; enhanced execute-extended-command
-;; make the menu key call smex's M-x. However, for some reason this doesn't work. Works only when this code is manually executed after emacs start.
 (require 'smex)
 (smex-initialize)
-(when (member 'smex features)
-  (cond
-   ((string-equal system-type "windows-nt")
-    (progn
-      (global-set-key (kbd "<apps>") 'smex)
-      (global-set-key (kbd "<S-apps>") 'smex-major-mode-commands)
-      )
-    )
-   ((string-equal system-type "darwin")
-    nil)
-   ((string-equal system-type "gnu/linux")
-    (progn
-      (global-set-key (kbd "<menu>") 'smex)
-      (global-set-key (kbd "<S-menu>") 'smex-major-mode-commands)
-      )
-    )
-   )
-  )
+
+;; ;; make the menu key call smex's M-x. However, for some reason this doesn't work. Works only when this code is manually executed after emacs start.
+;; (when (member 'smex features)
+;;   (cond
+;;    ((string-equal system-type "windows-nt")
+;;     (progn
+;;       (global-set-key (kbd "<apps>") 'smex)
+;;       (global-set-key (kbd "<S-apps>") 'smex-major-mode-commands)
+;;       )
+;;     )
+;;    ((string-equal system-type "darwin")
+;;     nil)
+;;    ((string-equal system-type "gnu/linux")
+;;     (progn
+;;       (global-set-key (kbd "<menu>") 'smex)
+;;       (global-set-key (kbd "<S-menu>") 'smex-major-mode-commands)
+;;       )
+;;     )
+;;    )
+;;   )
 
 ;; a user interface library used by auto-complete
 (add-to-list 'load-path
