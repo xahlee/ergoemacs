@@ -680,14 +680,10 @@ In addition, when the function is called:
             (puthash (cons major-mode function) (if count (+ count 1) 1)
                      keyfreq-table))))
       (let (deactivate-mark)
-        (if (and (boundp 'cua-mode) cua-mode)
-            (cua--pre-command-handler))
-        (unwind-protect
-            (progn
-              (remove-hook 'pre-command-hook 'erogemacs-pre-command-hook)
-              (run-hooks 'pre-command-hook)
-              (call-interactively function record-flag keys))
-          (add-hook 'pre-command-hook 'ergoemacs-pre-command-hook))
+	(remove-hook 'ergoemacs-pre-command-hook 'ergoemacs-pre-command-hook)
+	(remove-hook 'ergoemacs-pre-command-hook 'ergoemacs-pre-command-hook t)
+        (run-hooks 'ergoemacs-pre-command-hook)
+        (call-interactively function record-flag keys)
         (setq ergoemacs-deactivate-mark deactivate-mark))))))
 
 (defvar ergoemacs-read-key-overriding-terminal-local-save nil)
@@ -1911,7 +1907,9 @@ original key binding.
     (when fn-lst
       (setq send-keys (nth 2 (nth 0 fn-lst)))
       (setq fn (nth 0 (nth 0 fn-lst))))
-    (ergoemacs-read-key-call (or (command-remapping fn (point)) fn))))
+    (ergoemacs-read-key-call (or (command-remapping fn (point)) fn))
+    (setq deactivate-mark ergoemacs-deactivate-mark
+          ergoemacs-deactivate-mark nil)))
 
 (defun ergoemacs-install-shortcuts-map (&optional map dont-complete)
   "Returns a keymap with shortcuts installed.
