@@ -55,6 +55,7 @@
 
 ;;; HISTORY
 
+;; v1.6.0, 2014-03-10 • added wink.   「;-)」 and 「;)」 and 「wink」 → 「😉」
 ;; v1.5.9, 2013-12-14 • changed “c1” to ①, by not requiring “c”. So, now 「1」 → 「①」, and up to 20, also 「0」 → 「⓪」. Before, these number transforms to the corresponding unicode code point, and for 1 to 31 they are ASCII control chars. Number still convert to corresponding unicode code point, other than ones changed here.
 ;; v1.5.8, 2013-11-17 • added cycles (xmsi-add-cycle ["#" "♯" "№"])
 ;; v1.5.7, 2013-11-12 • added cycles for several symbols related to {equal, equivalence, congruence, similarity, identity}, and also for {hyphen, minus sign, en-dash, …}. Type tilde 「~」 and press shift space to cycle. Also try on equal sign 「=」 and minus sign 「-」.
@@ -123,7 +124,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.5.9")
+(setq xmsi-version "v1.6.0")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
@@ -650,7 +651,10 @@
   (puthash "smiley" "☺" xmsi-abrvs)     ;WHITE SMILING FACE smiley, happy face
   (puthash ":)" "☺" xmsi-abrvs)
   (puthash ":(" "☹" xmsi-abrvs)
-  (puthash "sad" "☹" xmsi-abrvs)        ; WHITE FROWNING FACE
+  (puthash ";-)" "😉" xmsi-abrvs)
+  (puthash ";)" "😉" xmsi-abrvs)
+  (puthash "wink" "😉" xmsi-abrvs)
+(puthash "sad" "☹" xmsi-abrvs)        ; WHITE FROWNING FACE
   )
 
 (progn
