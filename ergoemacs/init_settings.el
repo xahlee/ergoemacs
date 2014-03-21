@@ -63,8 +63,7 @@
   "Some settings setup for desktop-save-mode."
   (interactive)
 
-  ;; At this point the desktop.el hook in after-init-hook was
-  ;; executed, so (desktop-read) is avoided.
+  ;; At this point the desktop.el hook in after-init-hook was executed, so (desktop-read) is avoided.
   (when (not (eq (emacs-pid) (desktop-owner))) ; Check that emacs did not load a desktop yet
     ;; Here we activate the desktop mode
     (desktop-save-mode 1)
@@ -78,17 +77,14 @@
     ;; Set the location to save/load default desktop
     (setq desktop-dirname user-emacs-directory)
 
-    ;; Make sure that even if emacs or OS crashed, emacs
-    ;; still have last opened files.
+    ;; Make sure that even if emacs or OS crashed, emacs still have last opened files.
     (add-hook 'find-file-hook 'desktop-file-modtime-reset)
 
     ;; Read default desktop
     (if (file-exists-p (concat desktop-dirname desktop-base-file-name))
         (desktop-read desktop-dirname))
 
-    ;; Add a hook when emacs is closed to we reset the desktop
-    ;; modification time (in this way the user does not get a warning
-    ;; message about desktop modifications)
+    ;; Add a hook when emacs is closed to we reset the desktop modification time (in this way the user does not get a warning message about desktop modifications)
     (add-hook 'kill-emacs-hook 'desktop-file-modtime-reset)
     )
   )
@@ -186,8 +182,9 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 
 
 ;; make buffer names unique when files of the same name of diff dir are opened
-(require 'uniquify) ; bundled with GNU emacs 23.2.1 or before
-(setq uniquify-buffer-name-style 'forward)
+(require 'uniquify) ; bundled with GNU emacs 23.2.1 or before. On in 24.4
+;; (setq uniquify-buffer-name-style 'forward)
+(setq uniquify-buffer-name-style 'post-forward-angle-brackets) ; emacs 24.4 style
 
 
 ;; 2011-07-29 yasnippet. Make the “yas/minor-mode”'s expansion behavior to take input word including hyphen.
