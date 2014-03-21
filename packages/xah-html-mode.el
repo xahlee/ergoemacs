@@ -15,6 +15,7 @@
 
 ;;; HISTORY
 
+;; 0.7.1, 2014-03-18 added a “main” tag to “xhm-wrap-html-tag”.
 ;; 0.7.0, 2014-01-26 xhm-wrap-html-tag now will always do a class. (no need for prefix arg anymore). Also, now the default tag is “div” instead of “span”
 ;; 0.6.9, 2014-01-11 xhm-make-link-defunct behavier changed slightly. See inline doc.
 ;; 0.6.8, 2014-01-11 added xhm-html-to-text. modified xhm-remove-html-tags.
@@ -59,6 +60,7 @@
 ("abbr" . ["w"])
 ("applet" . ["l"])
 ("article" . ["b"])
+("main" . ["b"])
 ("address" . ["w"])
 ("aside" . ["b"])
 ("audio" . ["l"])
