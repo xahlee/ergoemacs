@@ -648,13 +648,18 @@
 (puthash "cm2" "㎠" xmsi-abrvs)
 (puthash "cm3" "㎤" xmsi-abrvs)
 
-  (puthash "smiley" "☺" xmsi-abrvs)     ;WHITE SMILING FACE smiley, happy face
-  (puthash ":)" "☺" xmsi-abrvs)
-  (puthash ":(" "☹" xmsi-abrvs)
-  (puthash ";-)" "😉" xmsi-abrvs)
-  (puthash ";)" "😉" xmsi-abrvs)
-  (puthash "wink" "😉" xmsi-abrvs)
-(puthash "sad" "☹" xmsi-abrvs)        ; WHITE FROWNING FACE
+(puthash "smiley" "☺" xmsi-abrvs)     ;WHITE SMILING FACE smiley, happy face
+(puthash ":)" "☺" xmsi-abrvs)
+(puthash ":(" "☹" xmsi-abrvs)
+(puthash ";-)" "😉" xmsi-abrvs)
+(puthash ";)" "😉" xmsi-abrvs)
+(puthash "wink" "😉" xmsi-abrvs)
+(puthash "sad" "☹" xmsi-abrvs)   ; WHITE FROWNING FACE
+(puthash "good" "👍" xmsi-abrvs)  ; thumb up
+(puthash "bad" "👎" xmsi-abrvs)   ; thumb down
+(puthash "ok" "👌" xmsi-abrvs)    ;
+(puthash "fist" "👊" xmsi-abrvs)  ; fist
+
   )
 
 (progn
@@ -1189,7 +1194,7 @@
 (xmsi-add-cycle ["🎶" "🎵" "🎼"])
 
 (xmsi-add-cycle ["&" "＆" "﹠"])
-(xmsi-add-cycle ["?" "？" "�" "؟" "¿" "❓" "❔"])
+(xmsi-add-cycle ["?" "？" "�" "¿" "❓" "❔"])
 
 (xmsi-add-cycle [" " " " "　"])         ; space, NO-BREAK SPACE, IDEOGRAPHIC SPACE
 

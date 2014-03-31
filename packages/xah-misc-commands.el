@@ -195,7 +195,7 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 ;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) ) ) )
 
 (defun xah-convert-english-chinese-punctuation (p1 p2 &optional ε-to-direction)
-  "Replace punctuation from/to English/Chinese Unicode symbols.
+  "Convert punctuation from/to English/Chinese Unicode symbols.
 
 When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
 
@@ -205,8 +205,6 @@ If `universal-argument' is called:
  C-u → to English
  C-u 1 → to English
  C-u 2 → to Chinese
-
-“Automatic” is based on whether the text contains the English comma followed by a space 「, 」. If so, then English to Chinese.
 
 When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
@@ -231,8 +229,8 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           [", " "，"]
           [": " "："]
           ["; " "；"]
-          ["?" "？"] ; no space after
-          ["!" "！"]
+          ["? " "？"] ; no space after
+          ["! " "！"]
 
           ;; for inside HTML
           [".</" "。</"]
@@ -241,17 +239,29 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           ]
          ))
 
-    (replace-pairs-region p1 p2
-                              (cond
-                               ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
-                               ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-                               ((string= ε-to-direction "auto")
-                                (if (string-match ", " inputStr)
-                                  ξ-english-chinese-punctuation-map
-                                  (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map)
-                                  ))
+    (when (string= ε-to-direction "auto")
+      (if 
+          (or (string-match "。" inputStr)
+              (string-match "，" inputStr)
+              (string-match "？" inputStr)
+              (string-match "！" inputStr)
+              )          ;; (or (string-match ", " inputStr)
+          ;;     (string-match ".  " inputStr)
+          ;;     (string-match "! " inputStr)
+          ;;     (string-match "? " inputStr)
+          ;;     (string-match ". " inputStr)
+          ;;     )
+          (setq ε-to-direction "english")
+        (setq ε-to-direction "chinese")
+        ))
 
-                               (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) ) ) )
+    (replace-pairs-region
+     p1 p2
+     (cond
+      ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
+      ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) )
+     ) ) )
 
 (defun xah-convert-asian/ascii-space (p1 p2)
   "Change all space characters between Asian Ideographic one to ASCII one.

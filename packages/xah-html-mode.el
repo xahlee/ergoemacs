@@ -1735,6 +1735,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["delete" "<kbd>⌦ Delete</kbd>"]
                        ["del" "<kbd>⌦ Delete</kbd>"]
                        ["space" "<kbd>Space</kbd>"]
+                       ["SPC" "<kbd>Space</kbd>"]
                        ["capslock" "<kbd>Caps Lock</kbd>"]
                        ["f-lock" "<kbd>F Lock</kbd>"]
                        ["numlock" "<kbd>Num Lock</kbd>"]
