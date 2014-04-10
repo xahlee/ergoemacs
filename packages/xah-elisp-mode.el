@@ -19,6 +19,7 @@
 
 ;;; HISTORY
 
+;; version 0.2.1, 2014-04-10 added keyword “remove”
 ;; version 0.2, 2014-02-18 lots more keywords, and stuff.
 ;; version 0.1, 2013-03-23 first version
 
@@ -134,6 +135,7 @@
 "defvar"
 "float"
 "vectorp"
+"remove"
 ) )
 
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
