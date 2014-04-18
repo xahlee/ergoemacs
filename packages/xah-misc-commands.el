@@ -504,11 +504,10 @@ Examples of changes:
 ;; I’am not
 ;; said "can’t have it, can’t, just can’t"
 ;; ‘I’ve can’t’
-
   (interactive
    (let ( (bds (get-selection-or-unit 'block)))
      (list (elt bds 1) (elt bds 2) ) ) )
-  (let ( )
+  (save-excursion
     ;; Note: order is important since this is huristic.
 
     (save-restriction

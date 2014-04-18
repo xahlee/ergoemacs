@@ -206,6 +206,7 @@
 (defvar xjs-dom-words nil "a list of keywords more or less related to emacs system.")
 (setq xjs-dom-words '(
 "addEventListener"
+"removeEventListener"
 "document.getElementById"
 "document.getElementsByTagName"
 ) )
