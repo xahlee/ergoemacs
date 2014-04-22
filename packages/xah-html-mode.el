@@ -2025,8 +2025,8 @@ see file header for currrent status.
             (,(format "<!--%s-->" textNodeRegex) . (1 font-lock-comment-face))
             (,(format "“%s”" textNodeRegex) . (1 'xhm-curly“”-quoted-text-face))
             (,(format "‘%s’" textNodeRegex) . (1 'xhm-curly‘’-quoted-text-face))
-
             (,(format "<span%s>%s</span>" attriRegex textNodeRegex) . (1 "hi-pink"))
+            (,(format "<mark>%s</mark>" textNodeRegex) . (1 "hi-yellow"))
             (,(format "<mark%s>%s</mark>" attriRegex textNodeRegex) . (1 "hi-yellow"))
             (,(format "<b%s>%s</b>" attriRegex textNodeRegex) . (1 "bold"))
             (,(format "<h\\([1-6]\\)>%s</h\\1>" textNodeRegex) . (2 "bold"))
