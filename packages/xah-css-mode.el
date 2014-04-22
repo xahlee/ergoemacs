@@ -56,7 +56,7 @@ Example output: hsl(100,24%,82%);"
 (defun xcm-hex-to-hsl-color (hexStr)
   "Convert hexStr color to CSS HSL format.
 Return a string.
- ⁖ 
+ ⁖
  (xcm-hex-to-hsl-color \"#ffefd5\") ⇒ \"hsl(37,100%,91%)\"
 "
   (let* (
@@ -85,7 +85,7 @@ Note: The input string must NOT start with “#”. If so, the return value is n
    ))
 
 (defun xcm-normalize-number-scale (myVal rangeMax)
-  "Return a number between [0, 1] that's a rescaled myVal. 
+  "Return a number between [0, 1] that's a rescaled myVal.
 myVal's original range is [0, rangeMax].
 
 The arguments can be int or float.
@@ -205,18 +205,66 @@ WARNING: not robust."
           (,cssxxxtodo . font-lock-reference-face)
           (,htmlTagNames . font-lock-function-name-face)
 
+("#[abcdef[:digit:]]\\{6\\}" .
+      (0 (put-text-property
+          (match-beginning 0)
+          (match-end 0)
+          'face (list :background (match-string-no-properties 0)))))
+
+("hsl( *\\([0-9]\\{1,3\\}\\) *, *\\([0-9]\\{1,3\\}\\)% *, *\\([0-9]\\{1,3\\}\\)% *)" .
+     (0 (put-text-property
+         (+ (match-beginning 0) 3)
+         (match-end 0)
+         'face (list :background
+ (concat "#" (mapconcat 'identity 
+                        (mapcar
+                         (lambda (x) (format "%x" (round (* x 255))))
+                         (color-hsl-to-rgb
+                          (/ (string-to-number (match-string-no-properties 1)) 360.0)
+                          (/ (string-to-number (match-string-no-properties 2)) 100.0)
+                          (/ (string-to-number (match-string-no-properties 3)) 100.0)
+                          ) )
+                        "" )) ;  "#00aa00"
+                      ))))
+
           ("'[^']+'" . font-lock-string-face)
           ) ) )
 
-(defvar xcm-colorfy-hex
-  '(("#[abcdef[:digit:]]\\{6\\}"
+(defun xcm-syntax-color-hex ()
+"Syntax color hex color spec such as 「#ff1100」 in current buffer."
+  (interactive)
+  (font-lock-add-keywords
+   nil
+   '(("#[abcdef[:digit:]]\\{6\\}"
+      (0 (put-text-property
+          (match-beginning 0)
+          (match-end 0)
+          'face (list :background (match-string-no-properties 0)))))))
+  (font-lock-fontify-buffer)
+  )
+
+(defun xcm-syntax-color-hsl ()
+"Syntax color hex color spec such as 「hsl(0,50%,75%)」 in current buffer."
+  (interactive)
+  (font-lock-add-keywords
+   nil
+  '(("hsl( *\\([0-9]\\{1,3\\}\\) *, *\\([0-9]\\{1,3\\}\\)% *, *\\([0-9]\\{1,3\\}\\)% *)"
      (0 (put-text-property
-         (match-beginning 0)
+         (+ (match-beginning 0) 3)
          (match-end 0)
          'face (list :background
-                     (match-string-no-properties 0)))))))
-
-(font-lock-add-keywords 'xah-css-mode xcm-colorfy-hex)
+ (concat "#" (mapconcat 'identity 
+                        (mapcar
+                         (lambda (x) (format "%x" (round (* x 255))))
+                         (color-hsl-to-rgb
+                          (/ (string-to-number (match-string-no-properties 1)) 360.0)
+                          (/ (string-to-number (match-string-no-properties 2)) 100.0)
+                          (/ (string-to-number (match-string-no-properties 3)) 100.0)
+                          ) )
+                        "" )) ;  "#00aa00"
+                      ))))) )
+  (font-lock-fontify-buffer)
+  )
 
 
 ;; keybinding
@@ -237,9 +285,9 @@ WARNING: not robust."
 CSS keywords are colored. Basically that's it.
 
 \\{xcm-keymap}"
-  (setq font-lock-defaults '((xcm-font-lock-keywords)))
 
   (set-syntax-table xcm-syntax-table)
+  (setq font-lock-defaults '((xcm-font-lock-keywords)))
 
   (set (make-local-variable 'comment-start) "/*")
   (set (make-local-variable 'comment-start-skip) "/\\*+[ \t]*")
@@ -254,5 +302,5 @@ CSS keywords are colored. Basically that's it.
   (add-to-list 'ac-modes 'xah-css-mode)
   (add-hook 'xah-css-mode-hook 'ac-css-mode-setup)
   )
-  
+
 (provide 'xah-css-mode)
