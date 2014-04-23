@@ -1,4 +1,4 @@
-;;; insert-random-id.el --- commands to insert random ID. -*- coding: utf-8 -*-
+;;; xah-insert-random-id.el --- commands to insert random ID. -*- coding: utf-8 -*-
 
 ;; Copyright © 2013 by Xah Lee
 
@@ -8,10 +8,7 @@
 ;; Version: 0.1
 ;; Keywords: convenience
 
-;; You can redistribute this program and/or modify it under the terms
-;; of the GNU General Public License as published by the Free Software
-;; Foundation; either version 2, or (at your option) any later
-;; version.
+;; feel free to use this code in anyway you like. Credit and donation is appreciated. Thanks.
 
 ;;; Commentary:
 ;; misc collection of commands to insert hex, digits, of fixed number of digits.
@@ -97,4 +94,4 @@ Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
 (provide 'xah-insert-random-id)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; insert-random-id.el ends here
+;;; xah-insert-random-id.el ends here
