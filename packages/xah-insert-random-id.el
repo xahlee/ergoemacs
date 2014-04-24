@@ -83,12 +83,13 @@ Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
                     (substring myStr 17 20)
                     (substring myStr 20 32)))))
 
-(defun xah-insert-random-number ()
-  "Insert a random number of length 5."
-  (interactive)
+(defun xah-insert-random-number (πcount)
+  "Insert πcount of random digits.
+πcount default to 5"
+  (interactive "P")
   (let (myCharset (possibleCharsCount 10))
     (setq myCharset "1234567890" )
-    (dotimes (ii 5)
+    (dotimes (ii (if (numberp πcount) (abs πcount) 5 ))
       (insert (elt myCharset (random possibleCharsCount))) ) ) )
 
 (provide 'xah-insert-random-id)
