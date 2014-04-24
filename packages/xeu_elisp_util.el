@@ -45,7 +45,7 @@
 
 ;;; HISTORY
 
-
+;; version 1.4.21, 2014-04-24 modified some inline doc to reflect emacs 24.4's new functions
 ;; version 1.4.20, 2014-01-21 “unit-at-cursor” with 'filepath argument now also consider single quote as delimiter
 ;; version 1.4.19, 2013-05-10 “get-html-file-title” moved to xah-html-mode.el and name is now “xhm-get-html-file-title”
 ;; version 1.4.18, 2013-02-22 removed delete-subdirs-by-regex and delete-files-by-regex . These are either buggy or very inefficient. Pending work.
@@ -318,7 +318,10 @@ GNU Emacs 24.1.1 (i386-mingw-nt6.1.7601) of 2012-06-10 on MARVIN
 
 (defun trim-string (string)
   "Remove white spaces in beginning and ending of STRING.
-White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
+White space here is any of: space, tab, emacs newline (line feed, ASCII 10).
+
+Note: in emacs GNU Emacs 24.4+ and later, there's `string-trim' function. You need to (require 'subr-x).
+"
 (replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" string))
 )
 
@@ -326,7 +329,11 @@ White space here is any of: space, tab, emacs newline (line feed, ASCII 10)."
   "Remove string path2 from the beginning of path1.
 length of path1 ≥ to length path2.
 
-e.g. 「c:/Users/lisa/web/a/b」 -  「c:/Users/lisa/web/」 ⇒ 「a/b」"
+⁖  (substract-path \"c:/Users/lisa/web/a/b\" \"c:/Users/lisa/web/\") ⇒ \"a/b\"
+This is the roughly the same as emacs 24.4's `string-remove-prefix'.
+ (require 'subr-x)
+ (string-remove-prefix  \"c:/Users/lisa/web/\" \"c:/Users/lisa/web/a/b\" )
+"
   (let ((p2length (length path2)))
     (if (string= (substring path1 0 p2length) path2 )
         (substring path1 p2length)
@@ -334,7 +341,13 @@ e.g. 「c:/Users/lisa/web/a/b」 -  「c:/Users/lisa/web/」 ⇒ 「a/b」"
 
 (defun hash-to-list (hashtable)
   "Return a list that represent the hashtable.
-Each element is a list: (list key value)."
+Each element is a list: (list key value).
+
+See also, emacs 24.4's new functions.
+ (require 'subr-x)
+ `hash-table-keys'
+ `hash-table-values'
+"
   (let (mylist)
     (maphash (lambda (kk vv) (setq mylist (cons (list kk vv) mylist))) hashtable)
     mylist))
