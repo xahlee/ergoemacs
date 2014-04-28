@@ -135,7 +135,7 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
   "Test the shifted selection bug."
   (let ((old-ergoemacs-theme ergoemacs-theme)
         (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
-        (macro (edmacro-parse-keys "C-SPC M-h M-S-i" t))
+        (macro (edmacro-parse-keys "M-SPC M-h M-I" t))
         (ret))
     (ergoemacs-mode -1)
     (setq ergoemacs-theme nil)
@@ -177,7 +177,9 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
                     (format "global-set-key (kbd \"%s\") " test-key)))
                   w-file))
     (with-temp-file temp-file
-      (insert "(condition-case err (progn ")
+      (if (boundp 'wait-for-me)
+          (insert "(setq debug-on-error t)")
+        (insert "(condition-case err (progn "))
       (unless after
         (when delete-def
           (insert (format "(global-set-key (kbd \"%s\") nil)" delete-def)))
@@ -196,10 +198,12 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
         (when delete-def
           (insert (format "(global-set-key (kbd \"%s\") nil)" delete-def)))
         (insert sk))
+      (when (boundp 'wait-for-me)
+        (insert "(switch-to-buffer (get-buffer-create \"*ergoemacs-test*\")) (insert (substitute-command-keys \"\\\\{ergoemacs-global-override-keymap}\")) (goto-char (point-min))"))
       (insert "(execute-kbd-macro ergoemacs-test-macro)")
       (insert (format "(if (file-exists-p \"%s\") (message \"Passed\") (message \"Failed\"))" w-file))
-      (insert ") (error (message \"Error %s\" err)))")
       (unless (boundp 'wait-for-me)
+        (insert ") (error (message \"Error %s\" err)))")
         (insert "(kill-emacs)")))
     (message
      "%s"
@@ -435,7 +439,7 @@ Test next and prior translation."
     (setq ergoemacs-theme nil)
     (setq ergoemacs-keyboard-layout "colemak")
     (ergoemacs-mode 1)
-    (ergoemacs-isearch-mode-hook)
+    (ergoemacs-for-isearch-mode-hook)
     (setq ret (lookup-key isearch-mode-map (read-kbd-macro
                                   (format "<%s> s"
                                   (if (eq system-type 'windows-nt)
@@ -867,6 +871,56 @@ Selected mark would not be cleared after paste."
       (ergoemacs-paste)
       (setq ret (or deactivate-mark (not mark-active))))
     (should ret)))
+
+(ert-deftest ergoemacs-test-command-remapping ()
+  "Test to make sure remapping for `ergoemacs-commands' are applied."
+  (should (eq 'ergoemacs-describe-key (command-remapping 'describe-key))))
+
+;; Fixed, but tests dont work.  Not sure why ergoemacs-test-fn goes to nil
+
+;; (ert-deftest ergoemacs-test-apps-h-v ()
+;;   "Make Sure <apps> h v works correctly"
+;;   (let ((old-ergoemacs-theme ergoemacs-theme)
+;;         (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+;;         (ergoemacs-test-fn t)
+;;         (rk (format "<%s> h v"
+;;                     (or (and (eq system-type 'windows-nt) "apps") "menu")))
+;;         (ret nil))
+;;     (ergoemacs-mode -1)
+;;     (setq ergoemacs-theme "reduction")
+;;     (setq ergoemacs-keyboard-layout "colemak")
+;;     (ergoemacs-mode 1)
+;;     (with-timeout (0.2 nil)
+;;       (ergoemacs-read-key rk))
+;;     (message "Test FN: %s" ergoemacs-test-fn)
+;;     (setq ret (eq ergoemacs-test-fn (or (command-remapping 'describe-variable (point)) 'describe-variable)))
+;;     (ergoemacs-mode -1)
+;;     (setq ergoemacs-theme old-ergoemacs-theme)
+;;     (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+;;     (ergoemacs-mode 1)
+;;     (should ret)))
+
+;; (ert-deftest ergoemacs-test-apps-h-z ()
+;;   "Make Sure <apps> h z works correctly"
+;;   (let ((old-ergoemacs-theme ergoemacs-theme)
+;;         (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
+;;         (ergoemacs-test-fn t)
+;;         (rk (format "<%s> h z"
+;;                     (or (and (eq system-type 'windows-nt) "apps") "menu")))
+;;         (ret nil))
+;;     (ergoemacs-mode -1)
+;;     (setq ergoemacs-theme "reduction")
+;;     (setq ergoemacs-keyboard-layout "colemak")
+;;     (ergoemacs-mode 1)
+;;     (with-timeout (0.2 nil)
+;;       (ergoemacs-read-key rk))
+;;     (message "Test FN: %s" ergoemacs-test-fn)
+;;     (setq ret (eq ergoemacs-test-fn (or (command-remapping 'ergoemacs-clean (point)) 'ergoemacs-clean)))
+;;     (ergoemacs-mode -1)
+;;     (setq ergoemacs-theme old-ergoemacs-theme)
+;;     (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+;;     (ergoemacs-mode 1)
+;;     (should ret)))
 
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
