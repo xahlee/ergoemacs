@@ -27,6 +27,14 @@
 ;; 
 
 ;;; Code:
+(defvar ergoemacs-dir
+  (file-name-directory
+   (or
+    load-file-name
+    (buffer-file-name)))
+  "Ergoemacs directory.")
+(add-to-list 'load-path ergoemacs-dir)
+(require 'ergoemacs-shortcuts)
 
 (defmacro ergoemacs-define-overrides (&rest body)
   "Force the define-keys to work"
@@ -80,6 +88,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
 (ad-activate 'define-key)
 
 (defvar ergoemacs-global-override-rm-keys '())
+(defvar ergoemacs-global-override-p t)
 (defvar ergoemacs-global-override-keymap (make-sparse-keymap))
 ;;; Advices enabled or disabled with ergoemacs-mode
 (defun ergoemacs-global-set-key-after (key command)
@@ -99,31 +108,14 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
                  (push rm-key rm-keys)))
              ergoemacs-global-override-rm-keys)
             (setq ergoemacs-global-override-rm-keys rm-keys))
-          (define-key ergoemacs-global-override-keymap key command))
+          (define-key ergoemacs-global-override-keymap key command)
+          (ergoemacs-shuffle-keys 'ergoemacs-global-overridep ergoemacs-global-override-keymap))
          (t
           (push key ergoemacs-global-override-rm-keys)
-          (setq ergoemacs-read-input-keymap (ergoemacs-rm-key ergoemacs-read-input-keymap key))
-          (setq ergoemacs-shortcut-keymap (ergoemacs-rm-key ergoemacs-shortcut-keymap key))
-          (setq ergoemacs-keymap (ergoemacs-rm-key ergoemacs-keymap key))
-          (setq ergoemacs-unbind-keymap (ergoemacs-rm-key ergoemacs-unbind-keymap key))
           ;; Update Maps.
-          (let ((x (assq 'ergoemacs-shortcut-keys ergoemacs-emulation-mode-map-alist)))
-            (when x
-              (setq ergoemacs-emulation-mode-map-alist (delq x ergoemacs-emulation-mode-map-alist)))
-            (push (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap) ergoemacs-emulation-mode-map-alist))
-          
-          (let ((x (assq 'ergoemacs-mode minor-mode-map-alist)))
-            (when x
-              (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-            (push (cons 'ergoemacs-mode ergoemacs-keymap) minor-mode-map-alist))
-          
-          (let ((x (assq 'ergoemacs-unbind-keys minor-mode-map-alist)))
-            (when x
-              (setq minor-mode-map-alist (delq x minor-mode-map-alist)))
-            ;; Put at the END of the list.
-            (setq minor-mode-map-alist
-                  (append minor-mode-map-alist
-                          (list (cons 'ergoemacs-unbind-keys ergoemacs-unbind-keymap)))))))))))
+          (when ergoemacs-mode
+            (ergoemacs-mode -1)
+            (ergoemacs-mode 1))))))))
     
     
   

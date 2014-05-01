@@ -31,6 +31,14 @@
 ;;; Code:
 
 (require 'redo "redo.elc" t) ; for redo shortcut
+(defvar ergoemacs-dir
+  (file-name-directory
+   (or
+    load-file-name
+    (buffer-file-name)))
+  "Ergoemacs directory.")
+(add-to-list 'load-path ergoemacs-dir)
+(require 'ergoemacs-shortcuts)
 
 
 (defcustom ergoemacs-isearch-backward-char-to-edit nil
@@ -142,30 +150,88 @@
      (t
       (ergoemacs-read-key key 'normal)))))
 
-(defun ergoemacs-clean ()
-  "Run ergoemacs in a bootstrap environment."
+(defun ergoemacs-clean-recompile-then-run (&optional terminal)
+  "Recompile `ergoemacs-mode' for a bootstrap environment."
   (interactive)
-  (let ((emacs-exe (ergoemacs-emacs-exe)))
+  (switch-to-buffer-other-window (get-buffer-create "*ergoemacs-clean*"))
+  (set (make-local-variable 'ergoemacs-terminal) terminal)
+  (delete-region (point-min) (point-max))
+  (when (or (equal current-prefix-arg '(4))
+            (equal current-prefix-arg '(16)))
+    (insert "Delete Byte Compiled Files:\n")
+    (mapc
+     (lambda(file)
+       (insert "\tDelete " file)
+       (delete-file file)
+       (insert "\n"))
+     (directory-files (expand-file-name (file-name-directory (locate-library "ergoemacs-mode"))) t "[.]elc$"))
+    (insert "\n"))
+  (if (equal  current-prefix-arg '(16))
+      (let* ((emacs-exe (ergoemacs-emacs-exe))
+             (default-directory (expand-file-name (file-name-directory (locate-library "ergoemacs-mode"))))
+             (process (start-process-shell-command "ergoemacs-byte-compile"
+                                                   "*ergoemacs-clean*"
+                                                   (format "%s -Q --batch -f batch-byte-compile *.el" emacs-exe))))
+        (set-process-sentinel process 'ergoemacs-run-clean))
+    (ergoemacs-run-clean)))
+
+(defun ergoemacs-run-clean (&rest ignore)
+  "Run the clean environment"
+  (let ((emacs-exe (ergoemacs-emacs-exe))
+        cmd process rm-batch)
     (when ergoemacs-keyboard-layout
       (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
     (when ergoemacs-theme
       (setenv "ERGOEMACS_THEME" ergoemacs-theme))
-    (shell-command (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& " emacs-exe
-                           (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
+    (cond
+     ((save-excursion
+        (set-buffer (get-buffer-create "*ergoemacs-clean*"))
+        (and (boundp 'ergoemacs-terminal) (not ergoemacs-terminal)))
+      (setq cmd (format "%s --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"" emacs-exe
+                        (expand-file-name (file-name-directory (locate-library "ergoemacs-mode"))))))
+     ((and (eq system-type 'windows-nt) (executable-find "cmd"))
+      ; Needs some work....
+      (setq cmd (format "%s -nw --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\""
+                        emacs-exe
+                        (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))
+      (set (make-local-variable 'ergoemacs-batch-file)
+           (make-temp-file "ergoemacs-clean" nil ".bat"))
+      (with-temp-file ergoemacs-batch-file
+        (insert cmd))
+      (setq default-directory (file-name-directory ergoemacs-batch-file)))
+     ((executable-find "xterm")
+      (setq cmd (format "%s -e %s -nw --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\""
+                        (executable-find "xterm") emacs-exe
+                        (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))
+    (insert "Command\n" cmd "\n\n")
+    (if (not rm-batch)
+        (setq process (start-process-shell-command "ergoemacs-run-clean"
+                                                   "*ergoemacs-clean*"
+                                                   cmd))
+      (setq process (start-process
+                     "ergoemacs-run-clean" "*ergoemacs-clean*"
+                     (executable-find "cmd")
+                     (file-name-nondirectory ergoemacs-batch-file)))
+      (set-process-sentinel process 'ergoemacs-run-clean-rm-batch))))
+
+(defun ergoemacs-run-clean-rm-batch (&rest ignore)
+  "Remove temporary batch file."
+  (when ergoemacs-batch-file
+    (delete-file ergoemacs-batch-file)))
+
+(defun ergoemacs-clean ()
+  "Run ergoemacs in a bootstrap environment.
+C-u deletes old byte compiled `ergoemacs-mode' files, and the recompiles.
+C-u C=u deletes old byte compilde `ergoemacs-mode' files."
+  (interactive)
+  (ergoemacs-clean-recompile-then-run))
 
 (defun ergoemacs-clean-nw ()
-  "Run ergoemacs in bootstrap environment in terminal."
+  "Run ergoemacs in bootstrap environment in terminal.
+C-u deletes old byte compiled `ergoemacs-mode' files, and the recompiles.
+C-u C=u deletes old byte compilde `ergoemacs-mode' files."
   (interactive)
-  (let ((emacs-exe (ergoemacs-emacs-exe)))
-    (cond
-     ((executable-find "xterm")
-      (when ergoemacs-keyboard-layout
-        (setenv "ERGOEMACS_KEYBOARD_LAYOUT" ergoemacs-keyboard-layout))
-      (when ergoemacs-theme
-        (setenv "ERGOEMACS_THEME" ergoemacs-theme))
-      (shell-command (format "%s -e %s -nw --debug-init -Q -L \"%s\" --load=\"ergoemacs-mode\"  --eval \"(ergoemacs-mode 1)\"& "
-                             (executable-find "xterm") emacs-exe
-                             (expand-file-name (file-name-directory (locate-library "ergoemacs-mode")))))))))
+  (ergoemacs-clean-recompile-then-run t))
 
 (defun ergoemacs-emacs-exe ()
   "Get the Emacs executable for testing purposes."
@@ -656,7 +722,6 @@ the prefix arguments of `end-of-buffer',
       (let ((line-move-visual nil))
         (forward-line (- N 1))))
     (let (pts)
-      ;; (setq prefix-arg nil)
       (setq current-prefix-arg nil)
       (save-excursion
         (call-interactively 'move-end-of-line)
@@ -1184,6 +1249,7 @@ Similar to (kill-buffer (current-buffer)) with the following addition:
 • Make sure the buffer shown after closing is a user buffer.
 • If the buffer is editing a source file in an org-mode file, prompt the user to save before closing.
 • If the buffer is editing a CAPTUREd task in an org-mode file, prompt the user to save before closing.
+• If the buffer is editing a magit commit, prompt the user to save the commit before closing.
 • If the buffer is a file, add the path to the list `ergoemacs-recently-closed-buffers'.
 • If it is the minibuffer, exit the minibuffer
 
@@ -1194,55 +1260,56 @@ Else it is a user buffer."
         emacs-buff-p
         is-emacs-buffer-after-p
         (org-p (string-match "^[*]Org Src" (buffer-name)))
-        (org-capture-p (string-match "CAPTURE-.*\\.org" (buffer-name))))
-    (setq emacs-buff-p (if (string-match "^*" (buffer-name)) t nil) )
-    
-    (if (string= major-mode "minibuffer-inactive-mode")
-        (progn
-          (if override-fn
-              (progn
-                (call-interactively override-fn))
-            (minibuffer-keyboard-quit)))
-      (if org-capture-p
-          (if (y-or-n-p "Capture not saved, do you want to save?")
-              (call-interactively 'org-capture-finalize)
-            (call-interactively 'org-capture-kill))
-        ;; offer to save buffers that are non-empty and modified, even
-        ;; for non-file visiting buffer. (because kill-buffer does not
-        ;; offer to save buffers that are not associated with files)
-        (when (and (buffer-modified-p)
-                   (not emacs-buff-p)
-                   (not (string-equal major-mode "dired-mode"))
-                   (if (equal (buffer-file-name) nil)
-                       (if (string-equal "" (save-restriction (widen) (buffer-string))) nil t)
-                     t))
-          (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
-              (save-buffer)
-            (set-buffer-modified-p nil)))
-        ;; 
-        (when (and (buffer-modified-p)
-                   org-p)
-          (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
-              (org-edit-src-save)
-            (set-buffer-modified-p nil)))
-        
-        
-        ;; save to a list of closed buffer
-        (when (not (equal buffer-file-name nil))
-          (setq ergoemacs-recently-closed-buffers
-                (cons (cons (buffer-name) (buffer-file-name)) ergoemacs-recently-closed-buffers))
-          (when (> (length ergoemacs-recently-closed-buffers) ergoemacs-recently-closed-buffers-max)
-            (setq ergoemacs-recently-closed-buffers (butlast ergoemacs-recently-closed-buffers 1))))
-        
-        ;; close
-        (kill-buffer (current-buffer))
-        
-        ;; if emacs buffer, switch to a user buffer
-        (if (string-match "^*" (buffer-name))
-            (setq is-emacs-buffer-after-p t)
-          (setq is-emacs-buffer-after-p nil))
-        (when is-emacs-buffer-after-p
-          (ergoemacs-next-user-buffer) ) ))))
+        (org-capture-p (string-match "CAPTURE-.*\\.org" (buffer-name)))
+        (git-commit-p (eq major-mode 'git-commit-mode)))
+    (setq emacs-buff-p (if (string-match "^*" (buffer-name)) t nil))
+    (cond
+     ((string= major-mode "minibuffer-inactive-mode")
+      (if override-fn
+          (progn
+            (call-interactively override-fn))
+        (minibuffer-keyboard-quit)))
+     (org-capture-p
+      (if (y-or-n-p "Capture not saved, do you want to save?")
+          (call-interactively 'org-capture-finalize)
+        (call-interuactively 'org-capture-kill)))
+     (git-commit-p
+      (if (y-or-n-p  "Not commited yet, do you want to commit?")
+          (call-interactively 'git-commit-commit)
+        (call-interactively 'git-commit-abort)))
+     (t
+      (when (and (buffer-modified-p)
+                 (not emacs-buff-p)
+                 (not (string-equal major-mode "dired-mode"))
+                 (if (equal (buffer-file-name) nil)
+                     (if (string-equal "" (save-restriction (widen) (buffer-string))) nil t)
+                   t))
+        (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
+            (save-buffer)
+          (set-buffer-modified-p nil)))
+      ;; offer to save buffers that are non-empty and modified, even
+      ;; for non-file visiting buffer. (because kill-buffer does not
+      ;; offer to save buffers that are not associated with files)
+      
+      ;; 
+      (when (and (buffer-modified-p)
+                 org-p)
+        (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
+            (org-edit-src-save)
+          (set-buffer-modified-p nil)))
+      ;; save to a list of closed buffer
+      (when (not (equal buffer-file-name nil))
+        (setq ergoemacs-recently-closed-buffers
+              (cons (cons (buffer-name) (buffer-file-name)) ergoemacs-recently-closed-buffers))
+        (when (> (length ergoemacs-recently-closed-buffers) ergoemacs-recently-closed-buffers-max)
+          (setq ergoemacs-recently-closed-buffers (butlast ergoemacs-recently-closed-buffers 1))))
+      (kill-buffer (current-buffer))
+      ;; if emacs buffer, switch to a user buffer
+      (if (string-match "^*" (buffer-name))
+          (setq is-emacs-buffer-after-p t)
+        (setq is-emacs-buffer-after-p nil))
+      (when is-emacs-buffer-after-p
+        (ergoemacs-next-user-buffer))))))
 
 (defun ergoemacs-open-last-closed ()
   "Open the last closed file."
