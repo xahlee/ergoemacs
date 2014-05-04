@@ -654,6 +654,7 @@ In addition, when the function is called:
 - set `this-command' to the function called.
 
 "
+  (setq ergoemacs-deactivate-mark nil)
   (cond
    ((and (boundp 'ergoemacs-test-fn) ergoemacs-test-fn)
     (setq ergoemacs-test-fn function))
@@ -701,7 +702,13 @@ In addition, when the function is called:
 	(remove-hook 'ergoemacs-pre-command-hook 'ergoemacs-pre-command-hook t)
         (run-hooks 'ergoemacs-pre-command-hook)
         (call-interactively function record-flag keys)
-        (setq ergoemacs-deactivate-mark deactivate-mark))))))
+        (setq ergoemacs-deactivate-mark deactivate-mark)
+        (when deactivate-mark
+          (setq ergoemacs-mark-active nil))))))
+  (when ergoemacs-deactivate-mark
+    (setq deactivate-mark ergoemacs-deactivate-mark
+          ergoemacs-mark-active nil)
+    (setq ergoemacs-deactivate-mark nil)))
 
 (defvar ergoemacs-read-key-overriding-terminal-local-save nil)
 (defvar ergoemacs-read-key-overriding-overlay-save nil)
@@ -887,38 +894,6 @@ FORCE-KEY forces keys like <escape> to work properly.
                     (setq ergoemacs-read-key-overriding-terminal-local-save overriding-terminal-local-map)
                     (setq overriding-terminal-local-map lookup))
                   (setq ret 'translate))))
-               ;; Global override
-               ((progn
-                  (setq fn (lookup-key ergoemacs-global-override-keymap key))
-                  (when (condition-case err
-                            (integerp fn)
-                          (error nil))
-                    (setq fn nil))
-                  (setq ret (ergoemacs-read-key-lookup-get-ret fn))
-                  (or ret (condition-case err
-                              (interactive-form fn)
-                            nil)))
-                (unless ret
-                  (setq fn (or (command-remapping fn (point)) fn))
-                  (setq ergoemacs-single-command-keys key)
-                  (when (and ergoemacs-echo-function
-                             (boundp 'pretty-key-undefined)
-                             (not (or this-command-keys-shift-translated
-                                      ergoemacs-shift-translated)))
-                    (let (message-log-max)
-                      (if (string= pretty-key-undefined pretty-key)
-                          (when (eq ergoemacs-echo-function t)
-                            (message "%s%s%s" pretty-key
-                                     (ergoemacs-unicode-char "→" "->")
-                                     (symbol-name fn)))
-                        (message "%s%s%s (from %s)"
-                                 pretty-key
-                                 (ergoemacs-unicode-char "→" "->")
-                                 (symbol-name fn)
-                                 pretty-key-undefined))))
-                  (ergoemacs-read-key-call fn nil key)
-                  (setq ergoemacs-single-command-keys nil)
-                  (setq ret 'global-function-override)))
                ;; Is there an local override function?
                ((progn
                   (setq fn (ergoemacs-get-override-function key))
@@ -1130,8 +1105,6 @@ UNIVERSAL allows ergoemacs-read-key to start with universal
 argument prompt.
 "
   (setq ergoemacs-deactivate-mark nil)
-  (unwind-protect
-      (run-hooks 'ergoemacs-read-key-begin-hook))
   (let ((continue-read t)
         (real-type (or type 'normal))
         (first-type (or type 'normal))
@@ -1328,12 +1301,14 @@ argument prompt.
                         (unless pretty-key-undefined
                           (setq pretty-key-undefined pretty-key-trial))
                         (setq ergoemacs-shift-translated (string-match "-shift-translated" tmp))
+                        (setq deactivate-mark nil)
                         (setq local-fn
                               (if key-trial
                                   (ergoemacs-read-key-lookup
                                    key pretty-key
                                    key-trial pretty-key-trial
                                    force-key) nil))
+                        (setq ergoemacs-deactivate-mark deactivate-mark)
                         (cond
                          ((eq local-fn 'keymap)
                           (when real-read
@@ -1451,7 +1426,9 @@ argument prompt.
                   (unless (minibufferp)
                     (let (message-log-max)
                       (message "%s is undefined!" pretty-key-undefined)))))))))))
-  (setq deactivate-mark ergoemacs-deactivate-mark)
+  (when ergoemacs-deactivate-mark
+    (setq deactivate-mark ergoemacs-deactivate-mark
+          ergoemacs-mark-active nil))
   (setq ergoemacs-describe-key nil))
 
 (defun ergoemacs-define-key (keymap key def)
@@ -1883,9 +1860,7 @@ original key binding.
     (setq send-fn (or (command-remapping fn (point)) fn))
     (unless (commandp send-fn t)
       (setq send-fn fn))
-    (ergoemacs-read-key-call send-fn)
-    (setq deactivate-mark ergoemacs-deactivate-mark
-          ergoemacs-deactivate-mark nil)))
+    (ergoemacs-read-key-call send-fn)))
 
 (defun ergoemacs-install-shortcuts-map (&optional map dont-complete)
   "Returns a keymap with shortcuts installed.

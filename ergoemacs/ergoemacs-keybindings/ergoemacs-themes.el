@@ -195,7 +195,9 @@
 (ergoemacs-theme-component fixed-bold-italic ()
   "Fixed keys for bold and italic"
   (define-key org-mode-map (kbd "C-b") 'ergoemacs-org-bold)
-  (define-key org-mode-map (kbd "C-i") 'ergoemacs-org-italic))
+  ;; (define-key org-mode-map (kbd "C-i") 'ergoemacs-org-italic)
+  ;; C-i is TAB... This seems to cause issues?
+  )
 
 (ergoemacs-theme-component backspace-is-back ()
   "Backspace is back, as in browsers..."
@@ -521,6 +523,17 @@
   (global-set-key (kbd "M-;") 'isearch-forward)
   (global-set-key (kbd "M-:") 'isearch-backward))
 
+(ergoemacs-theme-component search-reg ()
+  "Regular Expression Search/Replace"
+  (global-set-key [remap isearch-forward] 'isearch-forward-regexp)
+  (global-set-key [remap isearch-backward] 'isearch-backward-regexp)
+
+  (global-set-key (kbd "M-%") nil)
+  (global-set-key (kbd "M-5") '(vr/query-replace query-replace-regexp))
+  
+  (global-set-key (kbd "C-M-%") nil)
+  (global-set-key (kbd "M-%") 'query-replace))
+
 (ergoemacs-theme-component switch ()
   "Window/Frame/Tab Switching"
   (global-set-key (kbd "M-s") 'ergoemacs-move-cursor-next-pane)
@@ -842,8 +855,7 @@
 
 (ergoemacs-theme standard ()
   "Standard Ergoemacs Theme"
-  :components '(backspace-is-back
-                copy
+  :components '(copy
                 dired-to-wdired
                 execute
                 fixed-newline
@@ -865,6 +877,8 @@
   :optional-on '(apps-punctuation
                  apps-apps
                  apps
+                 backspace-del-seq
+                 backspace-is-back
                  fn-keys
                  f2-edit
                  fixed-bold-italic
@@ -872,21 +886,19 @@
                  ido-remaps
                  helm-remaps
                  multiple-cursors-remaps
-                 backspace-del-seq
                  quit
                  apps-swap)
-  :optional-off '(guru no-backspace)
+  :optional-off '(guru no-backspace search-reg)
   :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
                   ("Function Keys" (fn-keys f2-edit))
                   ("Remaps" (ido-remaps helm-remaps multiple-cursors-remaps))
                   ("Extreme ErgoEmacs" (guru no-backspace))
                   ("Standard Keys" (standard-fixed fixed-bold-italic quit))
-                  ("Keys during Key Sequence" (apps-swap backspace-del-seq))))
+                  ("Keys during Key Sequence" (f2-edit apps-swap backspace-del-seq))))
 
 (ergoemacs-theme reduction ()
   "Reduce Ergoemacs keys"
-  :components '(backspace-is-back
-                copy
+  :components '(copy
                 dired-to-wdired
                 execute
                 fixed-newline
@@ -908,6 +920,8 @@
   :optional-on '(apps-punctuation
                  apps-apps
                  apps
+                 backspace-del-seq
+                 backspace-is-back
                  fn-keys
                  f2-edit
                  fixed-bold-italic
@@ -915,16 +929,15 @@
                  ido-remaps
                  helm-remaps
                  multiple-cursors-remaps
-                 backspace-del-seq
                  quit
                  apps-swap)
-  :optional-off '(guru no-backspace)
+  :optional-off '(guru no-backspace search-reg)
   :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
                   ("Function Keys" (fn-keys f2-edit))
                   ("Remaps" (ido-remaps helm-remaps multiple-cursors-remaps))
                   ("Extreme ErgoEmacs" (guru no-backspace))
                   ("Standard Keys" (standard-fixed fixed-bold-italic quit))
-                  ("Keys during Key Sequence" (apps-swap backspace-del-seq)))
+                  ("Keys during Key Sequence" (f2-edit apps-swap backspace-del-seq)))
   
   (global-set-key (kbd "M-*") 'mc/mark-next-like-this)
   (global-set-key (kbd "M-&") 'mc/edit-lines)
