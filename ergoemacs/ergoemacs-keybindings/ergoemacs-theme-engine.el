@@ -195,6 +195,7 @@ particular it:
 - `global-set-key' is converted to `ergoemacs-theme-component--global-set-key'
 - `global-unset-key' is converted to `ergoemacs-theme-component--global-set-key'
 - `global-reset-key' is converted `ergoemacs-theme-component--global-reset-key'
+- `setq' and `set' is converted to `ergoemacs-theme-component--set'
 - Allows :version statement expansion
 - Adds with-hook syntax or (when -hook) or (when -mode)
 "
@@ -250,6 +251,19 @@ particular it:
                      (eq (nth 0 elt) 'global-unset-key)
                    (error nil))
                  `(ergoemacs-theme-component--global-set-key ,(nth 1 elt) nil))
+                ((condition-case err
+                     (eq (nth 0 elt) 'setq)
+                   (error nil))
+                 ;; Currently doesn't support (setq a b c d ), but it should.
+                 `(ergoemacs-theme-component--set (quote ,(nth 1 elt)) ,(nth 2 elt)))
+                ((condition-case err
+                     (eq (nth 0 elt) 'set)
+                   (error nil))
+                 `(ergoemacs-theme-component--set (nth 1 elt) ,(nth 2 elt)))
+                ((condition-case err
+                     (string-match "-mode$" (symbol-name (nth 0 elt)))
+                   (error nil))
+                 `(ergoemacs-theme-component--mode (quote ,(nth 0 elt)) ,(nth 1 elt)))
                 ((condition-case err
                      (eq (nth 0 elt) 'global-set-key)
                    (error nil))
@@ -688,6 +702,15 @@ DEF can be:
         (define-key keymap-shortcut key 'ergoemacs-shortcut)))
     t)
    (t nil)))
+
+(defun ergoemacs-theme-component--set (elt value)
+  "Direct `ergoemacs-mode' to set quoted ELT to VALUE when enabling a theme-component.
+Will attempt to restore the value when turning off the component/theme."
+  )
+(defun ergoemacs-theme-component--mode (mode &optional value)
+  "Direct `ergoemacs-mode' to turn on/off a minor-mode MODE with the optional argument VALUE.
+Will attempt to restore the mode state when turning off the component/theme."
+  )
 
 (defcustom ergoemacs-prefer-variable-keybindings t
   "Prefer Variable keybindings over fixed keybindings."
@@ -1604,11 +1627,13 @@ Uses `ergoemacs-theme-component-keymaps-for-hook' and
            (list map-name always-modify-p final-map))))
      (ergoemacs-theme-component-keymaps-for-hook hook theme-components version))))
 
+;;;###autoload
 (defun ergoemacs-theme-option-off (option)
   "Turns OPTION off.
 Uses `ergoemacs-theme-option-on'."
   (ergoemacs-theme-option-on option 'off))
 
+;;;###autoload
 (defun ergoemacs-theme-option-on (option &optional off)
   "Turns OPTION on.
 When OPTION is a list turn on all the options in the list
@@ -1616,7 +1641,8 @@ If OFF is non-nil, turn off the options instead."
   (if (eq (type-of option) 'cons)
       (mapc
        (lambda(new-option)
-         (ergoemacs-theme-option-on option off))
+         (let (ergoemacs-mode)
+           (ergoemacs-theme-option-on new-option off)))
        option)
     (let (found)
       (setq ergoemacs-theme-options
@@ -1631,7 +1657,10 @@ If OFF is non-nil, turn off the options instead."
              ergoemacs-theme-options))
       (unless found
         (push (if off (list option 'off) (list option 'on))
-              ergoemacs-theme-options)))))
+              ergoemacs-theme-options))))
+  (when ergoemacs-mode
+    (ergoemacs-mode -1)
+    (ergoemacs-mode 1)))
 
 (defun ergoemacs-theme-toggle-option (option)
   "Toggles theme OPTION."
@@ -1956,8 +1985,17 @@ This also:
 "
   (mapc
    (lambda(key)
+     ;; Read input keymap shouldn't interfere with global map needs.
      (setq ergoemacs-read-input-keymap (ergoemacs-rm-key ergoemacs-read-input-keymap key))
-     (setq ergoemacs-shortcut-keymap (ergoemacs-rm-key ergoemacs-shortcut-keymap key))
+     ;;
+     (let ((vector-key (or (and (vectorp key) key)
+                           (read-kbd-macro  (key-description key) t))))
+       ;; ergoemacs-shortcut-keymap should always have `ergoemacs-ctl-c'
+       ;; and `ergoemacs-ctl-x' for C-c and C-x, don't unbind here.
+       (unless (and (memq (elt vector-key 0) '(3 24))
+                    (memq (lookup-key ergoemacs-shortcut-keymap (vector (elt vector-key 0)))
+                          '(ergoemacs-ctl-x ergoemacs-ctl-c)))
+         (setq ergoemacs-shortcut-keymap (ergoemacs-rm-key ergoemacs-shortcut-keymap key))))
      (setq ergoemacs-keymap (ergoemacs-rm-key ergoemacs-keymap key))
      (setq ergoemacs-unbind-keymap (ergoemacs-rm-key ergoemacs-unbind-keymap key)))
    list)
