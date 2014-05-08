@@ -36,6 +36,18 @@
 (require 'advice)
 (require 'ergoemacs-theme-engine)
 
+
+(ergoemacs-theme-component standard-vars ()
+  "Enabled/changed variables/modes"
+  (setq org-CUA-compatible t)
+  (setq org-support-shift-select t)
+  (shift-select-mode t)
+  (delete-selection-mode 1)
+  (setq set-mark-command-repeat-pop t)
+  (setq org-special-ctrl-a/e t)
+  (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+  (setq scroll-error-top-bottom t))
+
 ;;; Fixed components
 (ergoemacs-theme-component standard-fixed ()
   "Standard Fixed Shortcuts"
@@ -296,7 +308,7 @@
 
 (ergoemacs-theme-component f2-edit ()
   "Have <f2> edit"
-  (when ergoemacs-read-key-begin-hook
+  (when ergoemacs-theme-hook
     :modify-map t
     (define-key ergoemacs-ctl-to-alt-translation-local-map [f2]
       'ergoemacs-universal-argument)
@@ -313,7 +325,7 @@
 
 (ergoemacs-theme-component backspace-del-seq ()
   "Backspace deletes last key entered in command sequence"
-  (when ergoemacs-read-key-begin-hook
+  (when ergoemacs-theme-hook
     :modify-map t
     (define-key ergoemacs-ctl-to-alt-translation-local-map (read-kbd-macro "DEL")
       'ergoemacs-read-key-undo-last)
@@ -767,7 +779,7 @@
 
 (ergoemacs-theme-component apps-swap ()
   "Apps/Menu swaps key sequence translations"
-  (when ergoemacs-read-key-begin-hook
+  (when ergoemacs-theme-hook
     :modify-map t
     (define-key ergoemacs-ctl-to-alt-translation-local-map (if (eq system-type 'windows-nt) [apps] [menu])
       'ergoemacs-read-key-swap)
@@ -873,7 +885,8 @@
                 select-items
                 switch
                 text-transform
-                ergoemacs-remaps)
+                ergoemacs-remaps
+                standard-vars)
   :optional-on '(apps-punctuation
                  apps-apps
                  apps
@@ -916,7 +929,8 @@
                 select-items
                 switch
                 text-transform
-                ergoemacs-remaps)
+                ergoemacs-remaps
+                standard-vars)
   :optional-on '(apps-punctuation
                  apps-apps
                  apps
