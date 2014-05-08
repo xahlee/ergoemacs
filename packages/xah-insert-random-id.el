@@ -43,43 +43,30 @@ The possible chars are 0 to 9, and a to z (lower case)."
     (dotimes (ii 5)
       (insert (elt myCharset (random possibleCharsCount))) ) ) )
 
+;; by Christopher Wellons, 2011-11-18. Editted by Xah Lee.
+;; Edited by Hideki Saito further to generate all valid variants for "N" in xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx format.
 (defun xah-insert-random-uuid ()
-  "Insert a random universally unique identifier (UUID).
-
-UUID is a 32 digits hexadecimal formatted in certain way with dash.
+  "Insert a UUID. This uses a simple hashing of variable data.
 Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
-."
-  (interactive)
-  (insert
-   (format "%04x%04x-%04x-%04x-%04x-%06x%06x"
-           (random (expt 16 4))
-           (random (expt 16 4))
-           (random (expt 16 4))
-           (random (expt 16 4))
-           (random (expt 16 4))
-           (random (expt 16 6))
-           (random (expt 16 6)) ) ) )
-
-;; primarily Christopher Wellons. 2011-11-18
-(defun xah-insert-random-uuid-2 ()
-  "Insert a UUID. This uses a simple hashing of variable data."
+"
   (interactive)
   (let ((myStr (md5 (format "%s%s%s%s%s%s%s%s%s%s"
-                        (user-uid)
-                        (emacs-pid)
-                        (system-name)
-                        (user-full-name)
-                        (current-time)
-                        (emacs-uptime)
-                        (garbage-collect)
-                        (buffer-string)
-                        (random)
-                        (recent-keys)))))
+                (user-uid)
+                (emacs-pid)
+                (system-name)
+                (user-full-name)
+                (current-time)
+                (emacs-uptime)
+                (garbage-collect)
+                (buffer-string)
+                (random)
+                (recent-keys)))))
 
-    (insert (format "%s-%s-4%s-a%s-%s"
+    (insert (format "%s-%s-4%s-%s%s-%s"
                     (substring myStr 0 8)
                     (substring myStr 8 12)
                     (substring myStr 13 16)
+            (format "%x" (+ 8 (random 4)))
                     (substring myStr 17 20)
                     (substring myStr 20 32)))))
 
