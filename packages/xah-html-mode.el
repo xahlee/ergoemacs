@@ -1665,7 +1665,7 @@ Some issues:
       (inputStr
        resultStr
        (changedItems nil)
-       (elispIdentifierRegex "\\([-A-Za-z0-9]+\\)")
+       (elispIdentifierRegex "\\([:-A-Za-z0-9]+\\)")
        (wantedRegex (concat "“" elispIdentifierRegex "”") )
        )
     (setq inputStr (buffer-substring-no-properties p1 p2) )
