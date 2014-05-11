@@ -325,8 +325,11 @@ universal argument can be entered.
       ;; Now try to fix issues with `input-decode-map'
       (when ret
         (setq ret (ergoemacs-read-event-change ret input-decode-map))
-        (setq ret (ergoemacs-read-event-change ret local-function-key-map))
-        (setq ret (ergoemacs-read-event-change ret key-translation-map)))
+        ;; These should only be replaced if they are not bound.
+        (unless (commandp (key-binding (vector ret)) t)
+          (setq ret (ergoemacs-read-event-change ret local-function-key-map)))
+        (unless (commandp (key-binding (vector ret)) t)
+          (setq ret (ergoemacs-read-event-change ret key-translation-map))))
       (cond
        ((and ret (not universal)
              (and local-keymap
@@ -579,11 +582,14 @@ It will replace anything defined by `ergoemacs-translation'"
   (interactive)
   ;; Eventually...
   (let ((cb (current-buffer))
-        (key (and (boundp 'key) key)))
+        (key (and (boundp 'key) key))
+        (ergoemacs-shortcut-override-mode t))
+    (ergoemacs-shortcut-override-mode 1)
     (save-excursion
       (with-help-window (help-buffer)
         (set-buffer (help-buffer))
-        (describe-buffer-bindings cb key)))))
+        (describe-buffer-bindings cb key)))
+    (ergoemacs-shortcut-override-mode -1)))
 
 (defun ergoemacs-keyboard-quit ()
   "Replacement for `keyboard-quit' and `minibuffer-keyboard-quit'."
