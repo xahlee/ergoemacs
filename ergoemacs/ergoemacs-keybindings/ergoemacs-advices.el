@@ -62,29 +62,27 @@ If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre
    (t
     ad-do-it)))
 (ad-activate 'remove-hook)
-  
 
 (defadvice define-key (around ergoemacs-define-key-advice (keymap key def))
   "This does the right thing when modifying `ergoemacs-keymap'.
 Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
-  (if (and (boundp 'ergoemacs-run-mode-hooks) ergoemacs-run-mode-hooks
-           (not (equal keymap (current-global-map)))
-           (not (equal keymap ergoemacs-keymap)))
-      (let ((ergoemacs-run-mode-hooks nil)
-            (new-key (read-kbd-macro
-                      (format "<ergoemacs-user> %s"
-                              (key-description key)))))
-        (unwind-protect
-            (define-key keymap new-key def))))
-  ad-do-it
-  (when (or (equal keymap (current-global-map))
-            (equal keymap global-map)
-            (equal keymap ergoemacs-keymap))
-    (let ((vk key))
-      (ergoemacs-global-set-key-after key def)
-      (unless (vectorp vk) ;; Do vector def too.
-        (setq vk (read-kbd-macro (key-description key) t))
-        (ergoemacs-global-set-key-after vk def)))))
+  (let ((is-global-p (equal keymap (current-global-map))))
+    (if (and (boundp 'ergoemacs-run-mode-hooks) ergoemacs-run-mode-hooks
+             (not (equal keymap (current-global-map)))
+             (not (equal keymap ergoemacs-keymap)))
+        (let ((ergoemacs-run-mode-hooks nil)
+              (new-key (read-kbd-macro
+                        (format "<ergoemacs-user> %s"
+                                (key-description key)))))
+          (unwind-protect
+              (define-key keymap new-key def))))
+    ad-do-it
+    (when is-global-p
+      (let ((vk key))
+        (ergoemacs-global-set-key-after key def)
+        (unless (vectorp vk) ;; Do vector def too.
+          (setq vk (read-kbd-macro (key-description key) t))
+          (ergoemacs-global-set-key-after vk def))))))
 (ad-activate 'define-key)
 
 (defvar ergoemacs-global-override-rm-keys '())
@@ -99,7 +97,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
         (add-to-list 'ergoemacs-global-override-rm-keys key)
         (when ergoemacs-mode
           (ergoemacs-theme-remove-key-list (list key) t))))))
-    
+
 (defadvice local-set-key (around ergoemacs-local-set-key-advice (key command))
   "This let you use `local-set-key' as usual when `ergoemacs-mode' is enabled."
   (if (and (fboundp 'ergoemacs-mode) ergoemacs-mode)
@@ -128,7 +126,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
 ;;                  (loop with local-map = (helm-M-x-current-mode-map-alist)
 ;;                        for cand in candidates
 ;;                        for local-key  = (car (rassq cand local-map))
-;;                        for key        = (substitute-command-keys (format "\\[%s]" cand))
+     ;;                        for key        = (substitute-command-keys (format "\\[%s]" cand))
 ;;                        collect
 ;;                        (cons (cond ((and (string-match "^M-x" key) local-key)
 ;;                                     (format "%s (%s)"
@@ -237,7 +235,7 @@ Compare the `buffer-name' the entries in `auto-mode-alist'."
   (when ergoemacs-check-new-buffer-auto-mode
     (with-current-buffer (ad-get-arg 0)
       (if (and (buffer-name) (not buffer-file-name))
-          (let ((name (buffer-name)))
+          (let ((name (buffer-name)) mode)
             ;; Remove backup-suffixes from file name.
             (setq name (file-name-sans-versions name))
             ;; Do not handle service buffers
