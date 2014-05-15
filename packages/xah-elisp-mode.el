@@ -88,6 +88,7 @@
 "nth"
 "nthcdr"
 "null"
+"number-sequence"
 "number-to-string"
 "or"
 "pop"
@@ -135,7 +136,9 @@
 "defvar"
 "float"
 "vectorp"
+"vconcat"
 "remove"
+
 ) )
 
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
