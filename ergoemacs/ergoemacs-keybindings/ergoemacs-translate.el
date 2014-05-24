@@ -1,5 +1,7 @@
 ;;; ergoemacs-translate.el --- Keyboard translation functions
-;; 
+
+;; Copyright © 2013-2014  Free Software Foundation, Inc.
+
 ;; Filename: ergoemacs-translate.el
 ;; Description: 
 ;; Author: Matthew L. Fidler
@@ -42,9 +44,7 @@
 ;; General Public License for more details.
 ;; 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
@@ -80,7 +80,7 @@
           ;; Save it so the user doesn't see the buffer popup very much
           ;; (if at all).
           (add-to-list 'ergoemacs-display-char-list (list (list face char window-system) ret))
-          (symbol-value 'ret)))
+          ret))
     (error nil)))
 
 (defvar ergoemacs-use-unicode-char t
@@ -197,7 +197,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
               (while (re-search-forward "Ctl[+]" nil t)
                 (replace-match "^")))
             (setq ret (buffer-string)))))
-      (symbol-value 'ret))))
+      ret)))
 
 (defun ergoemacs-pretty-key-rep-internal ()
   (let (case-fold-search)
@@ -227,7 +227,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
               (insert code)
               (ergoemacs-pretty-key-rep-internal)
               (setq ret (buffer-string)))))
-        (symbol-value 'ret))
+        ret)
     (when ergoemacs-use-ergoemacs-key-descriptions
       (ergoemacs-pretty-key-rep-internal))))
 
@@ -253,7 +253,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
           ;; Save it so the user doesn't see the buffer popup very much
           ;; (if at all).
           (add-to-list 'ergoemacs-display-char-list (list (list face char window-system) ret))
-          (symbol-value 'ret)))
+          ret))
     (error nil)))
 
 ;;; Actual Translations
@@ -365,7 +365,7 @@ This also creates functions:
 
     (eval (macroexpand
            `(defvar ,(intern (concat "ergoemacs-" (symbol-name (plist-get arg-plist ':name)) "-modal-map"))
-              ',(symbol-value 'keymap-modal)
+              ',keymap-modal
               ,(concat "Ergoemacs modal override map for "
                       (symbol-name (plist-get arg-plist ':name))
                       " translation.
@@ -373,7 +373,7 @@ This keymap is made in `ergoemacs-translation'"))))
 
     (eval (macroexpand
            `(defvar ,(intern (concat "ergoemacs-" (symbol-name (plist-get arg-plist ':name)) "-translation-local-map"))
-              ',(symbol-value 'keymap)
+              ',keymap
               ,(concat "Ergoemacs translation local map for "
                       (symbol-name (plist-get arg-plist ':name))
                       " translation setup.
@@ -489,7 +489,7 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
 (ergoemacs-translation
  :name 'normal
  :keymap (let ((map (make-sparse-keymap))
-               (no-ergoemacs-advice t))
+               (ergoemacs-ignore-advice t))
            (define-key map [f1] 'ergoemacs-read-key-help)
            (define-key map (read-kbd-macro "C-h") 'ergoemacs-read-key-help)
            map))
@@ -502,7 +502,7 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
  :modal-color "blue"
  :modal-always t
  :keymap (let ((map (make-sparse-keymap))
-               (no-ergoemacs-advice t))
+               (ergoemacs-ignore-advice t))
            (define-key map [f1] 'ergoemacs-read-key-help)
            (define-key map (read-kbd-macro "M-h") 'ergoemacs-read-key-help)
            (define-key map (if (eq system-type 'windows-nt) [M-apps] [M-menu]) 'ergoemacs-read-key-next-key-is-quoted)
@@ -520,7 +520,7 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
  :alt ""
  :ctl "M-"
  :keymap (let ((map (make-sparse-keymap))
-               (no-ergoemacs-advice t))
+               (ergoemacs-ignore-advice t))
            (define-key map [f1] 'ergoemacs-read-key-help)
            (define-key map (read-kbd-macro "SPC") 'ergoemacs-read-key-next-key-is-quoted)
            (define-key map (read-kbd-macro "M-SPC") 'ergoemacs-read-key-next-key-is-alt-ctl)
@@ -536,7 +536,7 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
  :alt "M-S-"
  :modal-color "red"
  :keymap-modal (let ((map (make-sparse-keymap))
-                     (no-ergoemacs-advice t))
+                     (ergoemacs-ignore-advice t))
                  (define-key map (read-kbd-macro "<return>") 'ergoemacs-unchorded-alt-modal)
                  (define-key map (read-kbd-macro "RET") 'ergoemacs-unchorded-alt-modal)
                  map))
@@ -558,7 +558,7 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
            map)
  :keymap-modal
  (let ((map (make-sparse-keymap))
-       (no-ergoemacs-advice t))
+       (ergoemacs-ignore-advice t))
    (define-key map (read-kbd-macro "1") 'ergoemacs-gaia-digit-argument)
    (define-key map (read-kbd-macro "2") 'ergoemacs-gaia-digit-argument)
    (define-key map (read-kbd-macro "3") 'ergoemacs-gaia-digit-argument)
@@ -609,7 +609,7 @@ Translates C-A into C-S-a."
             (setq ret (concat (match-string 1 ret)
                               (match-string 2 ret)
                               (upcase (match-string 3 ret)))))))
-      (symbol-value 'ret))))
+      ret)))
 
 (defun ergoemacs-shift-translate-install (trans-plist ret-plist)
   "Install shift translation"
@@ -634,7 +634,7 @@ Translates C-A into C-S-a."
       (setq ret (plist-put ret name shift-translated))
       (setq ret (plist-put ret k (read-kbd-macro shift-translated t)))
       (setq ret (plist-put ret p (ergoemacs-pretty-key shift-translated))))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-translation-install (trans-plist orig-key ret-plist)
   "Installs the translation.
@@ -720,7 +720,7 @@ properties are also added:
     (setq ret (plist-put ret key (read-kbd-macro new-key t)))
     (setq ret (plist-put ret pretty (ergoemacs-pretty-key new-key)))
     (setq ret (ergoemacs-shift-translate-install trans-plist ret))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-translate (key)
   "Translates KEY and returns a plist of the translations.
@@ -849,9 +849,9 @@ and `ergoemacs-pretty-key' descriptions.
            (lambda(key plist)
              (setq ret (ergoemacs-translation-install plist orig-key ret)))
            ergoemacs-translations)
-          (puthash orig-key (symbol-value 'ret) ergoemacs-translate-hash)
-          (puthash key (symbol-value 'ret) ergoemacs-translate-hash)
-          (symbol-value 'ret)))))
+          (puthash orig-key ret ergoemacs-translate-hash)
+          (puthash key ret ergoemacs-translate-hash)
+          ret))))
 
 (defun ergoemacs-setup-translation (layout &optional base-layout)
   "Setup translation from BASE-LAYOUT to LAYOUT."
@@ -946,7 +946,7 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
       (let ((new-key (gethash `(,key ,just-translate ,only-first ,ergoemacs-translation-from ,ergoemacs-translation-to)
                               ergoemacs-kbd-hash)))
         (if new-key
-            (symbol-value 'new-key)
+            new-key
           (setq new-key key)
           (cond
            ((eq system-type 'windows-nt)
@@ -998,7 +998,7 @@ For example, on dvorak, change C-j to C-c (copy/command)."
               "[Cc]\\(?:on\\)?tro?l[+-]" "C-"
               (replace-regexp-in-string
                "[Aa]lt[+-]" "M-" pre-kbd-code))))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-key-fn-lookup (function &optional use-apps)
   "Looks up the key binding for FUNCTION based on.
@@ -1017,7 +1017,7 @@ Based on `ergoemacs-with-ergoemacs'"
        (while (and ret (not (eq (elt (nth 0 ret) 0) 'apps)))
          (pop ret)))
      (setq ret (nth 0 ret))
-     (symbol-value 'ret))))
+     ret)))
 
 (provide 'ergoemacs-translate)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

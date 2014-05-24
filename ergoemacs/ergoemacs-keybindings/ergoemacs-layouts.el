@@ -1,6 +1,6 @@
 ;;; ergoemacs-layouts.el --- keyboard layouts for ErgoEmacs 
 
-;; Copyright (C) 2013 Matthew L. Fidler
+;; Copyright (C) 2013, 2014 Free Software Foundation, Inc.
 
 ;; Maintainer: Matthew L. Fidler
 ;; Keywords: convenience
@@ -363,10 +363,10 @@
   "Get the list of all known layouts."
   (if (and ergoemacs-get-layouts-no-aliases
            (not aliases))
-      (symbol-value 'ergoemacs-get-layouts-no-aliases)
+      ergoemacs-get-layouts-no-aliases
     (if (and ergoemacs-get-layouts-aliases
              aliases)
-        (symbol-value 'ergoemacs-get-layouts-aliases)
+        ergoemacs-get-layouts-aliases
       (let (ret)
         (mapatoms
          (lambda(s)

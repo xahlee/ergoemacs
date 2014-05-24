@@ -1,6 +1,6 @@
 ;;; ergoemacs-advices.el --- advices for ErgoEmacs
 
-;; Copyright (C) 2013 Matthew L. Fidler
+;; Copyright (C) 2013, 2014  Free Software Foundation, Inc.
 
 ;; Maintainer: Matthew L. Fidler
 ;; Keywords: convenience
@@ -27,6 +27,9 @@
 ;; 
 
 ;;; Code:
+(defvar ergoemacs-advices '()
+  "List of advices to enable and disable when ergoemacs is running.")
+
 (defvar ergoemacs-dir
   (file-name-directory
    (or
@@ -35,35 +38,38 @@
   "Ergoemacs directory.")
 (add-to-list 'load-path ergoemacs-dir)
 (require 'ergoemacs-shortcuts)
+(require 'ergoemacs-unbind)
 
 (defmacro ergoemacs-define-overrides (&rest body)
   "Force the define-keys to work"
   `(let ((ergoemacs-run-mode-hooks t))
      ,@body))
 
-(defadvice add-hook (around ergoemacs-add-hook-advice (hook function &optional append  local))
+(defadvice add-hook (around ergoemacs-add-hook-advice (hook function &optional append  local) activate)
   "Advice to allow `this-command' to be set correctly before running `pre-command-hook'
 If `pre-command-hook' is used and `ergoemacs-mode' is enabled add to `ergoemacs-pre-command-hook' instead."
   (cond
-   ((and ergoemacs-mode (eq hook 'pre-command-hook)
+   ((and (boundp 'ergoemacs-mode)
+         ergoemacs-mode (eq hook 'pre-command-hook)
+         (boundp 'ergoemacs-hook-functions)
          (memq hook ergoemacs-hook-functions))
     (add-hook 'ergoemacs-pre-command-hook function append local))
    (t
     ad-do-it)))
-(ad-activate 'add-hook)
 
-(defadvice remove-hook (around ergoemacs-remove-hook-advice (hook function &optional local))
+(defadvice remove-hook (around ergoemacs-remove-hook-advice (hook function &optional local) activate)
   "Advice to allow `this-command' to be set correctly before running `pre-command-hook'.
 If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre-command-hook' instead."
   (cond
-   ((and ergoemacs-mode (eq hook 'pre-command-hook)
+   ((and (boundp 'ergoemacs-mode)
+         ergoemacs-mode (eq hook 'pre-command-hook)
+         (boundp 'ergoemacs-hook-functions)
          (memq hook ergoemacs-hook-functions))
     (remove-hook 'ergoemacs-pre-command-hook function local))
    (t
     ad-do-it)))
-(ad-activate 'remove-hook)
 
-(defadvice define-key (around ergoemacs-define-key-advice (keymap key def))
+(defadvice define-key (around ergoemacs-define-key-advice (keymap key def) activate)
   "This does the right thing when modifying `ergoemacs-keymap'.
 Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
   (let ((is-global-p (equal keymap (current-global-map))))
@@ -74,39 +80,37 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
               (new-key (read-kbd-macro
                         (format "<ergoemacs-user> %s"
                                 (key-description key)))))
-          (unwind-protect
-              (define-key keymap new-key def))))
+          (define-key keymap new-key def)))
     ad-do-it
     (when is-global-p
       (let ((vk key))
-        (ergoemacs-global-set-key-after key def)
+        (ergoemacs-global-set-key-after key)
         (unless (vectorp vk) ;; Do vector def too.
           (setq vk (read-kbd-macro (key-description key) t))
-          (ergoemacs-global-set-key-after vk def))))))
-(ad-activate 'define-key)
+          (ergoemacs-global-set-key-after vk))))))
 
 (defvar ergoemacs-global-override-rm-keys '())
 ;;; Advices enabled or disabled with ergoemacs-mode
-(defun ergoemacs-global-set-key-after (key command)
-  (if (and (boundp 'no-ergoemacs-advice) no-ergoemacs-advice) nil
+(defvar ergoemacs-ignore-advice nil)
+(defun ergoemacs-global-set-key-after (key)
+  (if ergoemacs-ignore-advice nil
     (unless (or (and (vectorp key)
                      (memq (elt key 0) '(menu-bar 27 remap)))
                 (and (not (vectorp key))
                      (string= "ESC" (key-description key))))
-      (let ((no-ergoemacs-advice t))
+      (let ((ergoemacs-ignore-advice t))
         (add-to-list 'ergoemacs-global-changed-cache (key-description key))
         (when ergoemacs-global-not-changed-cache
           (delete (key-description key) ergoemacs-global-not-changed-cache))
         (add-to-list 'ergoemacs-global-override-rm-keys key)
-        (when ergoemacs-mode
+        (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
           (ergoemacs-theme-remove-key-list (list key) t))))))
 
-(defadvice local-set-key (around ergoemacs-local-set-key-advice (key command))
+(defadvice local-set-key (around ergoemacs-local-set-key-advice (key command) activate)
   "This let you use `local-set-key' as usual when `ergoemacs-mode' is enabled."
   (if (and (fboundp 'ergoemacs-mode) ergoemacs-mode)
       (ergoemacs-local-set-key key command)
     ad-do-it))
-
 (add-to-list 'ergoemacs-advices 'ergoemacs-local-set-key-advice)
 
 (defadvice local-unset-key (around ergoemacs-local-unset-key-advice (key))
@@ -154,26 +158,22 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
      ))
 
 
-(defadvice cua-mode (around ergoemacs-activate-only-selection-mode (arg))
+(defadvice cua-mode (around ergoemacs-activate-only-selection-mode (arg) activate)
   "When `ergoemacs-mode' is enabled, enable `cua-selection-mode' instead of plain `cua-mode'."
-  (when ergoemacs-mode
+  (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
     (setq-default cua-enable-cua-keys nil))
   ad-do-it
-  (when ergoemacs-mode
+  (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
     (customize-mark-as-set 'cua-enable-cua-keys)))
 
-(ad-activate 'cua-mode)
-
-(defadvice icicle-mode (around ergoemacs-icicle-play (arg))
+(defadvice icicle-mode (around ergoemacs-icicle-play (arg) activate)
   "Allow `ergoemacs-mode' to play nicely with `icicle-mode'."
-  (let ((oee ergoemacs-mode))
+  (let ((oee (and (boundp 'ergoemacs-mode) ergoemacs-mode)))
     (when oee ;; Remove key bindings
       (ergoemacs-mode -1))
     ad-do-it
     (when oee ;; Add them back.  Now icy-mode should play nice.
       (ergoemacs-mode 1))))
-
-(ad-activate 'icicle-mode)
 
 (defcustom ergoemacs-helm-expand-user-dirs 't
   "Expand user directories under helm.
@@ -183,7 +183,7 @@ This makes helm behave more like `ido-find-file'"
 
 (eval-after-load "helm-files"
   '(progn
-    (defadvice helm-ff-auto-expand-to-home-or-root (around ergoemacs-helm-ido-user-dirs)
+     (defadvice helm-ff-auto-expand-to-home-or-root (around ergoemacs-helm-ido-user-dirs activate)
       "Allow `helm-find-files' to expand user directories.
 For example ~ergoemacs/ would expand to /usr/ergoemacs or
 whatever that points to...
@@ -193,6 +193,7 @@ This require `ergoemacs-mode' to be enabled as well as
 "
       (cond
        ((and ergoemacs-helm-expand-user-dirs
+             (boundp 'ergoemacs-mode)
              ergoemacs-mode
              (helm-file-completion-source-p)
              (string-match "/\\(~[^/]*/\\)$" helm-pattern)
@@ -208,67 +209,21 @@ This require `ergoemacs-mode' to be enabled as well as
             (helm-set-pattern input)
             (helm-check-minibuffer-input))))
        (t
-        ad-do-it)))
-    (ad-activate 'helm-ff-auto-expand-to-home-or-root)))
+        ad-do-it)))))
 
 
-(defadvice run-mode-hooks (around ergoemacs-run-hooks)
+(defadvice run-mode-hooks (around ergoemacs-run-hooks activate)
   "`ergoemacs-mode' run-hooks advice helps user define keys properly.
 This assumes any key defined while running a hook is a user-defined hook."
   (let ((ergoemacs-run-mode-hooks t))
     ad-do-it))
-(ad-activate 'run-mode-hooks)
 
-(defadvice turn-on-undo-tree-mode (around ergoemacs-undo-tree-mode)
+(defadvice turn-on-undo-tree-mode (around ergoemacs-undo-tree-mode activate)
   "Make `ergoemacs-mode' and undo-tree compatible."
   (ergoemacs-with-global
    ad-do-it))
-(ad-activate 'turn-on-undo-tree-mode)
 
 
-(defcustom ergoemacs-check-new-buffer-auto-mode 't
-  "Check `auto-mode-alist' for major mode for just created new buffer.
-If nil - use value of `major-mode'."
-  :group 'ergoemacs-mode
-  :type 'boolean)
-
-(defadvice set-buffer-major-mode (after ergoemacs-new-buffer-auto-mode activate compile)
-  "Select major mode for newly created buffer.
-Compare the `buffer-name' the entries in `auto-mode-alist'."
-  (when ergoemacs-check-new-buffer-auto-mode
-    (with-current-buffer (ad-get-arg 0)
-      (if (and (buffer-name) (not buffer-file-name))
-          (let ((name (buffer-name)) mode)
-            ;; Remove backup-suffixes from file name.
-            (setq name (file-name-sans-versions name))
-            ;; Do not handle service buffers
-            (while (and name (not (string-match "^\\*.+\\*$" name)))
-              ;; Find first matching alist entry.
-              (setq mode
-                    (if (memq system-type '(windows-nt cygwin))
-                        ;; System is case-insensitive.
-                        (let ((case-fold-search t))
-                          (assoc-default name auto-mode-alist
-                                         'string-match))
-                      ;; System is case-sensitive.
-                      (or
-                       ;; First match case-sensitively.
-                       (let ((case-fold-search nil))
-                         (assoc-default name auto-mode-alist
-                                        'string-match))
-                       ;; Fallback to case-insensitive match.
-                       (and auto-mode-case-fold
-                            (let ((case-fold-search t))
-                              (assoc-default name auto-mode-alist
-                                             'string-match))))))
-              (if (and mode
-                       (consp mode)
-                       (cadr mode))
-                  (setq mode (car mode)
-                        name (substring name 0 (match-beginning 0)))
-                (setq name nil))
-              (when mode
-                (set-auto-mode-0 mode t))))))))
 
 
 (provide 'ergoemacs-advices)

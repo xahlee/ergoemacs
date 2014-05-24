@@ -1,5 +1,7 @@
 ;;; ergoemacs-modal.el --- Modal Editing commands
-;; 
+
+;; Copyright © 2013-2014  Free Software Foundation, Inc.
+
 ;; Filename: ergoemacs-modal.el
 ;; Description:
 ;; Author: Matthew L. Fidler
@@ -42,9 +44,7 @@
 ;; General Public License for more details.
 ;; 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
@@ -246,7 +246,7 @@ If so return the hash of translation values."
              (lookup-key ergoemacs-modal-ignored-keymap
                          (or ergoemacs-single-command-keys (this-single-command-keys))))
         (setq ret nil)))
-      (symbol-value 'ret))))
+      ret)))
 
 (defun ergoemacs-modal-default (&optional arg)
   "The default command for `ergoemacs-mode' modal.
@@ -389,7 +389,7 @@ Typically function keys")
          keymap
          (type type)
          tmp
-         (no-ergoemacs-advice t))
+         (ergoemacs-ignore-advice t))
     (setq ergoemacs-emulation-mode-map-alist
           (delq x ergoemacs-emulation-mode-map-alist))
     (cond

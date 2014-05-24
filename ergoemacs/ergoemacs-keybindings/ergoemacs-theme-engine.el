@@ -1,5 +1,7 @@
 ;; ergoemacs-theme-engine.el --- Engine for ergoemacs-themes
-;;
+
+;; Copyright © 2014  Free Software Foundation, Inc.
+
 ;; Filename: ergoemacs-theme-engine.el
 ;; Description: 
 ;; Author: Matthew L. Fidler
@@ -43,9 +45,7 @@
 ;; General Public License for more details.
 ;; 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program; see the file COPYING.  If not, write to
-;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-;; Floor, Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
@@ -353,17 +353,17 @@ particular it:
     (setq ergoemacs-component-version-curr component-version)
     (push ergoemacs-component-version-curr versions)
     (unless ergoemacs-component-version-minor-mode-layout
-      (setq ergoemacs-component-version-minor-mode-layout (symbol-value 'ergoemacs-component-version-minor-mode-layout)))
+      (setq ergoemacs-component-version-minor-mode-layout ergoemacs-component-version-minor-mode-layout))
     (unless ergoemacs-component-version-fixed-layout
-      (setq ergoemacs-component-version-fixed-layout (symbol-value 'fixed-layout)))
+      (setq ergoemacs-component-version-fixed-layout fixed-layout))
     (unless ergoemacs-component-version-fixed-layout-rm
-      (setq ergoemacs-component-version-fixed-layout-rm (symbol-value 'fixed-layout-rm)))
+      (setq ergoemacs-component-version-fixed-layout-rm fixed-layout-rm))
     (unless ergoemacs-component-version-fixed-layout
-      (setq ergoemacs-component-version-variable-layout (symbol-value 'variable-layout)))
+      (setq ergoemacs-component-version-variable-layout variable-layout))
     (unless ergoemacs-component-version-fixed-layout-rm
-      (setq ergoemacs-component-version-variable-layout-rm (symbol-value 'variable-layout-rm)))
+      (setq ergoemacs-component-version-variable-layout-rm variable-layout-rm))
     (unless ergoemacs-component-version-redundant-keys
-      (setq ergoemacs-component-version-redundant-keys (symbol-value 'redundant-keys)))))
+      (setq ergoemacs-component-version-redundant-keys redundant-keys))))
 
 (defun ergoemacs-theme-component--rm-key (key)
   "Remove KEY from `ergoemacs-mode' keymaps"
@@ -607,7 +607,7 @@ When fixed-layout and variable-layout are bound"
 
 (defun ergoemacs-theme-component--ignore-globally-defined-key (key)
   "Adds KEY to `ergoemacs-global-override-rm-keys' and `ergoemacs-global-override-map' if globally redefined."
-  (let ((no-ergoemacs-advice t)
+  (let ((ergoemacs-ignore-advice t)
         (key (read-kbd-macro (key-description key) t)) lk)
     (catch 'found-global-command
       (while (>= (length key) 1)
@@ -654,7 +654,7 @@ DEF can be:
                      (ergoemacs-theme-component--define-key-in-keymaps
                       keymap keymap-shortcut key new-def)))))
          def))
-      (symbol-value 'found)))
+      found))
    ((condition-case err
         (interactive-form def)
       (error nil))
@@ -766,7 +766,7 @@ Formatted for use with `ergoemacs-theme-component-hash' it will return ::version
           (if best-version
               (setq ret (concat "::" best-version))
             (setq ret (concat "::" smallest-version))))
-        (symbol-value 'ret))
+        ret)
     ""))
 
 (defun ergoemacs-theme--install-shortcut-item (key args keymap lookup-keymap
@@ -893,7 +893,7 @@ This function does not finalize maps by installing them into the original maps.
                     (push keymap-list ret)))
                 new-ret))))
          (reverse component))
-        (symbol-value 'ret))
+        ret)
     ;; Single component
     (let ((true-component (replace-regexp-in-string ":\\(fixed\\|variable\\)" ""
                                                     (or (and (stringp component) component)
@@ -1036,14 +1036,14 @@ This function does not finalize maps by installing them into the original maps.
                    (push 'keymap composed-map)
                    (setq tmp `(,map-name ,(or (nth 1 keymap-list) (nth 1 fixed-map))
                                          ,composed-map ,full-shortcut-map-p))
-                   (symbol-value 'tmp))))
+                   tmp)))
              variable-maps))
       (mapc
        (lambda(keymap-list)
          (unless (member (nth 0 keymap-list) already-done-list)
            (push keymap-list ret)))
        fixed-maps)
-      (symbol-value 'ret))))
+      ret)))
 
 (defun ergoemacs-theme-component-keymaps (component &optional version)
   "Gets the keymaps for COMPONENT for component VERSION.
@@ -1125,7 +1125,7 @@ Returns list of: read-keymap shortcut-keymap keymap shortcut-list unbind-keymap 
           fixed-rm variable-rm
           rm-lst
           key-list
-          (no-ergoemacs-advice t)
+          (ergoemacs-ignore-advice t)
           (case-fold-search t)
           key
           trans-key input-keys
@@ -1373,19 +1373,99 @@ added to the appropriate startup hooks.
                                                         (symbol-name component)))))
       (mapc
        (lambda(hook)
-         (when (string-match "hook$" (symbol-name hook))
-           (eval (macroexpand
-                  `(defun ,(intern (concat "ergoemacs-for-" (symbol-name hook))) ()
-                     ,(format "Runs `ergoemacs-theme-hook' for `%s'" (symbol-name hook))
-                     (ergoemacs-theme-hook ',hook))))
-           (if remove-p
-               (eval
-                (macroexpand
-                 `(remove-hook ',hook ',(intern (concat "ergoemacs-for-" (symbol-name hook))))))
-             (eval
-              (macroexpand
-               `(add-hook ',hook ',(intern (concat "ergoemacs-for-" (symbol-name hook)))))))))
-       (gethash (concat true-component ":minor-list") ergoemacs-theme-component-hash)))))
+         (when (string-match "hook\\'" (symbol-name hook))
+           (fset (intern (concat "ergoemacs-for-" (symbol-name hook)))
+                 `(lambda ()
+                    ,(format "Run `ergoemacs-theme-hook' for `%s'"
+                             (symbol-name hook))
+                    (ergoemacs-theme-hook ',hook)))
+           (funcall (if remove-p #'remove-hook #'add-hook) hook
+                    (intern (concat "ergoemacs-for-" (symbol-name hook))))))
+       (gethash (concat true-component ":minor-list")
+                ergoemacs-theme-component-hash)))))
+
+(defun ergoemacs--theme-component (plist body)
+  (let ((name (plist-get plist ':name))
+       (desc (or (plist-get plist ':description) ""))
+       (layout (or (plist-get plist ':layout) "us"))
+       (ergoemacs-variable-reg (or (plist-get plist ':variable-reg)
+                                   (concat "\\(?:^\\|<\\)" (regexp-opt '("M-" "<apps>" "<menu>")))))
+       (ergoemacs-just-first-reg (or (plist-get plist ':first-is-variable-reg)
+                                     nil))
+       (versions '())
+       (component-version nil)
+       (ergoemacs-component-version-variable-layout nil)
+       (ergoemacs-component-version-variable-layout-rm nil)
+       (ergoemacs-component-version-fixed-layout nil)
+       (ergoemacs-component-version-fixed-layout-rm nil)
+       (ergoemacs-component-version-redundant-keys nil)
+       (ergoemacs-component-version-minor-mode-layout nil)
+       (ergoemacs-component-version-curr nil)
+       (ergoemacs-component-version-list '())
+       (defined-keys '())
+       (variable-layout '())
+       (variable-layout-rm '())
+       (fixed-layout '())
+       (fixed-layout-rm '())
+       (defined-commands '())
+       (minor-mode-layout '())
+       (minor-mode-hook-list '())
+       (emulation-setup '())
+       (redundant-keys '())
+       (ergoemacs-translation-from ergoemacs-translation-from)
+       (ergoemacs-translation-to ergoemacs-translation-to)
+       (ergoemacs-shifted-assoc ergoemacs-shifted-assoc)
+       (ergoemacs-needs-translation ergoemacs-needs-translation)
+       (ergoemacs-translation-assoc ergoemacs-translation-assoc)
+       (ergoemacs-translation-regexp ergoemacs-translation-regexp)
+       (case-fold-search nil)
+       (ergoemacs-theme-save-variables '()))
+    (when (ad-is-advised 'define-key)
+      ;; FIXME:
+      ;; - AFAICT, this advice is never re-enabled.
+      ;; - ad-disable-advice only marks the advice as disabled, but doesn't
+      ;;   actually disable it yet (we'd need to deactivate+reactivate the
+      ;;   advice for that).
+      (ad-disable-advice 'define-key 'around 'ergoemacs-define-key-advice))
+    (ergoemacs-setup-translation "us" layout) ; Make sure keys are
+                                             ; stored in QWERTY
+                                             ; notation.
+    (funcall body)
+    ;; Finalize version setup
+    (when ergoemacs-component-version-curr
+      (push (list ergoemacs-component-version-curr
+                 ergoemacs-component-version-fixed-layout
+                 ergoemacs-component-version-variable-layout
+                 ergoemacs-component-version-redundant-keys
+                 ergoemacs-component-version-minor-mode-layout
+                 ergoemacs-component-version-fixed-layout-rm
+                 ergoemacs-component-version-variable-layout-rm)
+           ergoemacs-component-version-list))
+    (puthash (concat name ":plist") plist ergoemacs-theme-component-hash)
+    (puthash (concat name ":fixed") fixed-layout ergoemacs-theme-component-hash)
+    (puthash (concat name ":fixed-rm") fixed-layout-rm ergoemacs-theme-component-hash)
+    (puthash (concat name ":variable") variable-layout ergoemacs-theme-component-hash)
+    (puthash (concat name ":variable-rm") variable-layout-rm ergoemacs-theme-component-hash)
+    (puthash (concat name ":version") versions ergoemacs-theme-component-hash)
+    (puthash (concat name ":redundant") redundant-keys ergoemacs-theme-component-hash)
+    (puthash (concat name ":minor") minor-mode-layout ergoemacs-theme-component-hash)
+    (puthash (concat name ":minor-list") minor-mode-hook-list ergoemacs-theme-component-hash)
+    (puthash (concat name ":emulation") emulation-setup ergoemacs-theme-component-hash)
+    (puthash (concat name ":vars") ergoemacs-theme-save-variables ergoemacs-theme-component-hash)
+    (mapc
+     (lambda(x)
+       (let ((ver (nth 0 x))
+            (fixed (nth 1 x))
+            (var (nth 2 x))
+            (red (nth 3 x))
+            (fixed-rm (nth 4 x))
+            (var-rm (nth 5 x)))
+        (puthash (concat name "::" ver ":fixed") fixed ergoemacs-theme-component-hash)
+        (puthash (concat name "::" ver ":variable") var ergoemacs-theme-component-hash)
+        (puthash (concat name "::" ver ":redundant") var ergoemacs-theme-component-hash)
+        (puthash (concat name "::" ver ":fixed-rm") fixed-rm ergoemacs-theme-component-hash)
+        (puthash (concat name "::" ver ":variable-rm") var-rm ergoemacs-theme-component-hash)))
+     ergoemacs-component-version-list)))
 
 (defmacro ergoemacs-theme-component (&rest body-and-plist)
   "A component of an ergoemacs-theme."
@@ -1445,10 +1525,10 @@ added to the appropriate startup hooks.
                      ergoemacs-component-version-variable-layout-rm)
                ergoemacs-component-version-list))
        (puthash (concat name ":plist") ',(nth 0 kb) ergoemacs-theme-component-hash)
-       (puthash (concat name ":fixed") (symbol-value 'fixed-layout) ergoemacs-theme-component-hash)
-       (puthash (concat name ":fixed-rm") (symbol-value 'fixed-layout-rm) ergoemacs-theme-component-hash)
-       (puthash (concat name ":variable") (symbol-value 'variable-layout) ergoemacs-theme-component-hash)
-       (puthash (concat name ":variable-rm") (symbol-value 'variable-layout-rm) ergoemacs-theme-component-hash)
+       (puthash (concat name ":fixed") fixed-layout ergoemacs-theme-component-hash)
+       (puthash (concat name ":fixed-rm") fixed-layout-rm ergoemacs-theme-component-hash)
+       (puthash (concat name ":variable") variable-layout ergoemacs-theme-component-hash)
+       (puthash (concat name ":variable-rm") variable-layout-rm ergoemacs-theme-component-hash)
        (puthash (concat name ":version") versions ergoemacs-theme-component-hash)
        (puthash (concat name ":redundant") redundant-keys ergoemacs-theme-component-hash)
        (puthash (concat name ":minor") minor-mode-layout ergoemacs-theme-component-hash)
@@ -1516,7 +1596,7 @@ added to the appropriate startup hooks.
              (plist-get theme-plist ':optional-on)
              (plist-get theme-plist ':components)))
     (setq versions (sort versions 'string<))
-    (symbol-value 'versions)))
+    versions))
 
 (defun ergoemacs-theme-components (theme)
   "Get a list of components used for the current theme.
@@ -1544,7 +1624,7 @@ This respects `ergoemacs-theme-options'."
              (push x components)))))
      (reverse (plist-get theme-plist ':optional-off)))
     (setq components (reverse components))
-    (symbol-value 'components)))
+    components))
 
 (defun ergoemacs-theme-make-hooks (theme &optional remove-p)
   "Creates hooks for THEME.
@@ -1932,7 +2012,7 @@ If OFF is non-nil, turn off the options instead."
              (ergoemacs-menus-on))
          (when (featurep 'ergoemacs-menus)
            (ergoemacs-menus-off))))
-     :button (:radio . (symbol-value 'ergoemacs-use-menus)))
+     :button (:radio . ergoemacs-use-menus))
     (ergoemacs-save
      menu-item "Save Settings for Future Sessions"
      (lambda ()
@@ -2015,7 +2095,7 @@ Returns list of: read-keymap shortcut-keymap keymap shortcut-list unbind-keymap 
 Uses `ergoemacs-theme-component-keymaps' and `ergoemacs-theme-components'"
   (let* ((ret (ergoemacs-theme-component-keymaps (ergoemacs-theme-components theme) version))
          (menu-keymap (make-sparse-keymap))
-         (no-ergoemacs-advice t)
+         (ergoemacs-ignore-advice t)
          prior keys)
     (push (pop ret) prior)
     (push (pop ret) prior)
@@ -2027,7 +2107,7 @@ Uses `ergoemacs-theme-component-keymaps' and `ergoemacs-theme-components'"
     (push menu-keymap keys)
     (push 'keymap keys)
     (setq ret`(,@prior ,keys ,@ret))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-theme-restore-maps (&optional no-message)
   "Restore original keymaps.
@@ -2097,10 +2177,10 @@ Returns new keymap."
                    map)
                  new-keymap))
           (push 'keymap new-keymap)
-          (symbol-value 'new-keymap))
+          new-keymap)
          (t
           (define-key new-keymap key nil)
-          (symbol-value 'new-keymap))))))
+          new-keymap)))))
 
 (defvar ergoemacs-theme-hook nil)
 (defun ergoemacs-theme-remove-key-list (list &optional no-message dont-install)
@@ -2329,7 +2409,7 @@ When SILENT is true, also include silent themes"
                     (append (gethash "defined-themes" ergoemacs-theme-hash)
                             (gethash "silent-themes" ergoemacs-theme-hash)))
                (gethash "defined-themes" ergoemacs-theme-hash))))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-get-themes-type (&optional silent)
   "Gets the customization types for `ergoemacs-theme'"

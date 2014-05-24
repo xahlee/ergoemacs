@@ -1,6 +1,6 @@
 ;;; ergoemacs-extras.el --- generate extras for ErgoEmacs
 
-;; Copyright (C) 2013 Matthew L. Fidler
+;; Copyright (C) 2013, 2014 Free Software Foundation, Inc.
 
 ;; Maintainer: Matthew L. Fidler
 ;; Keywords: convenience
@@ -587,7 +587,7 @@ function change_layout() {
       (while (re-search-forward "\\<C-" nil t)
         (replace-match (if swap-option-and-control "~" "^") nil t))
       (setq ret (buffer-string)))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-gen-mac-osx (layout &optional file-name extra swap-opiton-and-control)
   "Generates an Autohotkey Script for Ergoemacs Keybindings.
@@ -1104,7 +1104,7 @@ Files are generated in the dir 〔ergoemacs-extras〕 at `user-emacs-directory'.
       (goto-char (point-min))
       (while (re-search-forward ">\\(AA\\)<" nil t)
         (replace-match "><" t)))
-    (symbol-value 'ret)))
+    ret))
 
 (defun ergoemacs-keyfreq-calc-ergo (x list var-layout cmd-n total-n)
   "Calculate keyfreq based on ergoemacs positions."
@@ -1637,7 +1637,7 @@ IS-PREFIX tell ergoemacs if this is a prefix diagram."
       (message "Generated!"))
     (when (called-interactively-p 'interactive)
       (browse-url (concat "file://" file)))
-    (symbol-value 'file)))
+    file))
 
 ;;;###autoload
 (defun ergoemacs-svgs (&optional layouts)
