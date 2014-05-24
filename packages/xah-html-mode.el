@@ -565,7 +565,6 @@ This command does the inverse of `xhm-htmlize-precode'."
 (defvar xhm-keymap nil "Keybinding for `xah-html-mode'")
 (progn
   (setq xhm-keymap (make-sparse-keymap))
-;  (define-key xhm-keymap [remap comment-dwim] 'xhm-comment-dwim)
 ;  (define-key xhm-keymap (kbd "C-c /") 'xhm-sgml-close-tag)
 ;  (define-key xhm-keymap (kbd "C-c <delete>") 'xhm-delete-tag)
   (define-key xhm-keymap (kbd "<C-right>") 'xhm-skip-tag-forward)
@@ -795,14 +794,6 @@ this is a quick 1 min hackjob, works only when there's no nesting."
 ;; "
 ;;   (interactive)
 ;;   )
-
-(defun xhm-comment-dwim (arg)
-"Comment or uncomment current line or region in a smart way.
-For detail, see `comment-dwim'."
-   (interactive "*P")
-   (require 'newcomment)
-   (let ((deactivate-mark nil) (comment-start "<!--") (comment-end "-->"))
-     (comment-dwim arg)))
 
 (defun xhm-replace-html-&<>-to-entities ()
   "Replace HTML < > & to HTML entities.
