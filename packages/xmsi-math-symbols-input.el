@@ -1,6 +1,6 @@
 ;;; xmsi-math-symbols-input.el --- a mode to input math chars. -*- coding: utf-8 -*-
 
-;; Copyright © 2010, 2011, 2012, 2013 by Xah Lee
+;; Copyright © 2010, 2011, 2012, 2013, 2014 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
 ;; Created: 2010-12-08
@@ -51,10 +51,11 @@
 ;; To see the inline documentation, call “describe-function”, then type “xmsi-mode”.
 ;; (if you have not load the mode yet, first load it by calling “xmsi-mode”.)
 
-;; donate $3 please. Paypal to xah@xahlee.org , thanks.
+;; donate $5 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
 
+;; v1.6.1, 2014-05-25 • modified the inline doc to contain info about how to change activation key and how to add a abbrev. (call “describe-function” on “xmsi-mode”)
 ;; v1.6.0, 2014-03-10 • added wink.   「;-)」 and 「;)」 and 「wink」 → 「😉」
 ;; v1.5.9, 2013-12-14 • changed “c1” to ①, by not requiring “c”. So, now 「1」 → 「①」, and up to 20, also 「0」 → 「⓪」. Before, these number transforms to the corresponding unicode code point, and for 1 to 31 they are ASCII control chars. Number still convert to corresponding unicode code point, other than ones changed here.
 ;; v1.5.8, 2013-11-17 • added cycles (xmsi-add-cycle ["#" "♯" "№"])
@@ -104,10 +105,6 @@
 ;; v1.1, 2010-12-12 added more symbols.
 ;; v1.0, 2010-12-08 First version.
 
-;;; TODO
-;; • make the activation key customizable
-;; • make it customizable to change/add abbrevs/symbols
-
 ;;; References
 ;; 〈Math Symbols in Unicode〉 http://xahlee.info/comp/unicode_math_operators.html
 ;; 〈HTML/XML Entities (Character/Unicode/Symbol) List〉 http://xahlee.info/comp/unicode_html_entities.html
@@ -124,7 +121,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.6.0")
+(setq xmsi-version "v1.6.1")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
@@ -1228,7 +1225,6 @@ See `xmsi-mode'."
 
 (progn
   (setq xmsi-keymap (make-sparse-keymap))
-
   (define-key xmsi-keymap (kbd "S-SPC") 'xmsi-change-to-symbol)
   )
 
@@ -1299,7 +1295,7 @@ See also: `xmsi-mode'."
 (define-minor-mode xmsi-mode
   "Toggle math symbol input (minor) mode.
 
-A mode for inputting a few math and other Unicode symbols.
+A mode for inputting a math and Unicode symbols.
 
 Type “inf”, then press 【Shift+Space】, then it becomes “∞”.
 Other examples:
@@ -1338,9 +1334,14 @@ as a wildcard to find the char. For example, call
 all unicode char names that has “arrow” in it. (this feature is
 part of Emacs 23)
 
-Without argument, toggles the minor mode.
-If optional argument is 1, turn it on.
-If optional argument is 0, turn it off.
+• to change the activation key, put this in your init:
+ \(require 'xmsi-math-symbols-input)
+ \(define-key xmsi-keymap (kbd \"S-SPC\") nil) ; unset Shift+space
+ \(define-key xmsi-keymap (kbd \"<f12>\") 'xmsi-change-to-symbol)
+
+• to add a abbrev, put this in your init:
+ \(require 'xmsi-math-symbols-input)
+ \(puthash \"floral\" \"❦\" xmsi-abrvs)
 
 Home page at: URL `http://ergoemacs.org/emacs/xmsi-math-symbols-input.html'"
   nil
