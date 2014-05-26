@@ -224,11 +224,11 @@
 
 
 
-(defun xhm-get-tag-type (tagName)
-  "Return the wrap-type info of tagName in `xhm-html5-tag-names'"
+(defun xhm-get-tag-type (εtag-name)
+  "Return the wrap-type info of εtag-name in `xhm-html5-tag-names'"
   (elt
    (cdr
-    (assoc tagName xhm-html5-tag-names)
+    (assoc εtag-name xhm-html5-tag-names)
     ) 0))
 
 (defvar xhm-lang-name-map nil "a alist that maps lang name. Each element has this form 「(‹lang code› . [‹emacs major mode name› ‹file_extension›])」")
@@ -258,7 +258,7 @@
            ("haskell" . ["haskell-mode" "hs"])
            ("html" . ["html-mode" "html"])
            ("mysql" . ["sql-mode" "sql"])
-           ("xml" . ["sgml-mode"])
+           ("xml" . ["sgml-mode" "xml"])
            ("html6" . ["xah-html6-mode" "html6"])
            ("java" . ["java-mode" "java"])
            ("js" . ["js-mode" "js"])
@@ -344,12 +344,12 @@ Returns a vector [langCode pos1 pos2], where pos1 pos2 are the boundary of the t
 
  ) ))
 
-(defun xhm-get-precode-make-new-file (ξlangNameMap)
-  "Create a new file on current dir with text inside pre code block.
+(defun xhm-get-precode-make-new-file (εlangNameMap)
+  "Create a new file in current dir with text inside pre code block.
 For example, if the cursor is somewhere between the tags:
-<pre class=\"…\">…▮…</pre>
+<pre class=\"python\">print 7</pre>
 
-after calling, all a new file of name 「xx-‹random›.‹suffix›」 is created in current dir, with content from the block.
+after calling, a new file of name 「xx-‹random›.py」 is created in current dir, with content “print 7”.
 
 If there's a text selection, use that region as content."
   (interactive (list xhm-lang-name-map))
@@ -358,9 +358,10 @@ If there's a text selection, use that region as content."
         (ξlangCode (elt ξxx 0))
         (p1 (elt ξxx 1))
         (p2 (elt ξxx 2))
-        (ξyy (cdr (assoc ξlangCode ξlangNameMap)))
-        (ξfileSuffix (elt ξyy 1))
         (ξtextContent (buffer-substring-no-properties p1 p2) )
+
+        (ξyy (cdr (assoc ξlangCode εlangNameMap)))
+        (ξfileSuffix (elt ξyy 1))
         )
 
     (progn
@@ -376,16 +377,16 @@ If there's a text selection, use that region as content."
     )
   )
 
-(defun xhm-htmlize-string (ξsourceCodeStr ξmajorModeName)
-  "Take ξsourceCodeStr and return a htmlized version using major mode ξmajorModeName.
+(defun xhm-htmlize-string (εsource-code-str εmajor-mode-name)
+  "Take εsource-code-str and return a htmlized version using major mode εmajor-mode-name.
 The purpose is to syntax color source code in HTML.
 This function requires the `htmlize-buffer' from 〔htmlize.el〕 by Hrvoje Niksic."
   (interactive)
   (let (htmlizeOutputBuffer resultStr)
     ;; put code in a temp buffer, set the mode, fontify
     (with-temp-buffer
-      (insert ξsourceCodeStr)
-      (funcall (intern ξmajorModeName))
+      (insert εsource-code-str)
+      (funcall (intern εmajor-mode-name))
       (font-lock-fontify-buffer)
       (setq htmlizeOutputBuffer (htmlize-buffer))
       )
@@ -398,7 +399,7 @@ This function requires the `htmlize-buffer' from 〔htmlize.el〕 by Hrvoje Niks
     (kill-buffer htmlizeOutputBuffer)
     resultStr ) )
 
-(defun xhm-htmlize-precode (ξlangCodeMap)
+(defun xhm-htmlize-precode (εlangCodeMap)
   "Replace text enclosed by “pre” tag to htmlized code.
 For example, if the cursor is somewhere between the pre tags <pre class=\"‹langCode›\">…▮…</pre>, then after calling, the text inside the pre tag will be htmlized.  That is, wrapped with many span tags for syntax coloring.
 
@@ -415,7 +416,7 @@ This function requires the `htmlize-buffer' from 〔htmlize.el〕 by Hrvoje Niks
             (ξlangCode (elt t78730 0))
             (p1 (elt t78730 1))
             (p2 (elt t78730 2))
-            (ξmodeName (elt (cdr (assoc ξlangCode ξlangCodeMap)) 0))
+            (ξmodeName (elt (cdr (assoc ξlangCode εlangCodeMap)) 0))
             )
 
         ;; remove beginning or trailing whitespace
@@ -596,10 +597,10 @@ This command does the inverse of `xhm-htmlize-precode'."
 
 
 
-(defun xhm-tag-self-closing-p (tagName)
+(defun xhm-tag-self-closing-p (εtag-name)
   "Return true if the tag is a self-closing tag, ⁖ br."
   (interactive)
-  (member tagName  xhm-html5-self-close-tags) )
+  (member εtag-name  xhm-html5-self-close-tags) )
 
 (defun xhm-cursor-in-tag-markup-p (&optional bracketPositions)
   "Return true if cursor is inside a tag markup.
@@ -1844,20 +1845,20 @@ Case shouldn't matter, except when it's emacs's key notation.
 (defvar xhm-class-input-history nil "for input history of `xhm-wrap-html-tag'")
 (setq xhm-class-input-history (list) )
 
-(defun xhm-add-open/close-tag (tagName className p1 p2)
+(defun xhm-add-open/close-tag (εtag-name className p1 p2)
   "Add HTML open/close tags around region boundary p1 p2.
 This function does not `save-excursion'.
 "
   (let* (
         (classStr (if (or (equal className nil) (string= className "") ) "" (format " class=\"%s\"" className)))
-        (insStrLeft (format "<%s%s>" tagName classStr) )
-        (insStrRight (format "</%s>" tagName ) )
+        (insStrLeft (format "<%s%s>" εtag-name classStr) )
+        (insStrRight (format "</%s>" εtag-name ) )
         )
 
       (goto-char p1)
 
-      (if (xhm-tag-self-closing-p tagName)
-          (progn (insert (format "<%s%s />" tagName classStr) ))
+      (if (xhm-tag-self-closing-p εtag-name)
+          (progn (insert (format "<%s%s />" εtag-name classStr) ))
         (progn
           ;; (setq myText (buffer-substring-no-properties p1 p2)
           (insert insStrLeft )
@@ -1867,7 +1868,7 @@ This function does not `save-excursion'.
         )
       ) )
 
-(defun xhm-wrap-html-tag (tagName &optional className)
+(defun xhm-wrap-html-tag (εtag-name &optional className)
   "Insert/wrap HTML tag to text selection or current word/line/text-block.
 When there's not text selection, the tag will be wrapped around current word/line/text-block, depending on the tag used.
 
@@ -1885,7 +1886,7 @@ If current line or word is empty, then insert open/end tags and place cursor bet
             lineWordBlock
             )
     (progn
-      (setq lineWordBlock (xhm-get-tag-type tagName) )
+      (setq lineWordBlock (xhm-get-tag-type εtag-name) )
       (setq bds
             (cond
              ((equal lineWordBlock "w") (get-selection-or-unit 'word))
@@ -1895,16 +1896,16 @@ If current line or word is empty, then insert open/end tags and place cursor bet
              ))
       (setq p1 (elt bds 1) )
       (setq p2 (elt bds 2) )
-      (xhm-add-open/close-tag tagName className p1 p2)
+      (xhm-add-open/close-tag εtag-name className p1 p2)
 
       (when ; put cursor between when input text is empty
-          (and (equal p1 p2) (not (xhm-tag-self-closing-p tagName)))
+          (and (equal p1 p2) (not (xhm-tag-self-closing-p εtag-name)))
           (progn (search-backward "</" ) )
          )
  ) ) )
 
-(defun xhm-pre-source-code (&optional langCode)
-  "Insert/wrap a <pre class=\"‹langCode›\"> tags to text selection or current text block.
+(defun xhm-pre-source-code (&optional εlang-code)
+  "Insert/wrap a <pre class=\"‹εlang-code›\"> tags to text selection or current text block.
 "
   (interactive
    (list
@@ -1915,10 +1916,10 @@ If current line or word is empty, then insert open/end tags and place cursor bet
     (setq bds (get-selection-or-unit 'block))
     (setq p1 (elt bds 1) )
     (setq p2 (elt bds 2) )
-    (xhm-add-open/close-tag "pre" langCode p1 p2))
+    (xhm-add-open/close-tag "pre" εlang-code p1 p2))
   )
 
-(defun xhm-rename-html-inline-image (ξnewFilePath)
+(defun xhm-rename-html-inline-image (εnew-file-path)
   "Replace current HTML inline image's file name.
 
 When cursor is in HTML link file path, e.g.  <img src=\"gki/macosxlogo.png\" > and this command is called, it'll prompt user for a new name. The link path will be changed to the new name, the corresponding file will also be renamed. The operation is aborted if a name exists."
@@ -1938,13 +1939,13 @@ When cursor is in HTML link file path, e.g.  <img src=\"gki/macosxlogo.png\" > a
          ;; (setq ξffp (windows-style-path-to-unix (local-url-to-file-path ξffp)))
          )
 
-    (if (file-exists-p ξnewFilePath)
-        (progn (error "file 「%s」 exist." ξnewFilePath ))
+    (if (file-exists-p εnew-file-path)
+        (progn (error "file 「%s」 exist." εnew-file-path ))
       (progn
-        (rename-file ξffp ξnewFilePath )
-        (message "rename to %s" ξnewFilePath)
+        (rename-file ξffp εnew-file-path )
+        (message "rename to %s" εnew-file-path)
         (delete-region p1 p2)
-        (insert (xahsite-filepath-to-href-value ξnewFilePath (or (buffer-file-name) default-directory)))
+        (insert (xahsite-filepath-to-href-value εnew-file-path (or (buffer-file-name) default-directory)))
         )
       )
     ))
