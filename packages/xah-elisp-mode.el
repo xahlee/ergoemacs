@@ -211,6 +211,7 @@
 "match-string"
 "narrow-to-region"
 "point"
+"point-marker"
 "point-max"
 "point-min"
 "pop-mark"
@@ -1136,6 +1137,7 @@ elisp keywords are colored. Basically that's it.
 
   (set-syntax-table xem-syntax-table)
   (use-local-map xem-keymap)
+
   (run-mode-hooks 'xah-elisp-mode-hook)
 )
 
