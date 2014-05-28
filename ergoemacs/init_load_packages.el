@@ -111,7 +111,6 @@
 (add-to-list 'load-path
  (concat (file-name-directory (or load-file-name buffer-file-name))
                      "../packages/auto-complete/" ) )
-(require 'auto-complete-config)
 (add-to-list 'ac-dictionary-directories
  (concat (file-name-directory (or load-file-name buffer-file-name))
                      "../packages/auto-complete/dict/" ))
