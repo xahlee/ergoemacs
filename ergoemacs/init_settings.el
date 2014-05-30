@@ -252,6 +252,6 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
  ;; '(diredp-compressed-file-suffix ((t (:foreground "#7b68ee"))))
  ;; '(diredp-ignored-file-name ((t (:foreground "#aaaaaa"))))
  ;; '(isearch ((((class color) (min-colors 88) (background light)) (:background "black" :foreground "white"))))
- '(completions-common-part ((t (:inherit default :foreground "green3"))))
+ '(completions-common-part ((t (:inherit default :foreground "red"))))
  '(show-paren-match ((((class color) (background light)) (:background "azure2"))))
  )
