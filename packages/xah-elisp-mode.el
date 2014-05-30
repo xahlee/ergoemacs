@@ -287,6 +287,31 @@
 "shell-command-on-region"
 "parse-time-string"
 
+"bolp"
+"eolp"
+"eobp"
+"bobp"
+"char-after"
+"char-before"
+"following-char"
+"preceding-char"
+"get-char-property"
+
+"overlay-get"
+"overlay-put"
+"overlay-properties"
+
+"overlayp"
+"make-overlay"
+"overlay-start"
+"overlay-end"
+"overlay-buffer"
+"delete-overlay"
+"move-overlay"
+"remove-overlays"
+"copy-overlay"
+"overlay-recenter"
+
 ) )
 
 (defvar xem-keyword-builtin nil "a list of elisp  names")
