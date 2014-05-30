@@ -1149,26 +1149,28 @@
 
 
 ;; define the mode
-(define-derived-mode xah-elisp-mode fundamental-mode
+(define-derived-mode xah-elisp-mode emacs-lisp-mode
   "ξlisp"
   "A simple major mode for emacs lisp.
 
 elisp keywords are colored. Basically that's it.
 
 \\{xem-keymap}"
-  (emacs-lisp-mode)
   (setq mode-name "ξlisp")
   (setq font-lock-defaults '((xem-font-lock-keywords)))
 
   (set-syntax-table xem-syntax-table)
   (use-local-map xem-keymap)
 
+  (progn
+    ;; setup auto-complete-mode
+    (when (fboundp 'auto-complete-mode)
+      (add-to-list 'ac-modes 'xah-elisp-mode)
+      ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
+      )
+    )
+
   (run-mode-hooks 'xah-elisp-mode-hook)
 )
-
-(when (featurep 'auto-complete )
-  (add-to-list 'ac-modes 'xah-elisp-mode)
-  (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
-  )
-
+  
 (provide 'xah-elisp-mode)

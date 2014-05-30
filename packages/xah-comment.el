@@ -132,7 +132,7 @@ This command may move `point' and `match-data' etc is changed.
 This command may move `point'."
 (interactive)
   (progn
-    (while (and (xc-is-blank-line-p) (<= (point) (point-max)))
+    (while (and (xc-is-blank-line-p) (< (point) (point-max)))
       (forward-line 1) )
     (point) ))
 
