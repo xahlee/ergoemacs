@@ -32,12 +32,13 @@
 ;; for example, if a line in a file has 2 occurrences, then the same line will be reported twice, as 2 “blocks”.
 ;; so, the number of blocks corresponds exactly to the number of occurrences.
 
-;; donate $3 please. Paypal to xah@xahlee.org , thanks.
+;; donate $5 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; INSTALL
 
 ;;; HISTORY
 
+;; version 1.6.9, 2014-05-29 • turned on undo in output buffer
 ;; version 1.6.8, 2013-07-05 • More options added to “xah-find-text”, “xah-find-text-regex”, “xah-find-replace-text”. Output format improved. Much code refactoring.
 ;; version 1.6.7, 2013-06-17 • WARNING the argument for case search is reversed for xah-find-replace-text-regex. • added a case search option for xah-find-text-regex
 ;; version 1.6.6, 2012-12-16 Now, the backup file's suffix is same for all backup files created during one command call. Before, each backup file has timestamp when the backup file is created, that is, their seconds will differ.
@@ -124,7 +125,8 @@ Path Regex 「%s」
        (find-lisp-find-files εinput-dir εpath-regex))
 
       (switch-to-buffer ξoutputBuffer)
-      (hi-lock-mode 0)
+      (setq buffer-undo-list nil )
+      (hi-lock-mode 0) ; todo: major hack here. implement your own coloring
       (funcall 'fundamental-mode)
       (highlight-phrase (regexp-quote εsearch-str1) (quote hi-yellow))
       (highlight-lines-matching-regexp "^• " (quote hi-pink))
@@ -186,6 +188,7 @@ Path Regex 「%s」
        (find-lisp-find-files εinput-dir εpath-regex))
 
       (switch-to-buffer ξoutputBuffer)
+      (setq buffer-undo-list nil )
       (hi-lock-mode 0)
       (funcall 'fundamental-mode)
       (highlight-phrase εsearch-regex (quote hi-yellow))
@@ -247,6 +250,7 @@ Directory 〔%s〕
       (princ "Done.")
       )
     (switch-to-buffer ξoutputBuffer)
+    (setq buffer-undo-list nil )
     (hi-lock-mode 0)
     (funcall 'fundamental-mode)
     (progn
@@ -329,6 +333,7 @@ Directory 〔%s〕
       )
 
     (switch-to-buffer ξoutputBuffer)
+    (setq buffer-undo-list nil )
     (hi-lock-mode 0)
     (funcall 'fundamental-mode)
     (progn
@@ -373,14 +378,15 @@ Case sensitivity is determined by `case-fold-search'. Call `toggle-case-fold-sea
          )
 
     (with-output-to-temp-buffer outputBuffer
-(princ (format "-*- coding: utf-8 -*-
+      (princ (format "-*- coding: utf-8 -*-
 Date: %s
 Command “xah-find-count” result.
 Search string: 「%s」
 Count expression: 「%s %s」
 Input dir: 「%s」
 Path regex: 「%s」
-" (current-date-time-string) εsearch-str ξcountExpr ξcountNumber εinput-dir εpath-regex))
+" 
+                     (current-date-time-string) εsearch-str ξcountExpr ξcountNumber εinput-dir εpath-regex))
       (mapc
        (lambda (ξf)
          (let ((ξcount 0)
@@ -398,22 +404,17 @@ Path regex: 「%s」
                (when
                    (funcall countOperator ξcount countNumber)
                  (princ (format "• %d %s\n" ξcount ξf))
-                 )
-               )
-             )
-
-           )
-         )
+                 ) ) ) ) )
        (find-lisp-find-files εinput-dir "\\.html$"))
       (princ "Done deal!")
       )
 
     (switch-to-buffer outputBuffer)
+    (setq buffer-undo-list nil )
     (hi-lock-mode 0)
     (funcall 'fundamental-mode)
     (highlight-phrase εsearch-str (quote hi-yellow))
     (highlight-lines-matching-regexp "^• " (quote hi-pink))
-
     ))
 
 (provide 'xah_file_util)
