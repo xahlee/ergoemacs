@@ -12,16 +12,16 @@
 ;; Major mode for editing emacs lisp. Beta stage.
 ;; home page: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
-;; 2013-06-09
-;; if you use auto-complete-mode, you need to add a hook
-;; (auto-complete-mode 1)
-;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
-
 ;;; HISTORY
 
+;; version 0.3, major kinda rewrite. use at your own risk.
 ;; version 0.2.1, 2014-04-10 added keyword “remove”
 ;; version 0.2, 2014-02-18 lots more keywords, and stuff.
 ;; version 0.1, 2013-03-23 first version
+
+
+(require 'lisp-mode)
+(require 'xeu_elisp_util)
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
@@ -1093,17 +1093,20 @@
 
 ) )
 
+(defvar xem-elisp-all-keywords nil "list of all elisp keywords")
+(setq xem-elisp-all-keywords (append xem-elisp-lang-words xem-emacs-words xem-keyword-builtin xem-elisp-vars-1 xem-elisp-vars-2))
+
 
 ;; syntax coloring related
 
 (setq xem-font-lock-keywords
       (let (
-          (emacsWords (regexp-opt xem-emacs-words 'symbols) )
-          (emacsBuiltins (regexp-opt xem-keyword-builtin 'symbols) )
-          (elispLangWords (regexp-opt xem-elisp-lang-words 'symbols) )
-          (elispVars1 (regexp-opt xem-elisp-vars-1 'symbols) )
-          (elispVars2 (regexp-opt xem-elisp-vars-2 'symbols) )
-)
+            (emacsWords (regexp-opt xem-emacs-words 'symbols) )
+            (emacsBuiltins (regexp-opt xem-keyword-builtin 'symbols) )
+            (elispLangWords (regexp-opt xem-elisp-lang-words 'symbols) )
+            (elispVars1 (regexp-opt xem-elisp-vars-1 'symbols) )
+            (elispVars2 (regexp-opt xem-elisp-vars-2 'symbols) )
+            )
         `(
           (,emacsWords . font-lock-function-name-face)
           (,emacsBuiltins . font-lock-type-face)
@@ -1112,16 +1115,74 @@
           (,elispVars2 . font-lock-variable-name-face)
           ) ) )
 
-;;font-lock-comment-delimiter-face
-;;font-lock-comment-face
-;;font-lock-doc-face
-;;font-lock-negation-char-face
-;;font-lock-preprocessor-face
-;;font-lock-reference-face
-;;font-lock-string-face
-;;font-lock-type-face
-;;font-lock-variable-name-face
-;;font-lock-warning-face
+
+;; completion
+
+(defun xem-complete-symbol ()
+  "Perform keyword completion on current word.
+
+This uses `ido-mode' user interface style for completion.
+"
+  (interactive)
+  (let* (
+         (bds (unit-at-cursor 'word))
+         (currentWord (elt bds 0) )
+         (p1 (elt bds 1) )
+         (p2 (elt bds 2) )
+         finalResult)
+    (when (not currentWord) (setq currentWord ""))
+    (setq finalResult
+          (ido-completing-read "" xem-elisp-all-keywords nil nil currentWord )
+          )
+    (delete-region p1 p2)
+    (insert finalResult)
+    ))
+
+(defun xem-complete-or-indent ()
+  "Do keyword complete or indent line depending on context.
+
+If there's a text selection, do indent region. Else, if the char
+before point is letters and char after point is whitespace or
+punctuation, then do completion. Else do indent line."
+  (interactive)
+  ;; consider the char to the left or right of cursor. Each side is either empty or char.
+  ;; there are 4 cases:
+  ;; space▮space → do indent
+  ;; space▮char → do indent
+  ;; char▮space → do completion
+  ;; char▮char → do indent
+  (if (region-active-p)
+      (xem-indent-region (region-beginning) (region-end))
+    (if (and
+         (looking-at "[[:blank:][:punct:]]")
+         (looking-back "[-_a-zA-Z]")
+         )
+        (progn (xem-complete-symbol) )
+      (progn (xem-indent-line) )
+      ) ) )
+
+
+;; indent
+
+(defun xem-indent-line ()
+  "Indent lines from parent bracket to matching bracket.
+"
+  (interactive)
+  (save-excursion
+    (backward-up-list)
+    (indent-sexp)
+    )
+  )
+
+(defun xem-indent-region (p1 p2)
+  "Indent region."
+  (interactive "r")
+  (let (p3 p4)
+    (save-excursion
+      (goto-char p1)
+      (indent-sexp p2)
+      )
+    ) )
 
 
 ;; keybinding
@@ -1129,8 +1190,8 @@
 (defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
 (progn
   (setq xem-keymap (make-sparse-keymap))
-;  (define-key xem-keymap [remap comment-dwim] 'xem-comment-dwim)
-)
+  (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
+  )
 
 
 ;; syntax table
@@ -1149,18 +1210,44 @@
 
 
 ;; define the mode
-(define-derived-mode xah-elisp-mode emacs-lisp-mode
-  "ξlisp"
-  "A simple major mode for emacs lisp.
+(defun xah-elisp-mode ()
+  "A major mode for emacs lisp.
 
-elisp keywords are colored. Basically that's it.
+Emacs lisp keywords are colored.
+and other experimental features.
+Use at your own risk.
+
+eventual plan is:
+• there shall be no command to indent code, except one that reformat code semantically, not by line. preferably transparent to user as she types. Code formatting shall never be programer's concern.
+• no reliance on emacs's syntax table
+• no reliance on emacs's comment-dwim
+• no reliance on yasnippet or anything completition backend.
+• everything shall be elisp only. not rely on shell tool or lang engines. (which can be later added)
 
 \\{xem-keymap}"
+  (interactive)
+
+  (emacs-lisp-mode)
+  (kill-all-local-variables)
+
   (setq mode-name "ξlisp")
+  (setq major-mode 'xah-elisp-mode)
   (setq font-lock-defaults '((xem-font-lock-keywords)))
 
   (set-syntax-table xem-syntax-table)
   (use-local-map xem-keymap)
+
+  (setq-local comment-start ";")
+  (setq-local comment-end "")
+  ;; (setq-local comment-start-skip ";+ *")
+  ;; (setq-local comment-add 1)		;default to `;;' in comment-region
+  ;; (setq-local comment-column 1)
+
+  ; (setq-local indent-line-function 'xem-indent-line)
+  ; (setq-local indent-region-function 'xem-indent-region)
+  ; (setq-local tab-always-indent 'complete)
+
+; (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
   (progn
     ;; setup auto-complete-mode
@@ -1169,8 +1256,8 @@ elisp keywords are colored. Basically that's it.
       ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
       )
     )
-
-  (run-mode-hooks 'xah-elisp-mode-hook)
-)
   
+  (run-mode-hooks 'xah-elisp-mode-hook)
+  )
+
 (provide 'xah-elisp-mode)
