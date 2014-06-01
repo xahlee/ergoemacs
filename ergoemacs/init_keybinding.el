@@ -8,7 +8,7 @@
 (global-set-key (kbd "C-S-z") 'redo)
 
 (defun browser-nav-keys ()
-  "Add some browser styled nav keys for Info-mode.
+  "Add some browser styled navigation keys for `Info-mode'.
   The following keys are added:
  【Backspace】 for `Info-history-back'
  【Shift+Backspace】 for `Info-history-forward'."
@@ -16,7 +16,7 @@
     (local-set-key (kbd "<backspace>") 'Info-history-back)
     (local-set-key (kbd "<S-backspace>") 'Info-history-forward)
     )
-  ;; note: on Linux Firefox, you have to turn on Backspace key for previous page. In the preference. That key isn't supported in Mac's Safari neither until i think 2008 or so.
+  ;; note: on Linux Firefox, you have to turn on Backspace key for previous page. In the preference.
   )
 
 (add-hook 'Info-mode-hook 'browser-nav-keys)
