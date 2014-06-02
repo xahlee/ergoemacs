@@ -144,6 +144,14 @@
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
 (setq xem-emacs-words '(
 
+"parse-partial-sexp"
+"skip-syntax-forward"
+"skip-syntax-backward"
+"forward-comment"
+"scan-lists"
+"scan-sexps"
+"parse-partial-sexp"
+
 "add-hook"
 "autoload"
 "backward-char"
@@ -1184,14 +1192,6 @@ punctuation, then do completion. Else do indent line."
       )
     ) )
 
-
-;; keybinding
-
-(defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
-(progn
-  (setq xem-keymap (make-sparse-keymap))
-  (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
-  )
 
 
 ;; syntax table
@@ -1206,6 +1206,15 @@ punctuation, then do completion. Else do indent line."
         (modify-syntax-entry ?@ "'   " synTable)
 
         synTable))
+
+
+;; keybinding
+
+(defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
+(progn
+  (setq xem-keymap (make-sparse-keymap))
+  (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
+  )
 
 
 
