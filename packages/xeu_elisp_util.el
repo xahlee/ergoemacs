@@ -15,21 +15,21 @@
 
 ;; unit-at-cursor (unit)
 ;; get-selection-or-unit (unit)
-;; get-image-dimensions (ξfile-path)
+;; get-image-dimensions (φfile-path)
 ;; get-image-dimensions-imk (img-file-path)
 ;; get-string-from-file (filePath)
 ;; read-lines (filePath)
-;; delete-files-by-regex (ξdir regex-pattern)
-;; file-relative-name-emacs24.1.1-fix (ξfilePath ξdirPath)
+;; delete-files-by-regex (φdir regex-pattern)
+;; file-relative-name-emacs24.1.1-fix (φfilePath φdirPath)
 ;; trim-string (string)
 ;; substract-path (path1 path2)
 ;; hash-to-list (hashtable)
-;; asciify-text (ξstring &optional ξfrom ξto)
-;; title-case-string-region-or-line (ξstring &optional ξregion-boundary)
+;; asciify-text (φstring &optional φfrom φto)
+;; title-case-string-region-or-line (φstring &optional φregion-boundary)
 ;; insert-date (&optional addTimeStamp-p)
 ;; current-date-time-string ()
 ;; is-datetimestamp-p (inputString)
-;; fix-datetimestamp (ξinput-string &optional ξfrom-to)
+;; fix-datetimestamp (φinput-string &optional φfrom-to)
 
 
 ;; The most used two are “unit-at-cursor” and “get-selection-or-unit”. They are intended as improvemnt of “thing-at-point”. For detailed discussion, see:〈Emacs Lisp: get-selection-or-unit〉 @ http://ergoemacs.org/emacs/elisp_get-selection-or-unit.html
@@ -75,12 +75,12 @@
 
 ;;; Code:
 
-(defun unit-at-cursor (unit)
-  "Return the string and boundary of UNIT under cursor.
+(defun unit-at-cursor (φunit)
+  "Return the string and boundary of ΦUNIT under cursor.
 
 Returns a vector [text a b], where text is the string and a and b are its boundary.
 
-UNIT can be:
+ΦUNIT can be:
 
 • 'word — sequence of 0 to 9, A to Z, a to z, and hyphen.
 
@@ -113,7 +113,7 @@ The main differences are:
   (let (p1 p2)
     (save-excursion
         (cond
-         ( (eq unit 'word)
+         ( (eq φunit 'word)
            (let ((wordcharset "-A-Za-z0-9ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"))
              (skip-chars-backward wordcharset)
              (setq p1 (point))
@@ -121,7 +121,7 @@ The main differences are:
              (setq p2 (point)))
            )
 
-         ( (eq unit 'glyphs)
+         ( (eq φunit 'glyphs)
            (progn
              (skip-chars-backward "[:graph:]")
              (setq p1 (point))
@@ -129,18 +129,18 @@ The main differences are:
              (setq p2 (point)))
            )
 
-         ((eq unit 'buffer)
+         ((eq φunit 'buffer)
            (progn
              (setq p1 (point-min))
              (setq p2 (point-max))
              )
            )
 
-         ((eq unit 'line)
+         ((eq φunit 'line)
           (progn
             (setq p1 (line-beginning-position))
             (setq p2 (line-end-position))))
-         ((eq unit 'block)
+         ((eq φunit 'block)
           (progn
             (if (re-search-backward "\n[ \t]*\n" nil "move")
                 (progn (re-search-forward "\n[ \t]*\n")
@@ -152,7 +152,7 @@ The main differences are:
                        (setq p2 (point) ))
               (setq p2 (point) ) ) ))
 
-         ((eq unit 'filepath)
+         ((eq φunit 'filepath)
           (let (p0)
             (setq p0 (point))
             ;; chars that are likely to be delimiters of full path, e.g. space, tabs, brakets.
@@ -163,7 +163,7 @@ The main differences are:
              (setq p2 (point)))
           )
 
-         ((eq unit 'url)
+         ((eq φunit 'url)
           (let (p0
                 ;; (ξdelimitors "^ \t\n,()[]{}<>〔〕“”\"`'!$^*|\;")
                 (ξdelimitors "!\"#$%&'*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~")
@@ -176,25 +176,25 @@ The main differences are:
             (setq p2 (point)))
           )
 
-         ((vectorp unit)
+         ((vectorp φunit)
           (let (p0)
              (setq p0 (point))
-             (skip-chars-backward (elt unit 0))
+             (skip-chars-backward (elt φunit 0))
              (setq p1 (point))
              (goto-char p0)
-             (skip-chars-forward (elt unit 1))
+             (skip-chars-forward (elt φunit 1))
              (setq p2 (point))))
          ) )
 
     (vector (buffer-substring-no-properties p1 p2) p1 p2 )
     ) )
 
-(defun get-selection-or-unit (unit)
-  "Return the string and boundary of text selection or UNIT under cursor.
+(defun get-selection-or-unit (φunit)
+  "Return the string and boundary of text selection or ΦUNIT under cursor.
 
-If `region-active-p' is true, then the region is the unit.  Else,
-it depends on the UNIT. See `unit-at-cursor' for detail about
-UNIT.
+If `region-active-p' is true, then the region is the φunit.  Else,
+it depends on the ΦUNIT. See `unit-at-cursor' for detail about
+ΦUNIT.
 
 Returns a vector [text a b], where text is the string and a and b
 are its boundary.
@@ -207,21 +207,21 @@ Example usage:
       (let ((p1 (region-beginning)) (p2 (region-end)))
         (vector (buffer-substring-no-properties p1 p2) p1 p2 )
         )
-    (unit-at-cursor unit) ) )
+    (unit-at-cursor φunit) ) )
 
 
 
-(defun get-image-dimensions (ξfile-path)
+(defun get-image-dimensions (φfile-path)
   "Returns a image file's width and height as a vector.
 Support png jpg svg gif and any image type emacs supports.
  (for gif, it calls `get-image-dimensions-imk')
 Bug: for large size png, sometimes this returns a wrong dimension 30×30."
   (let (ξx ξy)
     (cond
-     ((string-match "\.gif$" ξfile-path) (get-image-dimensions-imk ξfile-path))
-     ((string-match "\.svg$" ξfile-path)
+     ((string-match "\.gif$" φfile-path) (get-image-dimensions-imk φfile-path))
+     ((string-match "\.svg$" φfile-path)
       (with-temp-buffer
-        (insert-file-contents ξfile-path)
+        (insert-file-contents φfile-path)
         (goto-char (point-min))
         (search-forward-regexp "width=\"\\([0-9]+\\).*\"")
         (setq ξx (match-string 1 ))
@@ -235,66 +235,66 @@ Bug: for large size png, sometimes this returns a wrong dimension 30×30."
             (clear-image-cache t)
             (setq ξxy (image-size
                        (create-image
-                        (if (file-name-absolute-p ξfile-path)
-                            ξfile-path
-                          (concat default-directory ξfile-path) ))
+                        (if (file-name-absolute-p φfile-path)
+                            φfile-path
+                          (concat default-directory φfile-path) ))
                        t))
             )
           (vector (car ξxy) (cdr ξxy)) )
         ) ) ))
 
-;; (defun get-image-dimensions-imk (img-file-path)
+;; (defun get-image-dimensions-imk (φimg-file-path)
 ;;   "Returns a image file's width and height as a vector.
 ;; This function requires ImageMagick's “identify” shell command.
 ;; See also: `get-image-dimensions'."
 ;;   (let (cmd-name sh-output width height)
 ;;     (setq cmd-name "identify")
-;;     (setq sh-output (shell-command-to-string (concat cmd-name " " img-file-path)))
+;;     (setq sh-output (shell-command-to-string (concat cmd-name " " φimg-file-path)))
 ;;     ;;  sample output from “identify”:  “xyz.png PNG 520x429+0+0 DirectClass 8-bit 9.1k 0.0u 0:01”
 ;;     (string-match "^[^ ]+ [^ ]+ \\([0-9]+\\)x\\([0-9]+\\)" sh-output)
 ;;     (setq width (match-string 1 sh-output))
 ;;     (setq height (match-string 2 sh-output))
 ;;     (vector (string-to-number width) (string-to-number height))))
 
-(defun get-image-dimensions-imk (img-file-path)
+(defun get-image-dimensions-imk (φimg-file-path)
   "Returns a image file's width and height as a vector.
 This function requires ImageMagick's “identify” shell command.
 See also: `get-image-dimensions'."
   (let ( widthHeightList )
-    (setq widthHeightList (split-string (shell-command-to-string (concat "identify -format \"%w %h\" " img-file-path))) )
+    (setq widthHeightList (split-string (shell-command-to-string (concat "identify -format \"%w %h\" " φimg-file-path))) )
     (vector
      (string-to-number (elt widthHeightList 0))
      (string-to-number (elt widthHeightList 1)) ) ))
 
 
-(defun get-string-from-file (filePath)
-  "Return filePath's content."
+(defun get-string-from-file (φfile-path)
+  "Return φfile-path's content."
 ;; thanks to “Pascal J Bourguignon” and “TheFlyingDutchman <zzbba...@aol.com>”. 2010-09-02
   (with-temp-buffer
-    (insert-file-contents filePath)
+    (insert-file-contents φfile-path)
     (buffer-string)))
 
-(defun read-lines (filePath)
-  "Return a list of lines of a file at filePath."
+(defun read-lines (φfile-path)
+  "Return a list of lines of a file at φfile-path."
   (with-temp-buffer
-    (insert-file-contents filePath)
+    (insert-file-contents φfile-path)
     (split-string (buffer-string) "\n" t)))
 
 
 
 ;; 2013-02-21 INCORRECT behavior.
-;(defun delete-subdirs-by-regex (ξdir regex-pattern)
-;  "Delete sub-directories in ξdir whose path matches REGEX-PATTERN."
+;(defun delete-subdirs-by-regex (φdir φregex)
+;  "Delete sub-directories in φdir whose path matches ΦREGEX."
 ;  (require 'find-lisp)
 ;  (mapc
 ;   (lambda (ξx) (when (file-directory-p ξx)
 ;;;(delete-directory ξx t)
 ;                  (print ξx)
 ;                  ))
-;   (find-lisp-find-files ξdir regex-pattern)) )
+;   (find-lisp-find-files φdir φregex)) )
 
-(defun delete-files-by-regex (ξdir regex-pattern)
-  "Delete files in a ξdir whose file name (not full path) matches a regex-pattern.
+(defun delete-files-by-regex (φdir φregex)
+  "Delete files in a φdir whose file name (not full path) matches a φregex.
  Example:
   (delete-files-by-regex \"~/web\" \"~$\") ; remove files ending in ~
 "
@@ -303,9 +303,9 @@ See also: `get-image-dimensions'."
    (lambda (ξx) (if (file-regular-p ξx)
                     (delete-file ξx)
                   ) )
-   (find-lisp-find-files ξdir regex-pattern)) )
+   (find-lisp-find-files φdir φregex)) )
 
-(defun file-relative-name-emacs24.1.1-fix (ξfilePath ξdirPath)
+(defun file-relative-name-emacs24.1.1-fix (φfile-path φdir-path)
   "fix for `file-relative-name'. If path start with cap such as “C:” (Windows file path), it won't work.
 e.g.
  (file-relative-name \"c:/Users/h3/.emacs.d/test.el\" \"c:/Users/h3/.emacs.d/\" )
@@ -313,34 +313,34 @@ e.g.
 GNU Emacs 24.1.1 (i386-mingw-nt6.1.7601) of 2012-06-10 on MARVIN
 "
   (file-relative-name
-     (replace-regexp-in-string "\\`C:/" "c:/" ξfilePath  "FIXEDCASE" "LITERAL") ξdirPath ) )
+     (replace-regexp-in-string "\\`C:/" "c:/" φfile-path  "FIXEDCASE" "LITERAL") φdir-path ) )
 
 
-(defun trim-string (string)
-  "Remove white spaces in beginning and ending of STRING.
+(defun trim-string (φstring)
+  "Remove white spaces in beginning and ending of ΦSTRING.
 White space here is any of: space, tab, emacs newline (line feed, ASCII 10).
 
 Note: in emacs GNU Emacs 24.4+ and later, there's `string-trim' function. You need to (require 'subr-x).
 "
-(replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" string))
+(replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" φstring))
 )
 
-(defun substract-path (path1 path2)
-  "Remove string path2 from the beginning of path1.
-length of path1 ≥ to length path2.
+(defun substract-path (φpath1 φpath2)
+  "Remove string φpath2 from the beginning of φpath1.
+length of φpath1 ≥ to length φpath2.
 
 ⁖  (substract-path \"c:/Users/lisa/web/a/b\" \"c:/Users/lisa/web/\") ⇒ \"a/b\"
 This is the roughly the same as emacs 24.4's `string-remove-prefix'.
  (require 'subr-x)
  (string-remove-prefix  \"c:/Users/lisa/web/\" \"c:/Users/lisa/web/a/b\" )
 "
-  (let ((p2length (length path2)))
-    (if (string= (substring path1 0 p2length) path2 )
-        (substring path1 p2length)
-      (error "error 34689: beginning doesn't match: 「%s」 「%s」" path1 path2) ) ) )
+  (let ((p2length (length φpath2)))
+    (if (string= (substring φpath1 0 p2length) φpath2 )
+        (substring φpath1 p2length)
+      (error "error 34689: beginning doesn't match: 「%s」 「%s」" φpath1 φpath2) ) ) )
 
-(defun hash-to-list (hashtable)
-  "Return a list that represent the hashtable.
+(defun hash-to-list (φhashtable)
+  "Return a list that represent the φhashtable.
 Each element is a list: (list key value).
 
 See also, emacs 24.4's new functions.
@@ -349,12 +349,12 @@ See also, emacs 24.4's new functions.
  `hash-table-values'
 "
   (let (mylist)
-    (maphash (lambda (kk vv) (setq mylist (cons (list kk vv) mylist))) hashtable)
+    (maphash (lambda (kk vv) (setq mylist (cons (list kk vv) mylist))) φhashtable)
     mylist))
 
 
 
-(defun asciify-text (ξstring &optional ξfrom ξto)
+(defun asciify-text (φstring &optional φfrom ξto)
 "Change some Unicode characters into equivalent ASCII ones.
 For example, “passé” becomes “passe”.
 
@@ -362,7 +362,7 @@ This function works on chars in European languages, and does not transcode arbit
 
 When called interactively, work on text selection or current block.
 
-When called in lisp code, if ξfrom is nil, returns a changed string, else, change text in the region between positions ξfrom ξto."
+When called in lisp code, if φfrom is nil, returns a changed string, else, change text in the region between positions φfrom ξto."
   (interactive
    (if (region-active-p)
        (list nil (region-beginning) (region-end))
@@ -388,11 +388,11 @@ When called in lisp code, if ξfrom is nil, returns a changed string, else, chan
                         ["æ" "ae"]
                         ])
         )
-    (setq workOnStringP (if ξfrom nil t))
-    (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
+    (setq workOnStringP (if φfrom nil t))
+    (setq inputStr (if workOnStringP φstring (buffer-substring-no-properties φfrom ξto)))
     (if workOnStringP
         (let ((case-fold-search t)) (replace-regexp-pairs-in-string inputStr charChangeMap) )
-      (let ((case-fold-search t)) (replace-regexp-pairs-region ξfrom ξto charChangeMap) )) ) )
+      (let ((case-fold-search t)) (replace-regexp-pairs-region φfrom ξto charChangeMap) )) ) )
 
 ;; (defun asciify-text-iconv ()
 ;; "Convert STRING to ASCII string.
@@ -413,12 +413,12 @@ When called in lisp code, if ξfrom is nil, returns a changed string, else, chan
 ;;     (call-process-region (point-min) (point-max) "iconv" t t nil "--to-code=ASCII//TRANSLIT")
 ;;     (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun title-case-string-region-or-line (ξstring &optional ξregion-boundary)
+(defun title-case-string-region-or-line (φstring &optional φregion-boundary)
   "Capitalize the current line or text selection, following title conventions.
 
 Capitalize first letter of each word, except words like {to, of, the, a, in, or, and, …}. If a word already contains cap letters such as HTTP, URL, they are left as is.
 
-When called in a elisp program, if ξregion-boundary is nil, returns the changed ξstring, else, work on the region. ξregion-boundary is a pair [from to], it can be a vector or list."
+When called in a elisp program, if φregion-boundary is nil, returns the changed φstring, else, work on the region. φregion-boundary is a pair [from to], it can be a vector or list."
   (interactive
    (let ((bds (get-selection-or-unit 'line)))
      (list nil (vector (elt bds 1) (elt bds 2)) ) ) )
@@ -446,15 +446,15 @@ When called in a elisp program, if ξregion-boundary is nil, returns the changed
                     [" With " " with "]
                     [" From " " from "]
                     ))
-        (workOnStringP (if ξregion-boundary nil t ) )
-        (p1 (elt ξregion-boundary 0))
-        (p2 (elt ξregion-boundary 1))
+        (workOnStringP (if φregion-boundary nil t ) )
+        (p1 (elt φregion-boundary 0))
+        (p2 (elt φregion-boundary 1))
         )
 
     (let ((case-fold-search nil))
       (if workOnStringP
           (progn
-            (replace-pairs-in-string-recursive (upcase-initials ξstring) strPairs)
+            (replace-pairs-in-string-recursive (upcase-initials φstring) strPairs)
             )
         (progn
           (save-restriction
@@ -471,7 +471,7 @@ When called in a elisp program, if ξregion-boundary is nil, returns the changed
 
 (defvar weekday-names '("Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday" "Sunday") "list of English weekday full names.")
 
-(defun insert-date (&optional addTimeStamp-p)
+(defun insert-date (&optional φadd-time-stamp-p)
   "Insert current date and or time.
 
 • In this format yyyy-mm-dd.
@@ -482,7 +482,7 @@ See also `current-date-time-string'."
   (interactive "P")
   (when (region-active-p) (delete-region (region-beginning) (region-end) ) )
   (cond
-   ((equal addTimeStamp-p nil ) (insert (format-time-string "%Y-%m-%d")))
+   ((equal φadd-time-stamp-p nil ) (insert (format-time-string "%Y-%m-%d")))
    (t (insert (current-date-time-string))) ) )
 
 (defun current-date-time-string ()
@@ -495,28 +495,28 @@ Note, for the time zone offset, both the formats 「hhmm」 and 「hh:mm」 are 
    ((lambda (ξx) (format "%s:%s" (substring ξx 0 3) (substring ξx 3 5))) (format-time-string "%z")) )
   )
 
-(defun is-datetimestamp-p (inputString)
-  "Return t if inputString is a date/time stamp, else nil.
+(defun is-datetimestamp-p (φinput-string)
+  "Return t if φinput-string is a date/time stamp, else nil.
 This is based on heuristic, so it's not 100% correct.
 If the string contains any month names, weekday names, or of the form dddd-dd-dd, dddd-dd-dddd, dddd-dd-dd, or using slash, then it's considered a date.
 "
   (cond
-         ((string-match (regexp-opt (append month-full-names month-abbrev-names weekday-names) 'words) inputString) t)
+         ((string-match (regexp-opt (append month-full-names month-abbrev-names weekday-names) 'words) φinput-string) t)
          ;; mm/dd/yyyy
-         ((string-match "\\b[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\\b" φinput-string) t)
          ;; yyyy/mm/dd
-         ((string-match "\\b[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]\\b" φinput-string) t)
          ;; mm/dd/yy
-         ((string-match "\\b[0-9][0-9]/[0-9][0-9]/[0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9]/[0-9][0-9]/[0-9][0-9]\\b" φinput-string) t)
          ;; mm-dd-yyyy
-         ((string-match "\\b[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]\\b" φinput-string) t)
          ;; yyyy-mm-dd
-         ((string-match "\\b[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\b" φinput-string) t)
          ;; mm-dd-yy
-         ((string-match "\\b[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\b" inputString) t)
+         ((string-match "\\b[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\b" φinput-string) t)
          (t nil) ))
 
-(defun fix-datetimestamp (ξinput-string &optional ξfrom-to)
+(defun fix-datetimestamp (φinput-string &optional φfrom-to)
   "Change timestamp under cursor into a yyyy-mm-dd format.
 If there's a text selection, use that as input, else use current line.
 
@@ -528,8 +528,8 @@ For example:
  「11/28/1994」                     ⇒ 「1994-11-28」
  「1994/11/28」                     ⇒ 「1994-11-28」
 
-When called in lisp program, the optional second argument “ξfrom-to” is a vector [from to] of region boundary. (it can also be a list)
-If “ξfrom-to” is non-nil, the region is taken as input (and “ξinput-string” is ignored).
+When called in lisp program, the optional second argument “φfrom-to” is a vector [from to] of region boundary. (it can also be a list)
+If “φfrom-to” is non-nil, the region is taken as input (and “φinput-string” is ignored).
 
 Code detail: URL `http://ergoemacs.org/emacs/elisp_parse_time.html'"
   (interactive
@@ -540,8 +540,8 @@ Code detail: URL `http://ergoemacs.org/emacs/elisp_parse_time.html'"
      )
    )
   (let (
-        (ξstr (if ξfrom-to (buffer-substring-no-properties (elt ξfrom-to 0) (elt ξfrom-to 1) ) ξinput-string))
-        (workOnRegionP (if ξfrom-to t nil)))
+        (ξstr (if φfrom-to (buffer-substring-no-properties (elt φfrom-to 0) (elt φfrom-to 1) ) φinput-string))
+        (workOnRegionP (if φfrom-to t nil)))
     (require 'parse-time)
 
     (setq ξstr (replace-regexp-in-string "^ *\\(.+\\) *$" "\\1" ξstr)) ; remove white spaces
@@ -617,7 +617,7 @@ Code detail: URL `http://ergoemacs.org/emacs/elisp_parse_time.html'"
                 (concat ξyyyy "-" ξmm "-" ξdd) ) ) ) ) )
 
     (if workOnRegionP
-        (progn (delete-region  (elt ξfrom-to 0) (elt ξfrom-to 1) )
+        (progn (delete-region  (elt φfrom-to 0) (elt φfrom-to 1) )
                (insert ξstr) )
       ξstr ) ))
 
