@@ -150,7 +150,7 @@
 "forward-comment"
 "scan-lists"
 "scan-sexps"
-"parse-partial-sexp"
+"syntax-ppss"
 
 "add-hook"
 "autoload"
@@ -734,6 +734,8 @@
 (defvar xem-elisp-vars-2 nil "a list elisp variables names")
 (setq xem-elisp-vars-2 '(
 
+"multibyte-syntax-as-symbol"
+
 "font-lock-builtin-face"
 "font-lock-comment-delimiter-face"
 "font-lock-comment-face"
@@ -850,6 +852,7 @@
 "paragraph-start"
 "parens-require-spaces"
 "parse-sexp-ignore-comments"
+"parse-sexp-lookup-properties"
 "password-cache"
 "password-cache-expiry"
 "polling-period"
@@ -980,22 +983,6 @@
 "temp-buffer-show-function"
 "temporary-file-directory"
 "term-file-prefix"
-"tex-alt-dvi-print-command"
-"tex-bibtex-command"
-"tex-close-quote"
-"tex-default-mode"
-"tex-directory"
-"tex-dvi-print-command"
-"tex-dvi-view-command"
-"tex-first-line-header-regexp"
-"tex-main-file"
-"tex-offer-save"
-"tex-open-quote"
-"tex-run-command"
-"tex-shell-file-name"
-"tex-show-queue-command"
-"tex-start-commands"
-"tex-start-options"
 "texinfo-close-quote"
 "texinfo-open-quote"
 "text-mode-hook"
@@ -1162,12 +1149,16 @@ punctuation, then do completion. Else do indent line."
   (if (region-active-p)
       (xem-indent-region (region-beginning) (region-end))
     (if (and
-         (looking-at "[[:blank:][:punct:]]")
+         (looking-at "[\n[:blank:][:punct:]]")
          (looking-back "[-_a-zA-Z]")
          )
-        (progn (xem-complete-symbol) )
-      (progn (xem-indent-line) )
-      ) ) )
+        (progn (message "doing complete") ; debug
+               (xem-complete-symbol) 
+               )
+      (progn
+        (message "doing indent") ; debug
+        (xem-indent-line) 
+        ) ) ) )
 
 
 ;; indent
@@ -1194,18 +1185,18 @@ punctuation, then do completion. Else do indent line."
 
 
 
-;; syntax table
-(defvar xem-syntax-table nil "Syntax table for `xah-elisp-mode'.")
-(setq xem-syntax-table
-      (let ((synTable (make-syntax-table)))
-        (modify-syntax-entry ?\; "< b" synTable)
-        (modify-syntax-entry ?\n "> b" synTable)
-        (modify-syntax-entry ?` "'   " synTable)
-        (modify-syntax-entry ?' "'   " synTable)
-        (modify-syntax-entry ?, "'   " synTable)
-        (modify-syntax-entry ?@ "'   " synTable)
+;; ;; syntax table
+;; (defvar xem-syntax-table nil "Syntax table for `xah-elisp-mode'.")
+;; (setq xem-syntax-table
+;;       (let ((synTable (make-syntax-table)))
+;;         (modify-syntax-entry ?\; "<" synTable)
+;;         (modify-syntax-entry ?\n ">" synTable)
+;;         (modify-syntax-entry ?` "'   " synTable)
+;;         (modify-syntax-entry ?' "'   " synTable)
+;;         (modify-syntax-entry ?, "'   " synTable)
+;;         (modify-syntax-entry ?@ "'   " synTable)
 
-        synTable))
+;;         synTable))
 
 
 ;; keybinding
@@ -1216,6 +1207,97 @@ punctuation, then do completion. Else do indent line."
   (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
   )
 
+
+
+(define-abbrev-table 'xem-abbrev-table '(
+
+ ;; single letter name has abbrev start with 8
+ ("8d" "defun")
+ ("8i" "insert")
+ ("8l" "let")
+ ("8m" "message")
+ ("8p" "point")
+ ("8s" "setq")
+ ("8v" "vector")
+ ("8w" "when")
+
+ ("ah" "add-hook")
+ ("bc" "backward-char")
+ ("bfn" "buffer-file-name")
+ ("bmp" "buffer-modified-p")
+ ("bol" "beginning-of-line")
+ ("botap" "bounds-of-thing-at-point")
+ ("bs" "buffer-substring")
+ ("bsnp" "buffer-substring-no-properties")
+ ("ca" "custom-autoload")
+ ("cb" "current-buffer")
+ ("cc" "condition-case")
+ ("cd" "copy-directory")
+ ("cdr" "cdr")
+ ("cf" "copy-file")
+ ("dc" "delete-char")
+ ("dd" "delete-directory")
+ ("df" "delete-file")
+ ("dk" "define-key")
+ ("dr" "delete-region")
+ ("efn" "expand-file-name")
+ ("eol" "end-of-line")
+ ("fc" "forward-char")
+ ("ff" "find-file")
+ ("fl" "forward-line")
+ ("fnd" "file-name-directory")
+ ("fne" "file-name-extension")
+ ("fnn" "file-name-nondirectory")
+ ("fnse" "file-name-sans-extension")
+ ("frn" "file-relative-name")
+ ("gc" "goto-char")
+ ("gnb" "generate-new-buffer")
+ ("gsk" "global-set-key")
+ ("ifc" "insert-file-contents")
+ ("kb" "kill-buffer")
+ ("la" "looking-at")
+ ("lbp" "line-beginning-position")
+ ("lep" "line-end-position")
+ ("mb" "match-beginning")
+ ("md" "make-directory")
+ ("me" "match-end")
+ ("mlv" "make-local-variable")
+ ("ms" "match-string")
+ ("nts" "number-to-string")
+ ("ntr" "narrow-to-region")
+ ("pm" "point-max")
+ ("rap" "region-active-p")
+ ("rb" "region-beginning")
+ ("re" "region-end")
+ ("rf" "rename-file")
+ ("rm" "replace-match")
+ ("rq" "regexp-quote")
+ ("rr" "replace-regexp")
+ ("rris" "replace-regexp-in-string")
+ ("rsb" "re-search-backward")
+ ("rsf" "re-search-forward")
+ ("sb" "set-buffer")
+ ("sbr" "search-backward-regexp")
+ ("sc" "shell-command")
+ ("scb" "skip-chars-backward")
+ ("scf" "skip-chars-forward")
+ ("se" "save-excursion")
+ ("sf" "search-forward")
+ ("sfm" "set-file-modes")
+ ("sfr" "search-forward-regexp")
+ ("sm" "string-match")
+ ("sr" "save-restriction")
+ ("ss" "split-string")
+ ("stn" "string-to-number")
+ ("str" "string")
+ ("tap" "thing-at-point")
+ ("wcb" "with-current-buffer")
+ ("wg" "widget-get")
+ ("yonp" "yes-or-no-p")
+ )
+
+"abbrev table for `xah-elisp-mode'"
+  )
 
 
 ;; define the mode
@@ -1236,30 +1318,32 @@ eventual plan is:
 \\{xem-keymap}"
   (interactive)
 
-  (emacs-lisp-mode)
+;; (emacs-lisp-mode)
   (kill-all-local-variables)
 
   (setq mode-name "ξlisp")
   (setq major-mode 'xah-elisp-mode)
   (setq font-lock-defaults '((xem-font-lock-keywords)))
 
-  (set-syntax-table xem-syntax-table)
+  (set-syntax-table emacs-lisp-mode-syntax-table)
   (use-local-map xem-keymap)
+  (setq local-abbrev-table xem-abbrev-table)
+  (setq abbrev-mode t)
 
   (setq-local comment-start ";")
   (setq-local comment-end "")
-  ;; (setq-local comment-start-skip ";+ *")
-  ;; (setq-local comment-add 1)		;default to `;;' in comment-region
-  ;; (setq-local comment-column 1)
+  (setq-local comment-start-skip ";+ *")
+  (setq-local comment-add 1) ;default to `;;' in comment-region
+  (setq-local comment-column 1)
 
-  ; (setq-local indent-line-function 'xem-indent-line)
-  ; (setq-local indent-region-function 'xem-indent-region)
-  ; (setq-local tab-always-indent 'complete)
+ ; (setq-local indent-line-function 'xem-indent-line)
+ ; (setq-local indent-region-function 'xem-indent-region)
+ ; (setq-local tab-always-indent 'complete)
 
-; (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
+ ; (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
   (progn
-    ;; setup auto-complete-mode
+  ;; setup auto-complete-mode
     (when (fboundp 'auto-complete-mode)
       (add-to-list 'ac-modes 'xah-elisp-mode)
       ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
