@@ -323,7 +323,12 @@
 "overlays-in"
 "next-overlay-change"
 "previous-overlay-change"
-
+"redraw-frame"
+"selected-frame"
+"set-window-margins"
+"variable-pitch-mode"
+"window-body-width"
+"window-margins"
 
 ) )
 
@@ -1209,7 +1214,7 @@ punctuation, then do completion. Else do indent line."
 (defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
 (progn
   (setq xem-keymap (make-sparse-keymap))
-  (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
+  ;; (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
   )
 
 
@@ -1307,7 +1312,7 @@ punctuation, then do completion. Else do indent line."
 
 ;; define the mode
 (defun xah-elisp-mode ()
-  "A major mode for emacs lisp.
+    "A major mode for emacs lisp.
 
 Emacs lisp keywords are colored.
 and other experimental features.
@@ -1321,7 +1326,7 @@ eventual plan is:
 • everything shall be elisp only. not rely on shell tool or lang engines. (which can be later added)
 
 \\{xem-keymap}"
-  (interactive)
+    (interactive)
 
 ;; (emacs-lisp-mode)
   (kill-all-local-variables)
@@ -1341,11 +1346,11 @@ eventual plan is:
   (setq-local comment-add 1) ;default to `;;' in comment-region
   (setq-local comment-column 1)
 
- ; (setq-local indent-line-function 'xem-indent-line)
- ; (setq-local indent-region-function 'xem-indent-region)
- ; (setq-local tab-always-indent 'complete)
+  (setq-local indent-line-function 'lisp-indent-line)
+  ;; (setq-local indent-region-function 'xem-indent-region)
+  (setq-local tab-always-indent 'complete)
 
- ; (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
+  (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
   (progn
   ;; setup auto-complete-mode
