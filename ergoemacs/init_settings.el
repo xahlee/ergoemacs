@@ -97,8 +97,11 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
   (progn
     (setq inhibit-startup-screen t)
     (if (string= (buffer-name) "*scratch*")
-        (ergoemacs-new-empty-buffer))
-    ))
+        (let ((buf (generate-new-buffer "untitled")))
+          (switch-to-buffer buf)
+          (funcall (and initial-major-mode))
+          (setq buffer-offer-save t))
+        ) ))
 
 (add-hook 'after-init-hook 'desktop-settings-setup "APPEND")
 (add-hook 'after-init-hook 'hide-init-buffers "APPEND")
