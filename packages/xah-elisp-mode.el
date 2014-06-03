@@ -319,10 +319,15 @@
 "remove-overlays"
 "copy-overlay"
 "overlay-recenter"
+"overlays-at"
+"overlays-in"
+"next-overlay-change"
+"previous-overlay-change"
+
 
 ) )
 
-(defvar xem-keyword-builtin nil "a list of elisp  names")
+(defvar xem-keyword-builtin nil "a list of elisp names")
 (setq xem-keyword-builtin '( "&optional") )
 
 (defvar xem-elisp-vars-1 nil "a list elisp variables names")
