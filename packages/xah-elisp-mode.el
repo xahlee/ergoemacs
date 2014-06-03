@@ -152,6 +152,8 @@
 "scan-sexps"
 "syntax-ppss"
 
+"set-default"
+
 "add-hook"
 "autoload"
 "backward-char"
@@ -329,6 +331,23 @@
 "variable-pitch-mode"
 "window-body-width"
 "window-margins"
+"set-fontset-font"
+"font-family-list"
+
+;; need to break out of keywords that are user commands
+"electric-indent-mode"
+"electric-layout-mode"
+"electric-pair-mode"
+"electric-indent-local-mode"
+"subword-mode"
+"prettify-symbols-mode"
+"linum-mode"
+"eval-buffer"
+"eval-region"
+"eval-defun"
+"eval-expression"
+"eval-last-sexp"
+"complete-symbol"
 
 ) )
 
@@ -512,9 +531,6 @@
 "edebug-all-defs"
 "edebug-all-forms"
 "eldoc-minor-mode-string"
-"electric-indent-mode"
-"electric-layout-mode"
-"electric-pair-mode"
 "emacs-lisp-docstring-fill-column"
 "emacs-lisp-mode-hook"
 "emacs-major-version"
