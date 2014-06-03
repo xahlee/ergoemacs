@@ -25,13 +25,13 @@
 
 (random t) ; set seed
 
-(defun xah-insert-random-hex (πcount)
-  "Insert πcount random hexidecimal digits.
-πcount default to 8"
+(defun xah-insert-random-hex (φcount)
+  "Insert φcount random hexidecimal digits.
+φcount default to 8"
   (interactive "P")
   (let* ((myCharset "0123456789abcdef" )
         (possibleCharsCount (length myCharset)))
-    (dotimes (ii (if (numberp πcount) (abs πcount) 8 ))
+    (dotimes (ii (if (numberp φcount) (abs φcount) 8 ))
       (insert (elt myCharset (random possibleCharsCount))) ) ))
 
 (defun xah-insert-random-string ()
@@ -43,40 +43,40 @@ The possible chars are 0 to 9, and a to z (lower case)."
     (dotimes (ii 5)
       (insert (elt myCharset (random possibleCharsCount))) ) ) )
 
-;; by Christopher Wellons, 2011-11-18. Editted by Xah Lee.
-;; Edited by Hideki Saito further to generate all valid variants for "N" in xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx format.
 (defun xah-insert-random-uuid ()
   "Insert a UUID. This uses a simple hashing of variable data.
 Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
 "
+;; by Christopher Wellons, 2011-11-18. Editted by Xah Lee.
+;; Edited by Hideki Saito further to generate all valid variants for "N" in xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx format.
   (interactive)
   (let ((myStr (md5 (format "%s%s%s%s%s%s%s%s%s%s"
-                (user-uid)
-                (emacs-pid)
-                (system-name)
-                (user-full-name)
-                (current-time)
-                (emacs-uptime)
-                (garbage-collect)
-                (buffer-string)
-                (random)
-                (recent-keys)))))
+                            (user-uid)
+                            (emacs-pid)
+                            (system-name)
+                            (user-full-name)
+                            (current-time)
+                            (emacs-uptime)
+                            (garbage-collect)
+                            (buffer-string)
+                            (random)
+                            (recent-keys)))))
 
     (insert (format "%s-%s-4%s-%s%s-%s"
                     (substring myStr 0 8)
                     (substring myStr 8 12)
                     (substring myStr 13 16)
-            (format "%x" (+ 8 (random 4)))
+                    (format "%x" (+ 8 (random 4)))
                     (substring myStr 17 20)
                     (substring myStr 20 32)))))
 
-(defun xah-insert-random-number (πcount)
-  "Insert πcount of random digits.
-πcount default to 5"
+(defun xah-insert-random-number (φcount)
+  "Insert φcount of random digits.
+φcount default to 5"
   (interactive "P")
   (let (myCharset (possibleCharsCount 10))
     (setq myCharset "1234567890" )
-    (dotimes (ii (if (numberp πcount) (abs πcount) 5 ))
+    (dotimes (ii (if (numberp φcount) (abs φcount) 5 ))
       (insert (elt myCharset (random possibleCharsCount))) ) ) )
 
 (provide 'xah-insert-random-id)
