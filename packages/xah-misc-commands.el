@@ -130,7 +130,7 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 
     ) )
 
-;; (defun xah-convert-chinese-numeral (p1 p2 &optional ε-to-direction)
+;; (defun xah-convert-chinese-numeral (p1 p2 &optional φ-to-direction)
 ;;   "Replace punctuation from/to Chinese/English numeral.
 
 ;; When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
@@ -141,7 +141,7 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 ;;  C-u 1 → to English
 ;;  C-u 2 → to Chinese
 
-;; When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
+;; When called in lisp code, p1 p2 are region begin/end positions. φ-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
 ;; See also: `xah-remove-punctuation-trailing-redundant-space'."
 ;;   (interactive
@@ -184,17 +184,17 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 
 ;;     (replace-pairs-region p1 p2
 ;;                               (cond
-;;                                ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
-;;                                ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-;;                                ((string= ε-to-direction "auto")
+;;                                ((string= φ-to-direction "chinese") ξ-english-chinese-punctuation-map)
+;;                                ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+;;                                ((string= φ-to-direction "auto")
 ;;                                 (if (string-match ",\\|. " inputStr)
 ;;                                   ξ-english-chinese-punctuation-map
 ;;                                   (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map)
 ;;                                   ))
 
-;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) ) ) )
+;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction)) ) ) ) )
 
-(defun xah-convert-english-chinese-punctuation (p1 p2 &optional ε-to-direction)
+(defun xah-convert-english-chinese-punctuation (p1 p2 &optional φ-to-direction)
   "Convert punctuation from/to English/Chinese Unicode symbols.
 
 When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
@@ -206,7 +206,7 @@ If `universal-argument' is called:
  C-u 1 → to English
  C-u 2 → to Chinese
 
-When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
+When called in lisp code, p1 p2 are region begin/end positions. φ-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
 See also: `xah-remove-punctuation-trailing-redundant-space'."
   (interactive
@@ -239,7 +239,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           ]
          ))
 
-    (when (string= ε-to-direction "auto")
+    (when (string= φ-to-direction "auto")
       (if 
           (or (string-match "。" inputStr)
               (string-match "，" inputStr)
@@ -251,16 +251,16 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           ;;     (string-match "? " inputStr)
           ;;     (string-match ". " inputStr)
           ;;     )
-          (setq ε-to-direction "english")
-        (setq ε-to-direction "chinese")
+          (setq φ-to-direction "english")
+        (setq φ-to-direction "chinese")
         ))
 
     (replace-pairs-region
      p1 p2
      (cond
-      ((string= ε-to-direction "chinese") ξ-english-chinese-punctuation-map)
-      ((string= ε-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-      (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) )
+      ((string= φ-to-direction "chinese") ξ-english-chinese-punctuation-map)
+      ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction)) )
      ) ) )
 
 (defun xah-convert-asian/ascii-space (p1 p2)
@@ -288,17 +288,17 @@ See also `xah-convert-english-chinese-punctuation'
     )
   )
 
-(defun xah-remove-punctuation-trailing-redundant-space (p1 p2)
+(defun xah-remove-punctuation-trailing-redundant-space (φp1 φp2)
   "Remove redundant whitespace after punctuation.
 Works on current block or text selection.
 
-When called in emacs lisp code, the p1 p2 are cursor positions for region.
+When called in emacs lisp code, the φp1 φp2 are cursor positions for region.
 
 See also `xah-convert-english-chinese-punctuation'."
   (interactive
    (let ( (bds (get-selection-or-unit 'block)))
      (list (elt bds 1) (elt bds 2) ) ) )
-  (replace-regexp-pairs-region p1 p2
+  (replace-regexp-pairs-region φp1 φp2
                                [
                                 ;; clean up. Remove extra space.
                                 [" +," ","]
@@ -318,7 +318,7 @@ See also `xah-convert-english-chinese-punctuation'."
                                 ]
                                "FIXEDCASE" "LITERAL") )
 
-(defun xah-convert-fullwidth-chars (p1 p2 &optional ε-to-direction)
+(defun xah-convert-fullwidth-chars (φp1 φp2 &optional φ-to-direction)
   "Convert ASCII chars to/from Unicode fullwidth version.
 
 When called interactively, do text selection or text block (paragraph).
@@ -332,7 +332,7 @@ If `universal-argument' is called:
  C-u 1 → to ASCII
  C-u 2 → to Unicode
 
-When called in lisp code, p1 p2 are region begin/end positions. ε-to-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
+When called in lisp code, φp1 φp2 are region begin/end positions. φ-to-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
 
 See also: `xah-remove-punctuation-trailing-redundant-space'."
   (interactive
@@ -367,17 +367,17 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
 
 ;(message "before %s" stateBefore)
 ;(message "after %s" stateAfter)
-;(message "ε-to-direction %s" ε-to-direction)
+;(message "φ-to-direction %s" φ-to-direction)
 ;(message "real-this-command  %s" this-command)
 ;(message "real-last-command %s" last-command)
 
 (let ((case-fold-search nil))
  (replace-pairs-region
- p1 p2
+ φp1 φp2
  (cond
-  ((string= ε-to-direction "unicode") ξ-ascii-unicode-map)
-  ((string= ε-to-direction "ascii") ξ-reverse-map)
-  ((string= ε-to-direction "auto")
+  ((string= φ-to-direction "unicode") ξ-ascii-unicode-map)
+  ((string= φ-to-direction "ascii") ξ-reverse-map)
+  ((string= φ-to-direction "auto")
    (if (equal this-command last-command)
        (if (eq stateBefore 0)
            ξ-ascii-unicode-map
@@ -385,12 +385,12 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
          )
      ξ-ascii-unicode-map
      ))
-      (t (user-error "Your 3rd argument 「%s」 isn't valid" ε-to-direction)) ) )
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction)) ) )
 )
 (put 'xah-convert-fullwidth-chars 'state stateAfter)
  ) )
 
-(defun xah-convert-latin-alphabet-gothic (p1 p2 reverse-direction-p)
+(defun xah-convert-latin-alphabet-gothic (φp1 φp2 φreverse-direction-p)
   "Replace English alphabets to Unicode gothic characters.
 For example, A ⇒ 𝔄, a ⇒ 𝔞.
 
@@ -398,7 +398,7 @@ When called interactively, work on current text block or text selection. (a “t
 
 If any `universal-argument' is given, reverse direction.
 
-When called in elisp, the p1 and p2 are region begin/end positions to work on."
+When called in elisp, the φp1 and φp2 are region begin/end positions to work on."
   (interactive
    (let ((bds (get-selection-or-unit 'block)) )
      (list (elt bds 1) (elt bds 2) current-prefix-arg )) )
@@ -411,13 +411,13 @@ When called in elisp, the p1 and p2 are region begin/end positions to work on."
         useMap
         )
 
-    (if reverse-direction-p
+    (if φreverse-direction-p
         (progn (setq useMap gothic-to-latin))
       (progn (setq useMap latin-to-gothic))
       )
     (save-excursion
       (let ((case-fold-search nil))
-        (replace-pairs-region p1 p2 useMap ) ) ) ) )
+        (replace-pairs-region φp1 φp2 useMap ) ) ) ) )
 
 (defvar xah-bracketsList nil "a list of bracket pairs. ⁖ () {} [] “” ‘’ ‹› «» 「」 『』 ….")
 (setq xah-bracketsList '( "()" "{}" "[]" "<>" "“”" "‘’" "‹›" "«»" "「」" "『』" "【】" "〖〗" "〈〉" "《》" "〔〕" "⦅⦆" "〚〛" "⦃⦄"
@@ -425,7 +425,7 @@ When called in elisp, the p1 and p2 are region begin/end positions to work on."
 "⟦⟧" "⟨⟩" "⟪⟫" "⟮⟯" "⟬⟭" "❛❜" "❝❞" "❨❩" "❪❫" "❴❵" "❬❭" "❮❯" "❰❱"
 ))
 
-(defun xah-remove-quotes-or-brackets (bracketType)
+(defun xah-remove-quotes-or-brackets (φbracketType)
   "Remove quotes/brackets
 Works on current block or text selection.
 "
@@ -438,17 +438,17 @@ Works on current block or text selection.
          )
     (replace-regexp-pairs-region p1 p2
                                  (vector
-                                  (vector (substring bracketType 0 1) "")
-                                  (vector (substring bracketType 1 2) "")
+                                  (vector (substring φbracketType 0 1) "")
+                                  (vector (substring φbracketType 1 2) "")
                                   )
                                  "FIXEDCASE" "LITERAL")
     ) )
 
-(defun xah-change-bracket-pairs (fromType toType)
+(defun xah-change-bracket-pairs (φfromType φtoType)
   "Change bracket pairs from one type to another on text selection or text block.
 For example, change all parenthesis () to square brackets [].
 
-When called in lisp program, fromType and toType is a string of a bracket pair. ⁖ \"()\", likewise for toType."
+When called in lisp program, φfromType and φtoType is a string of a bracket pair. ⁖ \"()\", likewise for φtoType."
   (interactive
    (let ( )
      (list
@@ -459,8 +459,8 @@ When called in lisp program, fromType and toType is a string of a bracket pair. 
          (p1 (elt bds 1))
          (p2 (elt bds 2))
          (changePairs (vector
-                 (vector (char-to-string (elt fromType 0)) (char-to-string (elt toType 0)))
-                 (vector (char-to-string (elt fromType 1)) (char-to-string (elt toType 1)))
+                 (vector (char-to-string (elt φfromType 0)) (char-to-string (elt φtoType 0)))
+                 (vector (char-to-string (elt φfromType 1)) (char-to-string (elt φtoType 1)))
                  ))
          )
     (replace-pairs-region p1 p2 changePairs) ) )
