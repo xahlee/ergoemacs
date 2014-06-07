@@ -1707,6 +1707,7 @@ Case shouldn't matter, except when it's emacs's key notation.
          (replaceList [
                        ;; case in find string shouldn't matter.
                        ["ctrl" "<kbd>Ctrl</kbd>"]
+                       ["control" "<kbd>Ctrl</kbd>"]
                        ["altgr" "<kbd>AltGr</kbd>"]
                        ["compose" "<kbd>⎄ Compose</kbd>"]
                        ["alt" "<kbd>Alt</kbd>"]
