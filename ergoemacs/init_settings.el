@@ -132,11 +132,19 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 ;; Alt+y is not cua-repeat-replace-region
 ;; (define-key cua--cua-keys-keymap [(meta v)] 'nil)
 
+;; interactive name completion for describe-function, describe-variable, execute-extended-command, etc.
+(icomplete-mode 1)
+
+;; make icomplete prettier
+(setq icomplete-separator "\n")
+(setq icomplete-prospects-height 3)
+(setq icomplete-hide-common-prefix nil)
+(setq icomplete-in-buffer t)
+
 ;; make buffer switch command do suggestions
 (ido-mode 1)
-
-;; interactive name completion for describe-function, describe-variable, etc.
-(icomplete-mode 1)
+(setq ido-separator "\n")
+(setq ido-enable-flex-matching t)
 
 ;; display line numbers at margin
 (global-linum-mode 1)
