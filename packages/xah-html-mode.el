@@ -289,6 +289,8 @@
            ("sass" . ["sass-mode" "sass"])
            ("scss" . ["css-mode" "css"])
 
+           ("vimrc" . ["vimrc-mode" "vim"])
+
            ) )
 
 ;(defvar xhm-lang-name-list nil "a alist that maps lang name. Each element has this form 「(‹lang code› . [‹emacs major mode name› ‹file_extension›])」")

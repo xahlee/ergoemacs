@@ -1,4 +1,4 @@
-;;; xahk-mode.el --- Major mode for editing AHK (AutoHotkey) scripts. -*- coding: utf-8 -*-
+;;; xahk-mode.el --- Major mode for editing AutoHotkey scripts. -*- coding: utf-8 -*-
 
 ;; Copyright © 2008, 2009, 2010, 2011, 2012 by Xah Lee
 

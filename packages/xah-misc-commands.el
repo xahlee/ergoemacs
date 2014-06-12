@@ -33,11 +33,50 @@
 (require 'xfrp_find_replace_pairs)
 (require 'xeu_elisp_util)
 
+(defun xah-cycle-hyphen-underscore-space ()
+  "Cyclically replace {underscore, space, hypen} chars on current word or text selection.
+When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters."
+  (interactive)
+  ;; this function sets a property 「'state」. Possible values are 0 to length of charArray.
+  (let (inputText bds charArray p1 p2 currentState nextState changeFrom
+                 changeTo startedWithRegion-p )
+    (if (region-active-p)
+        (setq startedWithRegion-p t )
+      (setq startedWithRegion-p nil ) )
+
+    (setq bds (get-selection-or-unit 'glyphs))
+    (setq inputText (elt bds 0) p1 (elt bds 1) p2 (elt bds 2)  )
+
+    (setq charArray [" " "_" "-"])
+
+    ;; when called first time, set state to 0
+    (setq currentState
+          (if (equal last-command this-command )
+            (get 'xah-cycle-hyphen-underscore-space 'state)
+            0 )
+          )
+
+      (setq nextState (% (+ currentState 1) (length charArray)))
+      (setq changeFrom (elt charArray currentState ))
+      (setq changeTo (elt charArray nextState ))
+
+    (setq inputText (replace-regexp-in-string changeFrom changeTo (buffer-substring-no-properties p1 p2)) )
+    (delete-region p1 p2)
+    (insert inputText)
+
+    (when (or (string= changeTo " ") startedWithRegion-p)
+      (goto-char p2)
+      (set-mark p1)
+      (setq deactivate-mark nil) )
+
+    (put 'xah-cycle-hyphen-underscore-space 'state nextState)
+
+    ) )
+
 (defun xah-cycle-camel-style-case ()
   "Cyclically replace {camelStyle, camel_style} current word or text selection.
 actually, currently just change from camel to underscore. no cycle
-Note: this command is currently unstable.
-"
+WARNING: this command is currently unstable."
   (interactive)
   ;; this function sets a property 「'state」. Possible values are 0 to length of char_array.
   (let (input_text
@@ -88,46 +127,6 @@ Note: this command is currently unstable.
       )
 
     (put 'xah-cycle-camel-style-case 'state next_state)
-    ) )
-
-(defun xah-cycle-hyphen-underscore-space ()
-  "Cyclically replace {underscore, space, hypen} chars on current word or text selection.
-When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters."
-  (interactive)
-  ;; this function sets a property 「'state」. Possible values are 0 to length of charArray.
-  (let (inputText bds charArray p1 p2 currentState nextState changeFrom
-                 changeTo startedWithRegion-p )
-    (if (region-active-p)
-        (setq startedWithRegion-p t )
-      (setq startedWithRegion-p nil ) )
-
-    (setq bds (get-selection-or-unit 'glyphs))
-    (setq inputText (elt bds 0) p1 (elt bds 1) p2 (elt bds 2)  )
-
-    (setq charArray [" " "_" "-"])
-
-    ;; when called first time, set statet to 0
-    (setq currentState
-          (if (equal last-command this-command )
-            (get 'xah-cycle-hyphen-underscore-space 'state)
-            0 )
-          )
-
-      (setq nextState (% (+ currentState 1) (length charArray)))
-      (setq changeFrom (elt charArray currentState ))
-      (setq changeTo (elt charArray nextState ))
-
-    (setq inputText (replace-regexp-in-string changeFrom changeTo (buffer-substring-no-properties p1 p2)) )
-    (delete-region p1 p2)
-    (insert inputText)
-
-    (when (or (string= changeTo " ") startedWithRegion-p)
-      (goto-char p2)
-      (set-mark p1)
-      (setq deactivate-mark nil) )
-
-    (put 'xah-cycle-hyphen-underscore-space 'state nextState)
-
     ) )
 
 ;; (defun xah-convert-chinese-numeral (p1 p2 &optional φ-to-direction)

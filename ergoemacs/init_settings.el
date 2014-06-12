@@ -242,7 +242,7 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 
 ;; (progn
 ;; ;; use cperl-mode instead of perl-mode
-;; ;; 2013-05-13 turn off for now. seems too hairy, colorin is better but doesn't color some simple variable 「$xxxx」.
+;; ;; 2013-05-13 turn off for now. seems too hairy, coloring is better but doesn't color some simple variable 「$xxxx」.
 ;;   (setq auto-mode-alist (rassq-delete-all 'perl-mode auto-mode-alist))
 ;;   (add-to-list 'auto-mode-alist '("\\.\\(p\\([lm]\\)\\)\\'" . cperl-mode))
 ;;   (setq interpreter-mode-alist (rassq-delete-all 'perl-mode interpreter-mode-alist))

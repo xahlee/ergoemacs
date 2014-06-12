@@ -10,7 +10,7 @@
 ;;; DESCRIPTION
 
 ;; this package provides convenient commands for looking up the web.
-;; The exposed functions are:
+;; The commands are:
 
 ;; lookup-word-on-internet
 ;; lookup-google
@@ -19,7 +19,6 @@
 ;; lookup-word-definition
 ;; lookup-answers.com
 ;; lookup-wiktionary
-
 
 ;;; REQUIREMENT
 
@@ -154,7 +153,7 @@ See also `lookup-word-on-internet'."
   "Lookup current word or text selection in URL `http://answers.com/'.
 See also `lookup-word-on-internet'."
   (interactive)
-  (let ((dictUrl "http://www.answers.com/main/ntquery?s=�" 
+  (let ((dictUrl "http://www.answers.com/main/ntquery?s=�"
 ) )
     (lookup-word-on-internet input-word dictUrl) ) )
 
@@ -173,7 +172,5 @@ The dictionaries used are in `all-dictionaries'.
 See also `lookup-word-on-internet'."
   (interactive)
   (mapc (lambda (dictUrl) (lookup-word-on-internet input-word dictUrl)) all-dictionaries) )
-
-
 
 (provide 'lookup-word-on-internet)

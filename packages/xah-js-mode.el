@@ -1,4 +1,4 @@
-;;; xah-js-mode.el --- Major mode for editing emacs lisp. -*- coding: utf-8 -*-
+;;; xah-js-mode.el --- Major mode for editing JavaScript. -*- coding: utf-8 -*-
 
 ;; Copyright © 2013 by Xah Lee
 
