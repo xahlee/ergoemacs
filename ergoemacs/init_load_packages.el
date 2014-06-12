@@ -78,6 +78,10 @@
 ;;; enhanced “directory viewer”/“file manager” (diredplus mode)
 (require 'dired+)
 
+;;; enhanced execute-extended-command
+(require 'smex)
+(smex-initialize)
+
 ;; a user interface library used by auto-complete
 (add-to-list 'load-path
  (concat (file-name-directory (or load-file-name buffer-file-name)) 
