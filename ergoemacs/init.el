@@ -26,6 +26,7 @@
 (load "init_load_packages")
 (load "init_version")
 (load "init_functions")
+(load "init_settings_basics.el")
 (load "init_settings")
 (load "init_aliases")
 (load "init_abbrevs-lisp-mode")
