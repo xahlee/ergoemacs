@@ -119,7 +119,20 @@
 "yield"
 
 ;; --------------------
-"charCodeAt"
+
+"toString"
+
+"create"
+"getPrototypeOf"
+"isPrototypeOf"
+"defineProperty"
+"value"
+
+"prototype"
+
+"getOwnPropertyNames"
+"hasOwnProperty"
+
 "apply"
 "arguments"
 "getBoundingClientRect"
@@ -127,28 +140,10 @@
 "firstChild"
 "nodeValue"
 
- "length"
-
-"forEach"
+"length"
 
 "Math.floor"
 
-"console.log"
-"document.createElement"
-"innerHTML"
-"hasChildNodes"
-"lastChild"
-"removeChild"
-"document"
-
-"parentNode"
-"appendChild"
-
-"String.fromCodePoint"
-"toString"
-"style"
-"setAttribute"
-"createTextNode"
 
 ) )
 
@@ -174,7 +169,7 @@
 "sort"
 "splice"
 "toLocalString"
-"toString"
+
 "unshift"
 ) )
 
@@ -198,17 +193,33 @@
 "toLocaleLowerCase"
 "charAt"
 "charCodeAt"
-"toString"
+
 "toValueOf"
 "localeCompare"
 ) )
 
 (defvar xjs-dom-words nil "a list of keywords more or less related to emacs system.")
 (setq xjs-dom-words '(
+
+"style"
+"setAttribute"
+"createTextNode"
+
 "addEventListener"
 "removeEventListener"
-"document.getElementById"
-"document.getElementsByTagName"
+"getElementById"
+"getElementsByTagName"
+
+"console.log"
+"createElement"
+"innerHTML"
+"hasChildNodes"
+"lastChild"
+"removeChild"
+"document"
+
+"parentNode"
+"appendChild"
 ) )
 
 (defvar xjs-keyword-builtin nil "a list of js  names")
@@ -226,7 +237,7 @@
 (setq xjs-font-lock-keywords
       (let (
           (domWords (regexp-opt xjs-dom-words 'symbols) )
-          (emacsBuiltins (regexp-opt xjs-keyword-builtin 'symbols) )
+          (jsBuildins (regexp-opt xjs-keyword-builtin 'symbols) )
           (jsLangWords (regexp-opt xjs-js-lang-words 'symbols) )
           (jsVars1 (regexp-opt xjs-js-vars-1 'symbols) )
           (jsArrayMethods (regexp-opt xjs-js-array-methods 'symbols) )
@@ -235,7 +246,7 @@
 )
         `(
           (,domWords . font-lock-function-name-face)
-          (,emacsBuiltins . font-lock-type-face)
+          (,jsBuildins . font-lock-type-face)
           (,jsLangWords . font-lock-keyword-face)
           (,jsArrayMethods . font-lock-keyword-face)
           (,jsStrMethods . font-lock-keyword-face)
