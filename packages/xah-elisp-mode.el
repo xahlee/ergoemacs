@@ -1236,7 +1236,7 @@ punctuation, then do completion. Else do indent line."
   "Move cursor to the beginning of outer-most bracket."
   (interactive)
   (let ((i 0))
-      (while 
+      (while
           (and (not (eq (nth 0 (syntax-ppss (point))) 0) )
                (< i 20)
  )
@@ -1265,27 +1265,25 @@ punctuation, then do completion. Else do indent line."
     ) )
 
 (defun xem-compact-parens ()
-  "Removing whitespaces in ending repetition of parenthesises.
-Removes whitespace from cursor point to end of code block (that is, 2 or more blank lines.).
-if there's a text selection, act on the region.
+  "Remove whitespaces in ending repetition of parenthesises.
+If there's a text selection, act on the region, else, on defun block.
 Warning: This command does not preserve texts inside double quotes (strings) or in comments."
   (interactive)
   (let (p1 p2)
     (if (region-active-p)
         (setq p1 (region-beginning) p2 (region-end))
       (save-excursion
-        (setq p1 (point) )
-        (search-forward-regexp "\n\n" nil t)
-        (setq p2 (point))
-        ))
-    (save-excursion 
-      (save-restriction 
+        (beginning-of-defun)
+        (setq p1 (point))
+        (end-of-defun)
+        (setq p2 (point))))
+    (save-excursion
+      (save-restriction
         (narrow-to-region p1 p2)
         (goto-char (point-min))
         (while (search-forward-regexp ")[ \t\n]+)" nil t) (replace-match "))"))
         (goto-char (point-min))
-        (while (search-forward-regexp ")[ \t\n]+)" nil t) (replace-match "))"))
-        ))))
+        (while (search-forward-regexp ")[ \t\n]+)" nil t) (replace-match "))"))))))
 
 
 ;; ;; syntax table
@@ -1307,9 +1305,13 @@ Warning: This command does not preserve texts inside double quotes (strings) or 
 (defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
 (progn
   (setq xem-keymap (make-sparse-keymap))
-  (define-key xem-keymap (kbd "C-c C-7")  'xem-complete-or-indent)
-  (define-key xem-keymap (kbd "C-c C-8") 'xem-compact-parens)
-  (define-key xem-keymap (kbd "C-c C-9")  'xem-complete-symbol)
+  (define-key xem-keymap (kbd "C-c C-<tab>")  'xem-complete-or-indent)
+  (define-key xem-keymap (kbd "C-c C-t") 'xem-compact-parens)
+  (define-key xem-keymap (kbd "C-c C-u")  'xem-complete-symbol)
+
+  (define-key xem-keymap (kbd "<menu> e <tab>")  'xem-complete-or-indent)
+  (define-key xem-keymap (kbd "<menu> e t")  'xem-compact-parens)
+  (define-key xem-keymap (kbd "<menu> e u")  'xem-complete-symbol)
   )
 
 

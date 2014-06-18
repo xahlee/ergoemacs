@@ -17,11 +17,20 @@
 ;; version 0.2, 2013-12-25 added array methods and string method highlighting
 ;; version 0.1, 2013-08-21 first version
 
+;; TODO
+;; rid of calling js-mode
+;; make sure the comment works
+;; create complete syntax table
+;; add new faces
+;; separate diff types of keywords to use diff face
+;; add completion
+;; add indentation
+;; add support for autocomplete
+
 (defvar xah-js-mode-hook nil "Standard hook for `xah-js-mode'")
 
-(defvar xjs-js-lang-words nil "a list of JavaScript keywords.")
-(setq xjs-js-lang-words '(
-
+(defvar xjs-keyword-builtin nil "a list of js  names")
+(setq xjs-keyword-builtin '(
 "break"
 "case"
 "catch"
@@ -31,7 +40,6 @@
 "delete"
 "do"
 "else"
-"false"
 "finally"
 "for"
 "function"
@@ -39,21 +47,29 @@
 "in"
 "instanceof"
 "new"
-"null"
 "return"
 "switch"
 "this"
 "throw"
-"true"
 "try"
 "typeof"
 "var"
 "void"
 "while"
-"with"
+"with") )
+
+(defvar xjs-js-lang-words nil "a list of JavaScript keywords.")
+(setq xjs-js-lang-words '(
+
+"call"
+"isExtensible"
+"preventExtensions"
+"getOwnPropertyDescriptor"
+"isSealed"
+"isFrozen"
+"freeze"
 
 "substring"
-"undefined"
 
 "Array"
 "Boolean"
@@ -61,10 +77,7 @@
 "Error"
 "EvalError"
 "Function"
-"Infinity"
 "JSON"
-"Math"
-"NaN"
 "Number"
 "Object"
 "RangeError"
@@ -118,6 +131,12 @@
 "volatile"
 "yield"
 
+"alert"
+
+"writable"
+"enumerable"
+"configurable"
+
 ;; --------------------
 
 "toString"
@@ -135,15 +154,11 @@
 
 "apply"
 "arguments"
-"getBoundingClientRect"
-"indexOf"
-"firstChild"
-"nodeValue"
 
+"constructor"
 "length"
 
-"Math.floor"
-
+"JSON.stringify"
 
 ) )
 
@@ -198,7 +213,47 @@
 "localeCompare"
 ) )
 
-(defvar xjs-dom-words nil "a list of keywords more or less related to emacs system.")
+(defvar xjs-js-math-methods nil "a list of JavaScript Math methods.")
+(setq xjs-js-math-methods '(
+"Math.abs"
+"Math.acos"
+"Math.acosh"
+"Math.asin"
+"Math.asinh"
+"Math.atan"
+"Math.atanh"
+"Math.atan2"
+"Math.cbrt"
+"Math.ceil"
+"Math.clz32"
+"Math.cos"
+"Math.cosh"
+"Math.exp"
+"Math.expm1"
+"Math.floor"
+"Math.fround"
+"Math.hypot"
+"Math.imul"
+"Math.log"
+"Math.log1p"
+"Math.log10"
+"Math.log2"
+"Math.max"
+"Math.min"
+"Math.pow"
+"Math.random"
+"Math.round"
+"Math.sign"
+"Math.sin"
+"Math.sinh"
+"Math.sqrt"
+"Math.tan"
+"Math.tanh"
+"Math.toSource"
+"Math.trunc"
+) )
+
+(defvar xjs-dom-words nil "a list of keywords from DOM or browser.")
 (setq xjs-dom-words '(
 
 "style"
@@ -209,22 +264,42 @@
 "removeEventListener"
 "getElementById"
 "getElementsByTagName"
+"getElementsByClassName"
+
+"onmouseover"
 
 "console.log"
 "createElement"
 "innerHTML"
 "hasChildNodes"
+"firstChild"
 "lastChild"
 "removeChild"
 "document"
 
 "parentNode"
 "appendChild"
+
+"getBoundingClientRect"
+"nodeValue"
 ) )
 
-(defvar xjs-keyword-builtin nil "a list of js  names")
-(setq xjs-keyword-builtin '(
-
+(defvar xjs-constants nil "a list of constants")
+(setq xjs-constants '(
+"NaN"
+"Infinity"
+"null"
+"undefined"
+"true"
+"false"
+"Math.E"
+"Math.LN2"
+"Math.LN10"
+"Math.LOG2E"
+"Math.LOG10E"
+"Math.PI"
+"Math.SQRT1_2"
+"Math.SQRT2"
 ) )
 
 (defvar xjs-js-vars-1 nil "a list js variables names")
@@ -236,33 +311,41 @@
 
 (setq xjs-font-lock-keywords
       (let (
+          (jsMathMethods (regexp-opt xjs-js-math-methods 'symbols) )
           (domWords (regexp-opt xjs-dom-words 'symbols) )
           (jsBuildins (regexp-opt xjs-keyword-builtin 'symbols) )
           (jsLangWords (regexp-opt xjs-js-lang-words 'symbols) )
           (jsVars1 (regexp-opt xjs-js-vars-1 'symbols) )
           (jsArrayMethods (regexp-opt xjs-js-array-methods 'symbols) )
           (jsStrMethods (regexp-opt xjs-js-str-methods 'symbols) )
-
-)
+          (jsConstants (regexp-opt xjs-constants 'symbols) )
+          )
         `(
+          (,jsMathMethods . font-lock-type-face)
+          (,jsConstants . font-lock-constant-face)
           (,domWords . font-lock-function-name-face)
-          (,jsBuildins . font-lock-type-face)
+          (,jsBuildins . font-lock-keyword-face)
           (,jsLangWords . font-lock-keyword-face)
           (,jsArrayMethods . font-lock-keyword-face)
           (,jsStrMethods . font-lock-keyword-face)
           (,jsVars1 . font-lock-variable-name-face)
           ) ) )
 
-;;font-lock-comment-delimiter-face
-;;font-lock-comment-face
-;;font-lock-doc-face
-;;font-lock-negation-char-face
-;;font-lock-preprocessor-face
-;;font-lock-reference-face
-;;font-lock-string-face
-;;font-lock-type-face
-;;font-lock-variable-name-face
-;;font-lock-warning-face
+;; fontfont-lock-builtin-face
+;; font-lock-comment-delimiter-face
+;; font-lock-comment-face
+;; font-lock-constant-face
+;; font-lock-doc-face
+;; font-lock-function-name-face
+;; font-lock-keyword-face
+;; font-lock-negation-char-face
+;; font-lock-preprocessor-face
+;; font-lock-reference-face
+;; font-lock-string-face
+;; font-lock-syntactic-face-function
+;; font-lock-type-face
+;; font-lock-variable-name-face
+;; font-lock-warning-face
 
 
 ;; keybinding
@@ -275,47 +358,116 @@
 
 
 ;; syntax table
+
 (defvar xjs-syntax-table nil "Syntax table for `xah-js-mode'.")
 
- ;; (setq xjs-syntax-table
- ;;       (let ((synTable (make-syntax-table)))
- ;;   (modify-syntax-entry ?\/ ". 12b" synTable)
- ;;   (modify-syntax-entry ?\n "> b" synTable)
- ;;         synTable))
-
-(require 'cc-mode)
-
 (setq xjs-syntax-table
-     (let ((synTable (make-syntax-table)))
-       (c-populate-syntax-table synTable) ; todo: rid of dependence
-       (modify-syntax-entry ?$ "_" synTable)
-       synTable))
+      (let ((synTable (make-syntax-table)))
+        (modify-syntax-entry ?\n "> b" synTable)
+
+        ;; complete printable ascii
+        (modify-syntax-entry ?\! "." synTable)
+        (modify-syntax-entry ?\" "\"" synTable)
+        (modify-syntax-entry ?\# "." synTable)
+        (modify-syntax-entry ?\$ "." synTable)
+        (modify-syntax-entry ?\% "." synTable)
+        (modify-syntax-entry ?\& "." synTable)
+        (modify-syntax-entry ?\' "." synTable)
+        (modify-syntax-entry ?\( "()" synTable)
+        (modify-syntax-entry ?\) ")(" synTable)
+        (modify-syntax-entry ?\* "." synTable)
+        (modify-syntax-entry ?\+ "." synTable)
+        (modify-syntax-entry ?\, "." synTable)
+        (modify-syntax-entry ?\- "." synTable)
+        (modify-syntax-entry ?\. "." synTable)
+        (modify-syntax-entry ?\/ ". 12b" synTable)
+        (modify-syntax-entry '(?0 . ?9) "w" synTable)
+        (modify-syntax-entry ?\: "." synTable)
+        (modify-syntax-entry ?\; "." synTable)
+        (modify-syntax-entry ?\< "." synTable)
+        (modify-syntax-entry ?\= "." synTable)
+        (modify-syntax-entry ?\> "." synTable)
+        (modify-syntax-entry ?\? "." synTable)
+        (modify-syntax-entry ?\@ "." synTable)
+        (modify-syntax-entry '(?A . ?Z) "w" synTable)
+        (modify-syntax-entry ?\[ "(]" synTable)
+        (modify-syntax-entry ?\\ "\\" synTable)
+        (modify-syntax-entry ?\] ")[" synTable)
+        (modify-syntax-entry ?^ "." synTable) ; can't use blackslash, because it became control
+        (modify-syntax-entry ?\_ "_" synTable)
+        (modify-syntax-entry ?\` "." synTable)
+        (modify-syntax-entry '(?a . ?z) "w" synTable)
+        (modify-syntax-entry ?\{ "(}" synTable)
+        (modify-syntax-entry ?\| "." synTable)
+        (modify-syntax-entry ?\} "){" synTable)
+        (modify-syntax-entry ?\~ "." synTable)
+
+        synTable))
+
+
+;; indent
+
+(defun xjs-complete-or-indent ()
+  ""
+  (interactive)
+  nil)
+
+(defun xjs-indent-region ()
+  ""
+  (interactive)
+  nil)
+
+(defun xjs-complete-symbol-ido ()
+  ""
+  (interactive)
+  nil)
+
+
 
 
 
 ;; define the mode
-(define-derived-mode xah-js-mode fundamental-mode
-  "ξXJS"
-  "A simple major mode for JavaScript.
-
-JavaScript keywords are colored. Basically that's it.
+(defun xah-js-mode ()
+  "A major mode for JavaScript.
 
 \\{xjs-keymap}"
-  (js-mode)
-  (setq mode-name "ξXJS")
-  (setq font-lock-defaults '((xjs-font-lock-keywords)))
+  (interactive)
+  (kill-all-local-variables)
 
-(setq comment-start "//")
-(setq comment-end "")
+  (setq mode-name "ξjs")
+  (setq major-mode 'xah-js-mode)
+
+  (setq font-lock-defaults '((xjs-font-lock-keywords)))
 
   (set-syntax-table xjs-syntax-table)
   (use-local-map xjs-keymap)
-  (run-mode-hooks 'xah-js-mode-hook)
-)
 
-(when (featurep 'auto-complete )
-  (add-to-list 'ac-modes 'xah-js-mode)
-  (add-hook 'xah-js-mode-hook 'ac-emacs-lisp-mode-setup)
+  (setq-local comment-start "//")
+  (setq-local comment-end "")
+  (setq-local comment-column 2)
+
+  (setq-local indent-line-function 'xjs-complete-or-indent)
+  (setq-local indent-region-function 'xjs-indent-region)
+  (setq-local tab-always-indent 'complete)
+  (add-hook 'completion-at-point-functions 'xjs-complete-symbol-ido nil 'local)
+
+  ;; if emacs 23, turn on linum-mode
+  (when
+      (and
+       (fboundp 'linum-mode)
+       (>= emacs-major-version 23)
+       (>= emacs-minor-version 1)
+       )
+    (linum-mode 1)
+    )
+
+  (setq indent-tabs-mode nil) ; don't mix space and tab
+  (setq tab-width 1)
+
+  (run-mode-hooks 'xah-js-mode-hook)
+
+  :syntax-table xjs-syntax-table
+
   )
 
 (provide 'xah-js-mode)
