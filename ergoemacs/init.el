@@ -1,26 +1,20 @@
 ;-*- coding: utf-8 -*-
 
 (add-to-list 'load-path (file-name-directory (or load-file-name buffer-file-name)))
-(add-to-list 'load-path
-	     (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages"))
+(add-to-list 'load-path (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages"))
 
 ;; ;; Tool-bar has to be turned-off as soon as possible so the user cannot see it
 (tool-bar-mode 0) ;; Not sure we should have this on. The way it is right now, is rather useless for anyone who would use emacs, and i don't think it really provide any UI improvement because there's the menu already. The icons are rather very ugly. Possibly we can improve the icons, and or add a Close button to it.
 
 ;; Load ergoemacs-keybindings minor mode
-
 (if (boundp 'ergoemacs-load-ergoemacs-keybinding-q)
     (when ergoemacs-load-ergoemacs-keybinding-q
       (progn
         (load "ergoemacs-keybindings/ergoemacs-mode")
-        (ergoemacs-mode 1)
-        )
-      )
+        (ergoemacs-mode 1)))
   (progn
     (load "ergoemacs-keybindings/ergoemacs-mode")
-    (ergoemacs-mode 1)
-    )
-  )
+    (ergoemacs-mode 1)))
 
 ;; Load packages
 (load "init_load_packages")
@@ -43,7 +37,5 @@
 (setq recentf-save-file (concat user-emacs-directory ".recentf"))
 (recentf-mode 1)
 
-;; Initialize emacs server if it is not already running
-(require 'server)
-(if (not (eq t (server-running-p server-name)))
-    (server-start))
+;; Initialize emacs server if it is not already running 
+(require 'server) (if (not (eq t (server-running-p server-name))) (server-start))

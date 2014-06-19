@@ -1,5 +1,7 @@
 ; -*- coding: utf-8 -*-
 
+(require 'dired-x)
+
 ;; makes it possible to have some modes not have linum-mode on when global-linum-mode is on
 ;; 2013-04-19, as of GNU Emacs 24.3.1, linum-mode will freeze emacs for about 10 minutes when opening a jpg file of 10 megabytes size
 (require 'linum-off)
