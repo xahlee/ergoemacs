@@ -18,9 +18,6 @@
 ;; version 0.1, 2013-08-21 first version
 
 ;; TODO
-;; rid of calling js-mode
-;; make sure the comment works
-;; create complete syntax table
 ;; add new faces
 ;; separate diff types of keywords to use diff face
 ;; add completion
@@ -421,8 +418,6 @@
   ""
   (interactive)
   nil)
-
-
 
 
 

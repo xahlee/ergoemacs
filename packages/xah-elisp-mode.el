@@ -1428,7 +1428,7 @@ eventual plan is:
 ;; (emacs-lisp-mode)
   (kill-all-local-variables)
 
-  (setq mode-name "ξlisp")
+  (setq mode-name "Σlisp")
   (setq major-mode 'xah-elisp-mode)
   (setq font-lock-defaults '((xem-font-lock-keywords)))
 

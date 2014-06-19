@@ -392,7 +392,7 @@ This function requires the `htmlize-buffer' from 〔htmlize.el〕 by Hrvoje Niks
    (list (ido-completing-read "Chose mode for coloring:" (mapcar 'cdr auto-mode-alist))))
   (let* (
          (ξinput-str (buffer-substring-no-properties φp1 φp2))
-         (ξout-str 
+         (ξout-str
           (xhm-htmlize-string (if φtrim-whitespace-boundary?
                                   (replace-regexp-in-string "\\`[ \t\n]*" "" (replace-regexp-in-string "[ \t\n]*\\'" "" ξinput-str))
                                 ξinput-str
@@ -444,7 +444,7 @@ This command does the inverse of `xhm-htmlize-precode'."
       (xhm-skip-tag-forward)
       (search-backward "</pre>")
       (setq p2 (point))
-      (save-restriction 
+      (save-restriction
         (narrow-to-region p1 p2)
         (xhm-dehtmlize-precode (point-min) (point-max))
         (xhm-htmlize-region (point-min) (point-max) (xhm-langcode-to-major-mode-name langCode xhm-lang-name-map) t)))))
@@ -452,59 +452,54 @@ This command does the inverse of `xhm-htmlize-precode'."
 
 ;; syntax table
 (defvar xhm-syntax-table nil "Syntax table for `xah-html-mode'.")
+
 (setq xhm-syntax-table
       (let ((synTable (make-syntax-table)))
+        (modify-syntax-entry ?\n "> b" synTable)
+        (modify-syntax-entry ?\! "." synTable)
+        (modify-syntax-entry ?\" "\"" synTable)
+        (modify-syntax-entry ?\# "." synTable)
+        (modify-syntax-entry ?\$ "." synTable)
+        (modify-syntax-entry ?\% "." synTable)
+        (modify-syntax-entry ?\& "." synTable)
+        (modify-syntax-entry ?\' "." synTable)
+        (modify-syntax-entry ?\( "()" synTable)
+        (modify-syntax-entry ?\) ")(" synTable)
+        (modify-syntax-entry ?\* "." synTable)
+        (modify-syntax-entry ?\+ "." synTable)
+        (modify-syntax-entry ?\, "." synTable)
+        (modify-syntax-entry ?\- "_" synTable)
+        (modify-syntax-entry ?\. "." synTable)
+        (modify-syntax-entry ?\/ "." synTable)
+        (modify-syntax-entry '(?0 . ?9) "w" synTable)
+        (modify-syntax-entry ?\: "." synTable)
+        (modify-syntax-entry ?\; "." synTable)
+        (modify-syntax-entry ?\< "." synTable)
+        (modify-syntax-entry ?\= "." synTable)
+        (modify-syntax-entry ?\> "." synTable)
+        (modify-syntax-entry ?\? "." synTable)
+        (modify-syntax-entry ?\@ "." synTable)
+        (modify-syntax-entry '(?A . ?Z) "w" synTable)
+        (modify-syntax-entry ?\[ "(]" synTable)
+        (modify-syntax-entry ?\\ "\\" synTable)
+        (modify-syntax-entry ?\] ")[" synTable)
+        (modify-syntax-entry ?^ "." synTable) ; can't use blackslash, because it became control
+        (modify-syntax-entry ?\_ "_" synTable)
+        (modify-syntax-entry ?\` "." synTable)
+        (modify-syntax-entry '(?a . ?z) "w" synTable)
+        (modify-syntax-entry ?\{ "(}" synTable)
+        (modify-syntax-entry ?\| "." synTable)
+        (modify-syntax-entry ?\} "){" synTable)
+        (modify-syntax-entry ?\~ "." synTable)
 
- (progn                                  ; all on US keyboard
+        (modify-syntax-entry ?“ "(”" synTable)
+        (modify-syntax-entry ?” ")“" synTable)
 
- ;; (modify-syntax-entry ?\" "\"" synTable)
-   (modify-syntax-entry ?' "w" synTable)
+        (modify-syntax-entry ?‘ "(’" synTable)
+        (modify-syntax-entry ?’ ")‘" synTable)
 
- ;; (modify-syntax-entry ?, "." synTable)
- ;; (modify-syntax-entry ?. "." synTable)
- ;; (modify-syntax-entry ?: "." synTable)
- ;; (modify-syntax-entry ?? "." synTable)
- ;; (modify-syntax-entry ?\; "." synTable)
-
- ;; (modify-syntax-entry ?! "." synTable)
- ;; (modify-syntax-entry ?@ "." synTable)
- ;; (modify-syntax-entry ?# "." synTable)
- ;; (modify-syntax-entry ?$ "." synTable)
- ;; (modify-syntax-entry ?% "." synTable)
- ;; (modify-syntax-entry ?^ "." synTable)
- ;; (modify-syntax-entry ?& "." synTable)
- ;; (modify-syntax-entry ?* "." synTable)
- ;; (modify-syntax-entry ?+ "." synTable)
- ;; (modify-syntax-entry ?= "." synTable)
- ;; (modify-syntax-entry ?/ "." synTable)
- ;; (modify-syntax-entry ?\ "/" synTable)
-
- ;; (modify-syntax-entry ?_ "_" synTable)
- ;; (modify-syntax-entry ?- "w" synTable)
-
- ;; (modify-syntax-entry ?( "(" synTable)
- ;; (modify-syntax-entry ?) ")" synTable)
- ;; (modify-syntax-entry ?[ "(" synTable)
- ;; (modify-syntax-entry ?] ")" synTable)
- ;; (modify-syntax-entry ?{ "(" synTable)
- ;; (modify-syntax-entry ?} ")" synTable)
-        (modify-syntax-entry ?< "." synTable)
-        (modify-syntax-entry ?> "." synTable)
-
- ;; (modify-syntax-entry ?| "." synTable)
- ;; (modify-syntax-entry ?` "." synTable)
- ;; (modify-syntax-entry ?~ "." synTable)
- )
-
-        (modify-syntax-entry ?“ "(" synTable)
-        (modify-syntax-entry ?” ")" synTable)
-        (modify-syntax-entry ?‘ "(" synTable)
-        (modify-syntax-entry ?’ ")" synTable)
-
-;; (modify-syntax-entry ?“ "\"" synTable)
-;; (modify-syntax-entry ?” "\"" synTable)
-
-        synTable))
+        synTable)
+)
 
 
 
@@ -1020,7 +1015,7 @@ When done, the cursor is placed at p2."
   (save-restriction
     (narrow-to-region p1 p2)
     (replace-regexp-pairs-region (point-min) (point-max) '(["<span class=\"[^\"]+\">" ""]))
-    (replace-pairs-region (point-min) (point-max) '( ["</span>" ""] ["&amp;" "&"] ["&lt;" "<"] ["&gt;" ">"] )) 
+    (replace-pairs-region (point-min) (point-max) '( ["</span>" ""] ["&amp;" "&"] ["&lt;" "<"] ["&gt;" ">"] ))
     (goto-char (point-max))))
 
 (defun xhm-remove-html-tags (φstring &optional φfrom φto)
@@ -1138,7 +1133,7 @@ tempStr
             (insert inputStr)
             (goto-char 1)
             (let ((case-fold-search nil) )
-              (replace-pairs-region 1 (point-max) 
+              (replace-pairs-region 1 (point-max)
  '(
    ["<script>\\([^\\<]+?\\)</script>" ""]
    ["<li>" "<li>• " ]
@@ -1439,8 +1434,6 @@ The anchor text may be of 4 possibilities, depending on value of `universal-argu
     (delete-region p1-tag p2-tag)
     (insert resultLinkStr)
     ))
-
-
 
 (defun xhm-wikipedia-url-linkify (φstring &optional φfrom-to-pair)
   "Make the URL at cursor point into a html link.
@@ -1956,7 +1949,7 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
 
 ;; define the mode
 (define-derived-mode xah-html-mode fundamental-mode
-  "ξhtml"
+  "Σhtml"
   "A simple major mode for HTML5.
 HTML5 keywords are colored.
 

@@ -84,7 +84,7 @@
   (interactive
    (list
     (read-string (format "Search string (default %s): " (current-word)) nil 'query-replace-history (current-word))
-    (read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+    (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
     (y-or-n-p "Fixed case in search?")
     (y-or-n-p "Print surrounding Text?")
@@ -137,7 +137,7 @@ Path Regex 「%s」
   (interactive
    (list
     (read-string (format "Search regex (default %s): " (current-word)) nil 'query-replace-history (current-word))
-    (read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+    (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
     (y-or-n-p "Fixed case search?")
     (ido-completing-read "Print context level (0=none, 1=matched pattern, 2=neighboring string) " '("0" "1" "2"))
@@ -204,7 +204,7 @@ No regex."
    (list
     (read-string (format "Search string (default %s): " (current-word)) nil 'query-replace-history (current-word))
     (read-string (format "Replace string: ") nil 'query-replace-history)
-    (read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+    (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
     (y-or-n-p "Fixed case in search?")
     (y-or-n-p "Fixed case in replacement?")
@@ -277,7 +277,7 @@ Directory 〔%s〕
    (list
     (read-regexp "regex: " )
     (read-string (format "Replace string: ") nil 'query-replace-history)
-    (read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+    (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
     (y-or-n-p "Write changes to file?")
     (y-or-n-p "Fixed case in search?")
@@ -356,7 +356,7 @@ Case sensitivity is determined by `case-fold-search'. Call `toggle-case-fold-sea
       (read-string (format "Search string (default %s): " (current-word)) nil 'query-replace-history (current-word))
       (setq ξoperator (ido-completing-read "Greater less equal unqual:" '("<" ">" "<=" ">=" "=" "/=")) )
       (read-string (format "Count %s: "  ξoperator) "0")
-      (read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+      (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
       (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
       ))
    )
