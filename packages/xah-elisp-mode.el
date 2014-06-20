@@ -20,7 +20,7 @@
 ;; version 0.1, 2013-03-23 first version
 
 (require 'lisp-mode)
-(require 'xeu_elisp_util)
+;; (require 'xeu_elisp_util)
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
@@ -1188,10 +1188,12 @@
 This uses `ido-mode' user interface style for completion."
   (interactive)
   (let* (
-         (bds (unit-at-cursor 'word))
-         (currentWord (elt bds 0) )
-         (p1 (elt bds 1) )
-         (p2 (elt bds 2) )
+         
+         (bds (bounds-of-thing-at-point 'symbol))
+         (p1 (car bds) )
+         (p2 (cdr bds) )
+         (currentWord (buffer-substring-no-properties p1 p2) )
+
          finalResult)
     (when (not currentWord) (setq currentWord ""))
     (setq finalResult
@@ -1425,7 +1427,6 @@ eventual plan is:
 \\{xem-keymap}"
     (interactive)
 
-;; (emacs-lisp-mode)
   (kill-all-local-variables)
 
   (setq mode-name "Σlisp")
@@ -1441,7 +1442,7 @@ eventual plan is:
   (setq-local comment-end "")
   (setq-local comment-start-skip ";+ *")
   (setq-local comment-add 1) ;default to `;;' in comment-region
-  (setq-local comment-column 1)
+  (setq-local comment-column 2)
 
   (setq-local indent-line-function 'lisp-indent-line)
   ;; (setq-local indent-region-function 'xem-indent-region)
