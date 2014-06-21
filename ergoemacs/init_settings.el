@@ -70,6 +70,10 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 ;; 2011-07-29 yasnippet. Make the “yas/minor-mode”'s expansion behavior to take input word including hyphen.
 (setq yas/key-syntaxes '("w_" "w_." "^ ")) ; default is '("w" "w_" "w_." "^ ") as of 2011-07-29
 
+(yas-global-mode 1)
+(add-to-list 'auto-mode-alist '("\\.yasnippet\\'" . snippet-mode))
+
+
 
 ;; compile elisp files after save, do so only if there exists a byte-compiled file
 ;; thanks to Adolfo Benedetti, 2011-07-15

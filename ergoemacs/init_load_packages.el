@@ -68,14 +68,10 @@
 
 ;;; yasnippet template system
 (add-to-list 'load-path
- (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/yasnippet-0.6.1c/")
+ (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/yasnippet-0.8.0/")
  )
-(require 'yasnippet) ;; not yasnippet-bundle
-(yas/initialize)
-(yas/load-directory
- (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/yasnippet-0.6.1c/snippets/")
- )
-(add-to-list 'auto-mode-alist '("\\.yasnippet\\'" . snippet-mode))
+
+(require 'yasnippet)
 
 ;;; enhanced “directory viewer”/“file manager” (diredplus mode)
 (require 'dired+)
@@ -86,7 +82,7 @@
 
 ;; a user interface library used by auto-complete
 (add-to-list 'load-path
- (concat (file-name-directory (or load-file-name buffer-file-name)) 
+ (concat (file-name-directory (or load-file-name buffer-file-name))
          "../packages/popup/" ) )
 
 ;; auto-complete 1.4.0 (a enhanced word completion for computer languages)
