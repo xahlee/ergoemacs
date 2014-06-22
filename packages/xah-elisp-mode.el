@@ -12,15 +12,13 @@
 ;; Major mode for editing emacs lisp. Beta stage.
 ;; home page: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
-;;; HISTORY
-
+;; version 0.4, 2014-06-22 now features completion and function abbrev/template. (without auto-complete-mode nor yasnippet)
 ;; version 0.3, 2014-06-10 major kinda rewrite. use at your own risk.
 ;; version 0.2.1, 2014-04-10 added keyword “remove”
 ;; version 0.2, 2014-02-18 lots more keywords, and stuff.
 ;; version 0.1, 2013-03-23 first version
 
 (require 'lisp-mode)
-;; (require 'xeu_elisp_util)
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
@@ -1188,7 +1186,7 @@
 This uses `ido-mode' user interface style for completion."
   (interactive)
   (let* (
-         
+
          (bds (bounds-of-thing-at-point 'symbol))
          (p1 (car bds) )
          (p2 (cdr bds) )
@@ -1317,6 +1315,18 @@ Warning: This command does not preserve texts inside double quotes (strings) or 
   )
 
 
+;; abbrev and completion
+
+(defun xem--abbrev-position-cursor ()
+  ""
+  (interactive)
+  (when (search-backward "▮" (max 1 (- (point) 300)) t )
+    (delete-char 1)
+    ))
+
+(put 'xem--abbrev-position-cursor 'no-self-insert t) 
+
+(setq xem-abbrev-table nil)
 
 (define-abbrev-table 'xem-abbrev-table '(
 
@@ -1403,11 +1413,465 @@ Warning: This command does not preserve texts inside double quotes (strings) or 
  ("wcb" "with-current-buffer")
  ("wg" "widget-get")
  ("yonp" "yes-or-no-p")
+
+("add-hook" "(add-hook HOOK▮ FUNCTION)" xem--abbrev-position-cursor :system t)
+
+("and" "(and ▮)" xem--abbrev-position-cursor :system t )
+
+("append" "(append ▮)" xem--abbrev-position-cursor :system t)
+
+("apply" "(apply ▮)" xem--abbrev-position-cursor :system t)
+
+("aref" "(aref ARRAY▮ INDEX)" xem--abbrev-position-cursor :system t)
+
+("aset" "(aset ARRAY▮ IDX NEWELT)" xem--abbrev-position-cursor :system t)
+
+("assoc" "(assoc KEY▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("assq" "(assq KEY▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("autoload" "(autoload 'FUNCNAME▮ \"FILENAME\" &optional \"DOCSTRING\" INTERACTIVE TYPE)" xem--abbrev-position-cursor :system t)
+
+("backward-char" "(backward-char ▮)" xem--abbrev-position-cursor :system t)
+
+("beginning-of-line" "(beginning-of-line)" xem--abbrev-position-cursor :system t)
+
+("boundp" "(boundp '▮)" xem--abbrev-position-cursor :system t)
+
+("bounds-of-thing-at-point" "(bounds-of-thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
+
+("buffer-file-name" "(buffer-file-name)" xem--abbrev-position-cursor :system t)
+
+("buffer-modified-p" "(buffer-modified-p ▮)" xem--abbrev-position-cursor :system t)
+
+("buffer-substring-no-properties" "(buffer-substring-no-properties START▮ END)" xem--abbrev-position-cursor :system t)
+
+("buffer-substring" "(buffer-substring START▮ END)" xem--abbrev-position-cursor :system t)
+
+("called-interactively-p" "(called-interactively-p 'interactive▮)" xem--abbrev-position-cursor :system t)
+
+("car" "(car ▮)" xem--abbrev-position-cursor :system t)
+
+("catch" "(catch TAG▮ BODY)" xem--abbrev-position-cursor :system t)
+
+("cdr" "(cdr ▮)" xem--abbrev-position-cursor :system t)
+
+("concat" "(concat ▮)" xem--abbrev-position-cursor :system t)
+
+("cond" "(cond
+(CONDITION▮ BODY)
+(CONDITION BODY)
+)" xem--abbrev-position-cursor :system t)
+
+("condition-case" "(condition-case ▮)" xem--abbrev-position-cursor :system t)
+
+("cons" "(cons ▮)" xem--abbrev-position-cursor :system t)
+
+("consp" "(consp ▮)" xem--abbrev-position-cursor :system t)
+
+("copy-directory" "(copy-directory ▮ NEWNAME &optional KEEP-TIME PARENTS)" xem--abbrev-position-cursor :system t)
+
+("copy-file" "(copy-file FILE▮ NEWNAME &optional OK-IF-ALREADY-EXISTS KEEP-TIME PRESERVE-UID-GID)" xem--abbrev-position-cursor :system t)
+
+("current-buffer" "(current-buffer)" xem--abbrev-position-cursor :system t)
+
+("custom-autoload" "(custom-autoload ▮ SYMBOL LOAD &optional NOSET)" xem--abbrev-position-cursor :system t)
+
+("defalias" "(defalias 'SYMBOL▮ 'DEFINITION &optional DOCSTRING)" xem--abbrev-position-cursor :system t)
+
+("defconst" "(defconst ▮ INITVALUE \"DOCSTRING\")" xem--abbrev-position-cursor :system t)
+
+("defcustom" "(defcustom ▮ VALUE \"DOC\" &optional ARGS)" xem--abbrev-position-cursor :system t)
+
+("define-key" "(define-key KEYMAPNAME▮ (kbd \"M-b\") 'FUNCNAME)" xem--abbrev-position-cursor :system t)
+
+("defsubst" "(defsubst ▮)" xem--abbrev-position-cursor :system t)
+
+("defun" "(defun ▮ ()
+  \"DOCSTRING\"
+  (interactive)
+  (let (var1)
+    
+  ))" xem--abbrev-position-cursor :system t)
+
+("defvar" "(defvar ▮ &optional INITVALUE \"DOCSTRING\")" xem--abbrev-position-cursor :system t)
+
+("delete-char" "(delete-char ▮)" xem--abbrev-position-cursor :system t)
+
+("delete-directory" "(delete-directory ▮ &optional RECURSIVE)" xem--abbrev-position-cursor :system t)
+
+("delete-file" "(delete-file ▮)" xem--abbrev-position-cursor :system t)
+
+("delete-region" "(delete-region ▮)" xem--abbrev-position-cursor :system t)
+
+("directory-files" "(directory-files ▮ &optional FULL MATCH NOSORT)" xem--abbrev-position-cursor :system t)
+
+("dolist" "(dolist ▮)" xem--abbrev-position-cursor :system t)
+
+("dotimes" "(dotimes (VAR▮ COUNT [RESULT]) BODY)" xem--abbrev-position-cursor :system t)
+
+("elt" "(elt SEQUENCE▮ N)" xem--abbrev-position-cursor :system t)
+
+("end-of-line" "(end-of-line)" xem--abbrev-position-cursor :system t)
+
+("end-of-line" "(eq ▮)" xem--abbrev-position-cursor :system t)
+
+("equal" "(equal ▮)" xem--abbrev-position-cursor :system t)
+
+("error" "(error \"%s\" ▮)" xem--abbrev-position-cursor :system t)
+
+("expand-file-name" "(expand-file-name ▮ &optional relativedir)" xem--abbrev-position-cursor :system t)
+
+("format" "(format \"▮\" &optional OBJECTS)" xem--abbrev-position-cursor :system t)
+
+("fboundp" "(fboundp '▮)" xem--abbrev-position-cursor :system t)
+
+("file-directory-p" "(file-directory-p ▮)" xem--abbrev-position-cursor :system t)
+
+("file-exists-p" "(file-exists-p ▮)" xem--abbrev-position-cursor :system t)
+
+("file-name-directory" "(file-name-directory ▮)" xem--abbrev-position-cursor :system t)
+
+("file-name-extension" "(file-name-extension ▮ &optional PERIOD)" xem--abbrev-position-cursor :system t)
+
+("file-name-nondirectory" "(file-name-nondirectory ▮)" xem--abbrev-position-cursor :system t)
+
+("file-name-sans-extension" "(file-name-sans-extension ▮)" xem--abbrev-position-cursor :system t)
+
+("file-regular-p" "(file-regular-p ▮)" xem--abbrev-position-cursor :system t)
+
+("file-relative-name" "(file-relative-name ▮)" xem--abbrev-position-cursor :system t)
+
+("find-file" "(find-file ▮)" xem--abbrev-position-cursor :system t)
+
+("format" "(format \"%s\" ▮)" xem--abbrev-position-cursor :system t)
+
+("forward-char" "(forward-char ▮)" xem--abbrev-position-cursor :system t)
+
+("forward-line" "(forward-line ▮)" xem--abbrev-position-cursor :system t)
+
+("funcall" "(funcall ▮)" xem--abbrev-position-cursor :system t)
+
+("function" "(function ▮)" xem--abbrev-position-cursor :system t)
+
+("generate-new-buffer" "(generate-new-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("get" "(get SYMBOL▮ PROPNAME)" xem--abbrev-position-cursor :system t)
+
+("global-set-key" "(global-set-key (kbd \"C-▮\") 'COMMAND)" xem--abbrev-position-cursor :system t)
+
+("goto-char" "(goto-char ▮)" xem--abbrev-position-cursor :system t)
+
+("if" "(if ▮
+    (progn )
+  (progn )
+)" xem--abbrev-position-cursor :system t)
+
+("insert-file-contents" "(insert-file-contents ▮ &optional VISIT BEG END REPLACE)" xem--abbrev-position-cursor :system t)
+
+("insert" "(insert ▮)" xem--abbrev-position-cursor :system t)
+
+("interactive" "(interactive)" xem--abbrev-position-cursor :system t)
+
+("kbd" "(kbd \"▮\")" xem--abbrev-position-cursor :system t)
+
+("kill-buffer" "(kill-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("lambda" "(lambda (▮) BODY)" xem--abbrev-position-cursor :system t)
+
+("length" "(length ▮)" xem--abbrev-position-cursor :system t)
+
+("let" "(let (▮)
+ x
+)" xem--abbrev-position-cursor :system t)
+
+("line-beginning-position" "(line-beginning-position)" xem--abbrev-position-cursor :system t)
+
+("line-end-position" "(line-end-position)" xem--abbrev-position-cursor :system t)
+
+("list" "(list ▮)" xem--abbrev-position-cursor :system t)
+
+("looking-at" "(looking-at ▮)" xem--abbrev-position-cursor :system t)
+
+("make-directory" "(make-directory ▮ &optional PARENTS)" xem--abbrev-position-cursor :system t)
+
+("make-local-variable" "(make-local-variable ▮)" xem--abbrev-position-cursor :system t)
+
+("mapc" "(mapc '▮ SEQUENCE)" xem--abbrev-position-cursor :system t)
+
+("mapcar" "(mapcar '▮ SEQUENCE)" xem--abbrev-position-cursor :system t)
+
+("mapconcat" "(mapconcat FUNCTION▮ SEQUENCE SEPARATOR)" xem--abbrev-position-cursor :system t)
+
+("match-beginning" "(match-beginning N▮)" xem--abbrev-position-cursor :system t)
+
+("match-end" "(match-end N▮)" xem--abbrev-position-cursor :system t)
+
+("match-string" "(match-string ▮)" xem--abbrev-position-cursor :system t)
+
+("max" "(max ▮)" xem--abbrev-position-cursor :system t)
+
+("member" "(member ▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("memq" "(memq ▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("message" "(message \"%s▮\" ARGS)" xem--abbrev-position-cursor :system t)
+
+("min" "(min ▮)" xem--abbrev-position-cursor :system t)
+
+("narrow-to-region" "(narrow-to-region START▮ END)" xem--abbrev-position-cursor :system t)
+
+("not" "(not ▮)" xem--abbrev-position-cursor :system t)
+
+("nth" "(nth N▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("null" "(null ▮)" xem--abbrev-position-cursor :system t)
+
+("number-to-string" "(number-to-string ▮)" xem--abbrev-position-cursor :system t)
+
+("or" "(or ▮)" xem--abbrev-position-cursor :system t)
+
+("point-max" "(point-max)" xem--abbrev-position-cursor :system t)
+
+("point-min" "(point-min)" xem--abbrev-position-cursor :system t)
+
+("point" "(point)" xem--abbrev-position-cursor :system t)
+
+("prin1" "(prin1 ▮)" xem--abbrev-position-cursor :system t)
+
+("princ" "(princ ▮)" xem--abbrev-position-cursor :system t)
+
+("print" "(print ▮)" xem--abbrev-position-cursor :system t)
+
+("progn" "(progn ▮)" xem--abbrev-position-cursor :system t)
+
+("push" "(push ▮)" xem--abbrev-position-cursor :system t)
+
+("put" "(put 'SYMBOL▮ PROPNAME VALUE)" xem--abbrev-position-cursor :system t)
+
+("random" "(random ▮)" xem--abbrev-position-cursor :system t)
+
+("rassoc" "(rassoc KEY▮ LIST)" xem--abbrev-position-cursor :system t)
+
+("re-search-backward" "(re-search-backward REGEXP▮ &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("re-search-forward" "(re-search-forward REGEXP▮ &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("read-directory-name" "(read-directory-name \"▮\" &optional DIR DEFAULT-DIRNAME MUSTMATCH INITIAL)" xem--abbrev-position-cursor :system t)
+
+("read-file-name" "(read-file-name \"▮\" &optional DIR DEFAULT-FILENAME MUSTMATCH INITIAL PREDICATE)" xem--abbrev-position-cursor :system t)
+
+("read-regexp" "(read-regexp \"▮\" &optional DEFAULT-VALUE)" xem--abbrev-position-cursor :system t)
+
+("read-string" "(read-string \"▮\" &optional INITIAL-INPUT HISTORY DEFAULT-VALUE INHERIT-INPUT-METHOD)" xem--abbrev-position-cursor :system t)
+
+("regexp-opt" "(regexp-opt STRINGS▮ &optional PAREN)" xem--abbrev-position-cursor :system t)
+
+("regexp-quote" "(regexp-quote ▮)" xem--abbrev-position-cursor :system t)
+
+("region-active-p" "(region-active-p)" xem--abbrev-position-cursor :system t)
+
+("region-beginning" "(region-beginning)" xem--abbrev-position-cursor :system t)
+
+("region-end" "(region-end)" xem--abbrev-position-cursor :system t)
+
+("rename-file" "(rename-file FILE▮ NEWNAME &optional OK-IF-ALREADY-EXISTS)" xem--abbrev-position-cursor :system t)
+
+("repeat" "(repeat ▮)" xem--abbrev-position-cursor :system t)
+
+("replace-match" "(replace-match NEWTEXT▮ &optional FIXEDCASE LITERAL STRING SUBEXP)" xem--abbrev-position-cursor :system t)
+
+("replace-regexp-in-string" "(replace-regexp-in-string REGEXP▮ REP STRING &optional FIXEDCASE LITERAL SUBEXP START)" xem--abbrev-position-cursor :system t)
+
+("replace-regexp" "(replace-regexp REGEXP▮ TO-STRING &optional DELIMITED START END)" xem--abbrev-position-cursor :system t)
+
+("require" "(require ▮)" xem--abbrev-position-cursor :system t)
+
+("reverse" "(reverse ▮)" xem--abbrev-position-cursor :system t)
+
+("save-buffer" "(save-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("save-excursion" "(save-excursion ▮)" xem--abbrev-position-cursor :system t)
+
+("save-restriction" "(save-restriction ▮)" xem--abbrev-position-cursor :system t)
+
+("search-backward-regexp" "(search-backward-regexp \"▮\" &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("search-backward" "(search-backward \"▮\" &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("search-forward-regexp" "(search-forward-regexp \"▮\" &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("search-forward" "(search-forward \"▮\" &optional BOUND NOERROR COUNT)" xem--abbrev-position-cursor :system t)
+
+("set-buffer" "(set-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("set-file-modes" "(set-file-modes ▮ MODE)" xem--abbrev-position-cursor :system t)
+
+("set-mark" "(set-mark ▮)" xem--abbrev-position-cursor :system t)
+
+("set" "(set ▮)" xem--abbrev-position-cursor :system t)
+
+("setq" "(setq ▮)" xem--abbrev-position-cursor :system t)
+
+("shell-command" "(shell-command ▮ &optional OUTPUT-BUFFER ERROR-BUFFER)" xem--abbrev-position-cursor :system t)
+
+("skip-chars-backward" "(skip-chars-backward \"▮\" &optional LIM)" xem--abbrev-position-cursor :system t)
+
+("skip-chars-forward" "(skip-chars-forward \"▮\" &optional LIM)" xem--abbrev-position-cursor :system t)
+
+("split-string" "(split-string ▮ &optional SEPARATORS OMIT-NULLS)" xem--abbrev-position-cursor :system t)
+
+("string-match-p" "(string-match-p \"REGEXP▮\" \"STRING\" &optional START)" xem--abbrev-position-cursor :system t)
+
+("string-match" "(string-match \"REGEXP▮\" \"STRING\" &optional START)" xem--abbrev-position-cursor :system t)
+
+("string-to-number" "(string-to-number \"▮\")" xem--abbrev-position-cursor :system t)
+
+("string" "(string ▮)" xem--abbrev-position-cursor :system t)
+
+("string=" "(string= ▮)" xem--abbrev-position-cursor :system t)
+
+("stringp" "(stringp ▮)" xem--abbrev-position-cursor :system t)
+
+("substring-no-properties" "(substring-no-properties ▮ FROM TO)" xem--abbrev-position-cursor :system t)
+
+("substring" "(substring STRING▮ FROM &optional TO)" xem--abbrev-position-cursor :system t)
+
+("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
+
+("throw" "(throw TAG▮ VALUE)" xem--abbrev-position-cursor :system t)
+
+("unless" "(unless ▮)" xem--abbrev-position-cursor :system t)
+
+("vector" "(vector ▮)" xem--abbrev-position-cursor :system t)
+
+("when" "(when ▮)" xem--abbrev-position-cursor :system t)
+
+("while" "(while ▮)" xem--abbrev-position-cursor :system t)
+
+("widget-get" "(widget-get ▮)" xem--abbrev-position-cursor :system t)
+
+("with-current-buffer" "(with-current-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("with-temp-buffer" "(with-temp-buffer ▮)" xem--abbrev-position-cursor :system t)
+
+("with-temp-file" "(with-temp-file FILE▮)" xem--abbrev-position-cursor :system t)
+
+("write-file" "(write-file FILENAME▮ &optional CONFIRM)" xem--abbrev-position-cursor :system t)
+
+("write-region" "(write-region (point-min) (point-max) FILENAME &optional APPEND VISIT LOCKNAME MUSTBENEW)" xem--abbrev-position-cursor :system t)
+
+;; #name: process marked files in dired
+;; # --
+;; ;; idiom for processing a list of files in dired's marked files
+
+;; ;; suppose myProcessFile is your function that takes a file path
+;; ;; and do some processing on the file
+
+;; (defun dired-myProcessFile ()
+;;   "apply myProcessFile function to marked files in dired."
+;;   (interactive)
+;;   (require 'dired)
+;;   (mapc 'myProcessFile (dired-get-marked-files))
+;; )
+
+;; ;; to use it, type M-x dired-myProcessFile
+
+;; #name: a function that process a file
+;; # --
+;; (defun doThisFile (fpath)
+;;   "Process the file at path FPATH ..."
+;;   (let ()
+;;     ;; create temp buffer without undo record or font lock. (more efficient)
+;;     ;; first space in temp buff name is necessary
+;;     (set-buffer (get-buffer-create " myTemp"))
+;;     (insert-file-contents fpath nil nil nil t)
+
+;;     ;; process it ...
+;;     ;; (goto-char 0) ; move to begining of file's content (in case it was open)
+;;     ;; ... do something here
+;;     ;; (write-file fpath) ;; write back to the file
+
+;;     (kill-buffer " myTemp")))
+
+;;
+
+;; #name: read lines of a file
+;; # --
+;; (defun read-lines (filePath)
+;;   "Return a list of lines in FILEPATH."
+;;   (with-temp-buffer
+;;     (insert-file-contents filePath)
+;;     (split-string
+;;      (buffer-string) "\n" t)) )
+
+;; ;; process all lines
+;; (mapc
+;;  (lambda (aLine)
+;;    (message aLine) ; do your stuff here
+;;    )
+;;  (read-lines "inputFilePath")
+;; )
+;;
+
+;; #name: find and replace on region
+;; # --
+;; (defun replace-html-chars-region (start end)
+;;   "Replace “<” to “&lt;” and other chars in HTML.
+;; This works on the current region."
+;;   (interactive "r")
+;;   (save-restriction
+;;     (narrow-to-region start end)
+;;     (goto-char (point-min))
+;;     (while (search-forward "&" nil t) (replace-match "&amp;" nil t))
+;;     (goto-char (point-min))
+;;     (while (search-forward "<" nil t) (replace-match "&lt;" nil t))
+;;     (goto-char (point-min))
+;;     (while (search-forward ">" nil t) (replace-match "&gt;" nil t))
+;;     )
+;;   )
+
+;; # --
+;; ;; apply a function to all files in a dir
+;; (require 'find-lisp)
+;; (mapc 'my-process-file (find-lisp-find-files "~/myweb/" "\\.html$"))
+
+;; #name: Command that works on region or word
+;; # --
+;; ;; example of a command that works on current word or text selection
+;; (defun down-case-word-or-region ()
+;;   "Lower case the current word or text selection."
+;; (interactive)
+;; (let (pos1 pos2 meat)
+;;   (if (and transient-mark-mode mark-active)
+;;       (setq pos1 (region-beginning)
+;;             pos2 (region-end))
+;;     (setq pos1 (car (bounds-of-thing-at-point 'symbol))
+;;           pos2 (cdr (bounds-of-thing-at-point 'symbol))))
+
+;;   ; now, pos1 and pos2 are the starting and ending positions
+;;   ; of the current word, or current text selection if exists
+
+;;   ;; put your code here.
+;;   ▮
+;;   ;; Some example of things you might want to do
+;;   (downcase-region pos1 pos2) ; example of a func that takes region as args
+;;   (setq meat (buffer-substring-no-properties pos1 pos2)) ; grab the text.
+;;   (delete-region pos1 pos2) ; get rid of it
+;;   (insert "newText") ; insert your new text
+
+;;   )
+;; )
+
+("y-or-n-p" "(y-or-n-p \"PROMPT▮ \")" xem--abbrev-position-cursor :system t)
+
+("yes-or-no-p" "(yes-or-no-p \"PROMPT▮ \")" xem--abbrev-position-cursor :system t)
+
  )
 
 "abbrev table for `xah-elisp-mode'"
+:regexp "\\_<\\([_-A-Za-z]+\\)"
   )
-
 
 ;; define the mode
 (defun xah-elisp-mode ()
@@ -1415,7 +1879,6 @@ Warning: This command does not preserve texts inside double quotes (strings) or 
 
 Emacs lisp keywords are colored.
 and other experimental features.
-Use at your own risk.
 
 eventual plan is:
 • there shall be no command to indent code, except one that reformat code semantically, not by line. preferably transparent to user as she types. Code formatting shall never be programer's concern.
@@ -1429,7 +1892,7 @@ eventual plan is:
 
   (kill-all-local-variables)
 
-  (setq mode-name "Σlisp")
+  (setq mode-name "∑lisp")
   (setq major-mode 'xah-elisp-mode)
   (setq font-lock-defaults '((xem-font-lock-keywords)))
 
@@ -1447,6 +1910,8 @@ eventual plan is:
   (setq-local indent-line-function 'lisp-indent-line)
   ;; (setq-local indent-region-function 'xem-indent-region)
   (setq-local tab-always-indent 'complete)
+
+  (yas-minor-mode 0) ; todo. temp
 
   (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
