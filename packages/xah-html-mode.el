@@ -247,7 +247,6 @@
 
            ("clojure" . ["clojure-mode" "clj"])
            ("css" . ["css-mode" "css"])
-           ("elisp" . ["emacs-lisp-mode" "el"])
            ("emacs-lisp" . ["xah-elisp-mode" "el"])
            ("haskell" . ["haskell-mode" "hs"])
            ("html" . ["html-mode" "html"])
