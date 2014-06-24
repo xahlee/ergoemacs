@@ -15,6 +15,9 @@
 
 ;;;; language modes
 
+(autoload 'xah-elisp-mode "xah-elisp-mode" "load xah-elisp-mode for elisp file" t)
+(add-to-list 'auto-mode-alist '("\\.el\\'" . xah-elisp-mode))
+
 ;;; php mode
 (autoload 'php-mode "php-mode" "php mode by Aaron S Hawley." t)
 (add-to-list 'auto-mode-alist '("\\.php\\'" . php-mode))
