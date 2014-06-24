@@ -50,7 +50,18 @@
 ;; 
 ;;; Code:
 
+(eval-when-compile
+  (require 'cl)
+  (require 'ergoemacs-macros 
+	   (expand-file-name "ergoemacs-macros" 
+			     (file-name-directory (or
+			      load-file-name
+			      (buffer-file-name)
+			      default-directory)))))
+
+
 ;;; ergoemacs pretty keys
+
 
 (defvar ergoemacs-display-char-list nil
   "List of characters and fonts and if they display or not.")
@@ -58,33 +69,33 @@
 (require 'descr-text)
 (require 'faces)
 
-(defun ergoemacs-display-char-p (char)
-  "Determines if CHAR can be displayed."
-  (condition-case err
-      (let* (ret
-             (buf (current-buffer))
-             (face (font-xlfd-name (face-attribute 'default :font)))
-             (found (assoc (list face char window-system) ergoemacs-display-char-list)))
-        (if found
-            (nth 0 (cdr found))
-          (switch-to-buffer (get-buffer-create " *ergoemacs-display-char-p*") t)
-          (delete-region (point-min) (point-max))
-          (insert char)
-          (let ((display (describe-char-display (point-min) (char-after (point-min)))))
-            (if (display-graphic-p (selected-frame))
-                (if display
-                    (setq ret t))
-              (if display
-                  (setq ret t))))
-          (switch-to-buffer buf)
-          ;; Save it so the user doesn't see the buffer popup very much
-          ;; (if at all).
-          (add-to-list 'ergoemacs-display-char-list (list (list face char window-system) ret))
-          ret))
-    (error nil)))
-
 (defvar ergoemacs-use-unicode-char t
   "Use unicode characters when available.")
+
+(defun ergoemacs-display-char-p (char)
+  "Determines if CHAR can be displayed."
+  (ignore-errors
+    (let* (ret
+           (buf (current-buffer))
+           (face (font-xlfd-name (face-attribute 'default :font)))
+           (found (assoc (list face char window-system) ergoemacs-display-char-list)))
+      (if found
+          (nth 0 (cdr found))
+        (switch-to-buffer (get-buffer-create " *ergoemacs-display-char-p*") t)
+        (delete-region (point-min) (point-max))
+        (insert char)
+        (let ((display (describe-char-display (point-min) (char-after (point-min)))))
+          (if (display-graphic-p (selected-frame))
+              (if display
+                  (setq ret t))
+            (if display
+                (setq ret t))))
+        (switch-to-buffer buf)
+        ;; Save it so the user doesn't see the buffer popup very much
+        ;; (if at all).
+        (push (list (list face char window-system) ret) ergoemacs-display-char-list)
+        ret))))
+
 (defun ergoemacs-unicode-char (char alt-char)
   "Uses CHAR if it can be displayed, otherwise use ALT-CHAR.
 This assumes `ergoemacs-use-unicode-char' is non-nil.  When
@@ -98,19 +109,33 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
   :type 'boolean
   :group 'ergoemacs-mode)
 
+(defcustom ergoemacs-use-unicode-brackets t
+  "Use unicode brackets."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
+(defvar ergoemacs-use-M-x-p nil)
+
+(defvar ergoemacs-M-x)
 (defun ergoemacs-pretty-key (code)
   "Creates Pretty keyboard binding from kbd CODE from M- to Alt+"
   (if (not code) ""
-    (let (deactivate-mark
+    (if (string-match "^\\(M-x\\|<execute>\\) " code)
+        (if ergoemacs-use-M-x-p
+            code
+          (replace-match ergoemacs-M-x t t code))
+      (let (deactivate-mark
+          (ob (or (and ergoemacs-use-unicode-brackets (ergoemacs-unicode-char "【" "[")) "["))
+          (cb (or (and ergoemacs-use-unicode-brackets (ergoemacs-unicode-char "】" "]")) "]"))
           (ret (replace-regexp-in-string
                 " +$" "" (replace-regexp-in-string "^ +" "" code)))
           (case-fold-search nil)) 
       (when ergoemacs-use-ergoemacs-key-descriptions
         (save-match-data
           (with-temp-buffer
-            (insert (ergoemacs-unicode-char "【" "["))
+            (insert ob)
             (insert ret)
-            (insert (ergoemacs-unicode-char "】" "]"))
+            (insert cb)
             (goto-char (point-min))
             (while (re-search-forward "<f\\([0-9]+\\)>" nil t)
               (replace-match "<F\\1>"))
@@ -126,8 +151,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
               (replace-match "S-" t t))
             (goto-char (point-min))
             (while (re-search-forward " +" nil t)
-              (replace-match (format "%s%s"
-                                     (ergoemacs-unicode-char "】" "]") (ergoemacs-unicode-char "【" "["))))
+              (replace-match (format "%s%s" cb ob)))
             (goto-char (point-min))
             (while (search-forward "M-" nil t)
               (replace-match (if (eq system-type 'darwin)
@@ -197,7 +221,7 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
               (while (re-search-forward "Ctl[+]" nil t)
                 (replace-match "^")))
             (setq ret (buffer-string)))))
-      ret)))
+      ret))))
 
 (defun ergoemacs-pretty-key-rep-internal ()
   (let (case-fold-search)
@@ -231,41 +255,9 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
     (when ergoemacs-use-ergoemacs-key-descriptions
       (ergoemacs-pretty-key-rep-internal))))
 
-(defun ergoemacs-display-char-p (char)
-  "Determines if CHAR can be displayed."
-  (condition-case err
-      (let* (ret
-             (buf (current-buffer))
-             (face (font-xlfd-name (face-attribute 'default :font)))
-             (found (assoc (list face char window-system) ergoemacs-display-char-list)))
-        (if found
-            (nth 0 (cdr found))
-          (switch-to-buffer (get-buffer-create " *ergoemacs-display-char-p*") t)
-          (delete-region (point-min) (point-max))
-          (insert char)
-          (let ((display (describe-char-display (point-min) (char-after (point-min)))))
-            (if (display-graphic-p (selected-frame))
-                (if display
-                    (setq ret t))
-              (if display
-                  (setq ret t))))
-          (switch-to-buffer buf)
-          ;; Save it so the user doesn't see the buffer popup very much
-          ;; (if at all).
-          (add-to-list 'ergoemacs-display-char-list (list (list face char window-system) ret))
-          ret))
-    (error nil)))
+
 
 ;;; Actual Translations
-(defvar ergoemacs-dir
-  (file-name-directory
-   (or
-    load-file-name
-    (buffer-file-name)))
-  "Ergoemacs directory.")
-(add-to-list 'load-path ergoemacs-dir)
-(require 'ergoemacs-shortcuts)
-
 (defvar ergoemacs-translation-keymap
   (let ((map (make-sparse-keymap)))
     (define-key map (read-kbd-macro "<deletechar>") (read-kbd-macro "DEL"))
@@ -389,7 +381,8 @@ This is called through `ergoemacs-universal-argument'.
 This function is made in `ergoemacs-translation'")
               (interactive)
               (ergoemacs-universal-argument ',(plist-get arg-plist ':name)))))
-    (add-to-list 'ergoemacs-universal-fns (intern (concat "ergoemacs-" (symbol-name (plist-get arg-plist ':name)) "-universal-argument")))
+    (ergoemacs-pushnew (intern (concat "ergoemacs-" (symbol-name (plist-get arg-plist ':name)) "-universal-argument"))
+             ergoemacs-universal-fns)
 
     (eval (macroexpand
            `(defun ,(intern (concat "ergoemacs-" (symbol-name (plist-get arg-plist ':name)) "-digit-argument")) ()
@@ -422,51 +415,47 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
     
     
     ;; Now put the translation text together as a list.
-    (mapc
-     (lambda(x)
-       (let ((trans (plist-get arg-plist (nth 0 x)))
-             (orig (nth 1 x))
-             case-fold-search)
-         (when trans
-           (push (concat orig (ergoemacs-unicode-char "→" "->") trans)
-                 trans-text)
-           (push (concat
-                  (replace-regexp-in-string
-                   "[Qq]" ""
-                   (ergoemacs-pretty-key (concat orig "q")))
-                  (ergoemacs-unicode-char "→" "->")
-                  (replace-regexp-in-string
-                   "[Qq]" ""
-                   (ergoemacs-pretty-key (concat trans "q"))))
-                 pretty-trans))))
-     '((:alt "M-")
-       (:ctl "C-")
-       (:shift "S-")
-       (:alt-ctl "M-C-")
-       (:alt-shift "M-S-")
-       (:ctl-shift "C-S-")
-       (:alt-ctl-shift "C-M-S-")))
+    (dolist (x '((:alt "M-")
+                 (:ctl "C-")
+                 (:shift "S-")
+                 (:alt-ctl "M-C-")
+                 (:alt-shift "M-S-")
+                 (:ctl-shift "C-S-")
+                 (:alt-ctl-shift "C-M-S-")))
+      (let ((trans (plist-get arg-plist (nth 0 x)))
+            (orig (nth 1 x))
+            case-fold-search)
+        (when trans
+          (push (concat orig (ergoemacs-unicode-char "→" "->") trans)
+                trans-text)
+          (push (concat
+                 (replace-regexp-in-string
+                  "[Qq]" ""
+                  (ergoemacs-pretty-key (concat orig "q")))
+                 (ergoemacs-unicode-char "→" "->")
+                 (replace-regexp-in-string
+                  "[Qq]" ""
+                  (ergoemacs-pretty-key (concat trans "q"))))
+                pretty-trans))))
     ;; Now get keys that change the next key's behavior
     (when keymap
-      (mapc
-       (lambda(x)
-         (let ((key (where-is-internal (nth 0 x) keymap t))
-               (trans (nth 1 x)))
-           (when key
-             (setq key (key-description key))
-             (push (concat key (ergoemacs-unicode-char "→" "->") trans)
-                   key-text)
-             (push (concat
-                    (ergoemacs-pretty-key key)
-                    (ergoemacs-unicode-char "→" "->")
-                    (replace-regexp-in-string
-                     "[Qq]" ""
-                     (ergoemacs-pretty-key (concat trans "q"))))
-                   key-pretty))))
-       '((ergoemacs-read-key-next-key-is-alt "M-")
-         (ergoemacs-read-key-next-key-is-ctl "C-")
-         (ergoemacs-read-key-next-key-is-alt-ctl "C-M-")
-         (ergoemacs-read-key-next-key-is-quoted ""))))
+      (dolist (x '((ergoemacs-read-key-next-key-is-alt "M-")
+                   (ergoemacs-read-key-next-key-is-ctl "C-")
+                   (ergoemacs-read-key-next-key-is-alt-ctl "C-M-")
+                   (ergoemacs-read-key-next-key-is-quoted "")))
+        (let ((key (where-is-internal (nth 0 x) keymap t))
+              (trans (nth 1 x)))
+          (when key
+            (setq key (key-description key))
+            (push (concat key (ergoemacs-unicode-char "→" "->") trans)
+                  key-text)
+            (push (concat
+                   (ergoemacs-pretty-key key)
+                   (ergoemacs-unicode-char "→" "->")
+                   (replace-regexp-in-string
+                    "[Qq]" ""
+                    (ergoemacs-pretty-key (concat trans "q"))))
+                  key-pretty)))))
     (setq tmp '("" ""))
     (when (plist-get arg-plist ':unchorded)
       (setq tmp (list (plist-get arg-plist ':unchorded)
@@ -540,54 +529,6 @@ This function is made in `ergoemacs-translation' and calls `ergoemacs-modal-togg
                  (define-key map (read-kbd-macro "<return>") 'ergoemacs-unchorded-alt-modal)
                  (define-key map (read-kbd-macro "RET") 'ergoemacs-unchorded-alt-modal)
                  map))
-
-
-(ergoemacs-translation
- :name 'gaia
- :text "<G>"
- :unchorded "C-"
- :modal-color "red"
- :keymap (let ((map (make-sparse-keymap)))
-           (define-key map [f1] 'ergoemacs-read-key-help)
-           (define-key map (read-kbd-macro "SPC") 'ergoemacs-read-key-next-key-is-quoted)
-           (define-key map (read-kbd-macro "M-SPC") 'ergoemacs-read-key-next-key-is-alt-ctl)
-           (define-key map "g" 'ergoemacs-read-key-next-key-is-alt)
-           (define-key map "G" 'ergoemacs-read-key-next-key-is-alt-ctl)
-           (define-key map [f2] 'ergoemacs-universal-argument) ;; Allows editing
-           (define-key map (read-kbd-macro "DEL") 'ergoemacs-read-key-undo-last)
-           map)
- :keymap-modal
- (let ((map (make-sparse-keymap))
-       (ergoemacs-ignore-advice t))
-   (define-key map (read-kbd-macro "1") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "2") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "3") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "4") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "5") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "6") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "7") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "8") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "9") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "0") 'ergoemacs-gaia-digit-argument)
-   (define-key map (read-kbd-macro "-") 'ergoemacs-gaia-negative-argument)
-   (define-key map (read-kbd-macro "u") 'ergoemacs-gaia-universal-argument)
-   (define-key map (if (eq system-type 'windows-nt) [apps] [menu])
-     'ergoemacs-gaia-modal)
-   map))
-
-(defvar ergoemacs-gaia-mode nil)
-(defun ergoemacs-gaia-mode ()
-  "Gaia-mode"
-  (interactive)
-  (cond
-   (ergoemacs-gaia-mode
-    (setq ergoemacs-theme "lvl0")
-    (ergoemacs-mode -1))
-   ((not ergoemacs-gaia-mode)
-    (setq ergoemacs-theme "lvl0")
-    (ergoemacs-mode 1)
-    (ergoemacs-gaia-modal)))
-  (setq ergoemacs-gaia-mode (not ergoemacs-gaia-mode)))
 
 (defun ergoemacs-translate-shifted (kbd)
   "Translates anything with S- and no C- in it to an upper-case character.
@@ -745,6 +686,7 @@ and `ergoemacs-pretty-key' descriptions.
          only-key
          shift-translated
          (ergoemacs-use-ergoemacs-key-descriptions t)
+         shifted-key
          unshifted-key)
     (or ret
         (progn
@@ -866,12 +808,18 @@ and `ergoemacs-pretty-key' descriptions.
     (while (< i 60)
       (unless (or (string= "" (nth i lay))
                   (string= "" (nth (+ i 60) lay)))
-        (add-to-list 'ergoemacs-shifted-assoc
-                     `(,(nth i lay) . ,(nth (+ i 60) lay)))
-        (add-to-list 'ergoemacs-shifted-assoc
-                     `(,(nth (+ i 60) lay) . ,(nth i lay)))
-        (add-to-list 'unshifted-list (nth i lay))
-        (add-to-list 'shifted-list (nth (+ i 60) lay)))
+        (ergoemacs-pushnew `(,(nth i lay) . ,(nth (+ i 60) lay))
+                 ergoemacs-shifted-assoc
+                 :test 'equal)
+        (ergoemacs-pushnew `(,(nth (+ i 60) lay) . ,(nth i lay))
+                 ergoemacs-shifted-assoc
+                 :test 'equal)
+        (ergoemacs-pushnew (nth i lay)
+                 unshifted-list
+                 :test 'equal)
+        (ergoemacs-pushnew (nth (+ i 60) lay)
+                 shifted-list
+                 :test 'equal))
       (setq i (+ i 1)))
     (setq ergoemacs-shifted-regexp 
           (format "\\(-\\| \\|^\\)\\(%s\\)\\($\\| \\)"
@@ -897,8 +845,9 @@ and `ergoemacs-pretty-key' descriptions.
         (while (< i len)
           (unless (or (string= "" (nth i base))
                       (string= "" (nth i lay)))
-            (add-to-list 'ergoemacs-translation-assoc
-                         `(,(nth i base) . ,(nth i lay))))
+            (ergoemacs-pushnew `(,(nth i base) . ,(nth i lay))
+                    ergoemacs-translation-assoc
+                    :test 'equal))
           (setq i (+ i 1)))
         (setq ergoemacs-translation-regexp
               (format "\\(-\\| \\|^\\)\\(%s\\)\\($\\| \\)"
@@ -906,32 +855,37 @@ and `ergoemacs-pretty-key' descriptions.
                                           ergoemacs-translation-assoc) nil)))))
     ;; Pre-cache the translations...?  Takes too long to load :(
     (when nil
-      (mapc
-       (lambda(char)
-         (unless (string= "" char)
-           (ergoemacs-translate char)
-           (ergoemacs-translate (concat "C-" char))
-           (ergoemacs-translate (concat "M-" char))
-           (ergoemacs-translate (concat "M-C-" char))))
-       (append lay '("<f1>"  "<S-f1>"
-                     "<f2>"  "<S-f2>"
-                     "<f3>"  "<S-f3>"
-                     "<f4>"  "<S-f4>"
-                     "<f5>"  "<S-f5>"
-                     "<f6>"  "<S-f6>"
-                     "<f7>"  "<S-f7>"
-                     "<f8>"  "<S-f8>"
-                     "<f9>"  "<S-f9>"
-                     "<f10>" "<S-f10>"
-                     "<f11>" "<S-f11>"
-                     "<f12>" "<S-f12>"
-                     "SPC" "RET" "ESC" "DEL" "TAB"
-                     "<home>" "<S-home>"
-                     "<next>" "<S-next>"
-                     "<prior>" "<S-prior>"
-                     "<end>" "<S-end>"
-                     "<insert>" "<S-insert>"
-                     "<deletechar>" "<S-deletechar>"))))))
+      (dolist (char (append lay '("<f1>"  "<S-f1>"
+                                  "<f2>"  "<S-f2>"
+                                  "<f3>"  "<S-f3>"
+                                  "<f4>"  "<S-f4>"
+                                  "<f5>"  "<S-f5>"
+                                  "<f6>"  "<S-f6>"
+                                  "<f7>"  "<S-f7>"
+                                  "<f8>"  "<S-f8>"
+                                  "<f9>"  "<S-f9>"
+                                  "<f10>" "<S-f10>"
+                                  "<f11>" "<S-f11>"
+                                  "<f12>" "<S-f12>"
+                                  "SPC" "RET" "ESC" "DEL" "TAB"
+                                  "<home>" "<S-home>"
+                                  "<next>" "<S-next>"
+                                  "<prior>" "<S-prior>"
+                                  "<end>" "<S-end>"
+                                  "<insert>" "<S-insert>"
+                                  "<deletechar>" "<S-deletechar>")))
+        (unless (string= "" char)
+          (ergoemacs-translate char)
+          (ergoemacs-translate (concat "C-" char))
+          (ergoemacs-translate (concat "M-" char))
+          (ergoemacs-translate (concat "M-C-" char)))))))
+
+(declare-function ergoemacs-mode-line "ergoemacs-mode.el")
+(defun ergoemacs-setup-keys-for-layout (layout &optional base-layout)
+  "Setup keys based on a particular LAYOUT. All the keys are based on QWERTY layout."
+  (ergoemacs-setup-translation layout base-layout)
+  ;; Set appropriate mode-line indicator
+  (ergoemacs-mode-line))
 
 (defvar ergoemacs-kbd-hash (make-hash-table :test 'equal))
 ;; This is called so frequently make a hash-table of the results.
@@ -990,6 +944,7 @@ If JUST-TRANSLATE is non-nil, just return the KBD code, not the actual emacs key
 For example, on dvorak, change C-j to C-c (copy/command)."
   :type 'boolean
   :set 'ergoemacs-set-default
+  :initialize #'custom-initialize-default
   :group 'ergoemacs-mode)
 
 (defun ergoemacs-get-kbd-translation (pre-kbd-code &optional dont-swap)
@@ -1000,6 +955,10 @@ For example, on dvorak, change C-j to C-c (copy/command)."
                "[Aa]lt[+-]" "M-" pre-kbd-code))))
     ret))
 
+(defvar ergoemacs-keymap)
+(defvar ergoemacs-unbind-keymap)
+(defvar ergoemacs-shortcut-keymap)
+(defvar ergoemacs-command-shortcuts-hash)
 (defun ergoemacs-key-fn-lookup (function &optional use-apps)
   "Looks up the key binding for FUNCTION based on.
 Based on `ergoemacs-with-ergoemacs'"

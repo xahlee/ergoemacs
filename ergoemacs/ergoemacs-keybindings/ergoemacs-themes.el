@@ -27,26 +27,54 @@
 ;; 
 
 ;;; Code:
+(eval-when-compile 
+  (require 'cl)
+  (require 'ergoemacs-macros 
+           (expand-file-name "ergoemacs-macros" 
+                             (file-name-directory (or
+                                                   load-file-name
+                                                   (buffer-file-name)
+                                                   default-directory)))))
+
 (autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
 (autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
 (autoload 'wdired-exit "wdired" "ergoemacs-autoload." t)
 
-(require 'ergoemacs-unbind)
-(require 'ergoemacs-translate)
 (require 'advice)
-(require 'ergoemacs-theme-engine)
 
+(defvar ergoemacs-theme-comp-hash)
+(defvar ergoemacs-theme-hash)
+(declare-function ergoemacs-theme-component--create-component "ergoemacs-theme-engine.el")
 
 (ergoemacs-theme-component standard-vars ()
   "Enabled/changed variables/modes"
-  (setq org-CUA-compatible t)
-  (setq org-support-shift-select t)
+  (setq org-CUA-compatible t
+        org-support-shift-select t
+        set-mark-command-repeat-pop t
+        org-special-ctrl-a/e t
+        ido-vertical-define-keys 'C-n-C-p-up-down-left-right
+        scroll-error-top-bottom t)
+  (undo-tree-mode 1)
   (shift-select-mode t)
   (delete-selection-mode 1)
-  (setq set-mark-command-repeat-pop t)
-  (setq org-special-ctrl-a/e t)
-  (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
-  (setq scroll-error-top-bottom t))
+  ;; (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
+  ;; (setq cua--rectangle-keymap (make-sparse-keymap))
+  ;; (setq cua--rectangle-initialized nil)
+  ;; (setq cua--keymap-alist
+  ;; 	(progn
+  ;; 	  (cua--init-rectangles)
+  ;; 	  `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
+  ;; 	    (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
+  ;; 	    (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
+  ;; 	    (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
+  ;; 	    (cua--rectangle . ,cua--rectangle-keymap)
+  ;; 	    (cua--ena-region-keymap . ,cua--region-keymap)
+  ;; 	    (cua-mode . ,cua-global-keymap))))
+  )
+
+(ergoemacs-theme-component save-options-on-exit ()
+  "Save emacs options on exit"
+  (add-hook 'kill-emacs-hook 'ergoemacs-exit-customize-save-customized))
 
 ;;; Fixed components
 (ergoemacs-theme-component standard-fixed ()
@@ -75,11 +103,11 @@
   (global-set-key (kbd "C-x h") nil) ;; Mark whole buffer
   (global-set-key (kbd "C-a") 'mark-whole-buffer)
   
-  (global-set-key (kbd "C-u") 'ergoemacs-universal-argument)
+  ;; (global-set-key (kbd "C-u") 'ergoemacs-universal-argument)
   (global-set-key (kbd "<M-backspace>") '(undo-tree-undo undo))
   (global-set-key (kbd "C-z") 'undo)
 
-  (global-set-key (kbd "C-S-z") '(undo-tree-redo redo))
+  (global-set-key (kbd "C-S-z") '(undo-tree-redo redo ergoemacs-redo))
   (global-set-key (kbd "<S-delete>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "C-c <timeout>") 'ergoemacs-copy-line-or-region)
   (global-set-key (kbd "C-c") 'ergoemacs-ctl-c)
@@ -169,7 +197,7 @@
   (global-set-key (kbd "C-x <timeout>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "C-x C-b") 'ibuffer)
   (global-set-key (kbd "C-x") 'ergoemacs-ctl-x "Cut")
-  (global-set-key (kbd "C-y") '(undo-tree-redo redo) "↷ redo")
+  (global-set-key (kbd "C-y") '(undo-tree-redo redo ergoemacs-redo) "↷ redo")
   
   (global-set-key (kbd "M-S-<next>") 'forward-page)
   (global-set-key (kbd "M-S-<prior>") 'backward-page)
@@ -239,12 +267,12 @@
   (global-set-key (kbd "<C-f2>") 'ergoemacs-cut-all)
   (global-set-key (kbd "<C-f3>") 'ergoemacs-copy-all)
   (global-set-key (kbd "<C-f4>") 'ergoemacs-paste-cycle)
-  (global-set-key (kbd "<C-f5>") '(undo-tree-redo redo))
+  (global-set-key (kbd "<C-f5>") '(undo-tree-redo redo ergoemacs-redo))
   (global-set-key (kbd "<C-f8>") 'highlight-symbol-prev)
   (global-set-key (kbd "<C-f9>") 'highlight-symbol-next)
   (global-set-key (kbd "<M-f2>") 'ergoemacs-cut-all)
   (global-set-key (kbd "<M-f3>") 'ergoemacs-copy-all)
-  (global-set-key (kbd "<M-f5>") '(undo-tree-redo redo))
+  (global-set-key (kbd "<M-f5>") '(undo-tree-redo redo ergoemacs-redo))
   (global-set-key (kbd "<S-f3>") 'ergoemacs-toggle-letter-case)
   (global-set-key (kbd "<f11>") 'previous-line)
   (global-set-key (kbd "<f12>") 'next-line)
@@ -350,7 +378,6 @@
   (global-set-key (kbd "C-h 8") 'ergoemacs-lookup-wikipedia)
   (global-set-key (kbd "C-h 9") 'ergoemacs-lookup-word-definition)
   (global-set-key (kbd "C-h `") 'elisp-index-search)
-  (global-set-key (kbd "C-h m") 'ergoemacs-describe-major-mode)
   (global-set-key (kbd "C-h o") 'ergoemacs-where-is-old-binding)
   (global-set-key (kbd "C-h z") 'ergoemacs-clean)
   (global-set-key (kbd "<f1> '") 'ergoemacs-display-current-svg)
@@ -363,7 +390,6 @@
   (global-set-key (kbd "<f1> 8") 'ergoemacs-lookup-wikipedia)
   (global-set-key (kbd "<f1> 9") 'ergoemacs-lookup-word-definition)
   (global-set-key (kbd "<f1> `") 'elisp-index-search)
-  (global-set-key (kbd "<f1> m") 'ergoemacs-describe-major-mode)
   (global-set-key (kbd "<f1> o") 'ergoemacs-where-is-old-binding))
 
 
@@ -489,7 +515,7 @@
   
   (global-set-key (kbd "M-C") 'ergoemacs-copy-all)
   (global-set-key (kbd "M-X") 'ergoemacs-cut-all)
-  (global-set-key (kbd "M-Z") '(undo-tree-redo redo))
+  (global-set-key (kbd "M-Z") '(undo-tree-redo redo ergoemacs-redo))
 
   ;; Undo
   (global-set-key (kbd "C-_") nil)
@@ -503,8 +529,8 @@
   (global-set-key (kbd "C-x <timeout>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "C-x") 'ergoemacs-ctl-x)
   (global-set-key (kbd "C-z") 'undo)
-  (global-set-key (kbd "C-S-z") '(undo-tree-redo redo))
-  (global-set-key (kbd "C-y") '(undo-tree-redo redo))
+  (global-set-key (kbd "C-S-z") '(undo-tree-redo redo ergoemacs-redo))
+  (global-set-key (kbd "C-y") '(undo-tree-redo redo ergoemacs-redo))
 
   ;; Mode specific changes
   (when isearch-mode-hook
@@ -668,7 +694,6 @@
   (global-set-key (kbd "<apps> h 8") 'ergoemacs-lookup-wikipedia)
   (global-set-key (kbd "<apps> h 9") 'ergoemacs-lookup-word-definition)
   (global-set-key (kbd "<apps> h `") 'elisp-index-search)
-  (global-set-key (kbd "<apps> h m") 'ergoemacs-describe-major-mode)
   (global-set-key (kbd "<apps> h o") 'ergoemacs-where-is-old-binding)
   (global-set-key (kbd "<apps> h z") 'ergoemacs-clean)
   (global-set-key (kbd "<apps> h Z") 'ergoemacs-clean-nw)
@@ -676,12 +701,12 @@
   (global-set-key (kbd "<apps> s") 'save-buffer)
   (global-set-key (kbd "<apps> C-s") 'write-file)
   (global-set-key (kbd "<apps> o") 'find-file)
-  (global-set-key (kbd "<apps> g") 'ergoemacs-unchorded-universal-argument)
+  (global-set-key (kbd "<apps> g") 'ergoemacs-universal-argument)
   (global-set-key (kbd "<apps> w") 'ergoemacs-close-current-buffer)
   (global-set-key (kbd "<apps> x") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "<apps> c") 'ergoemacs-copy-line-or-region)
   (global-set-key (kbd "<apps> v") 'ergoemacs-paste)
-  (global-set-key (kbd "<apps> b") '(undo-tree-redo redo))
+  (global-set-key (kbd "<apps> b") '(undo-tree-redo redo ergoemacs-redo))
   (global-set-key (kbd "<apps> t") 'switch-to-buffer)
   (global-set-key (kbd "<apps> z") 'undo)
   (global-set-key (kbd "<apps> r") goto-map))
@@ -851,16 +876,24 @@
 (ergoemacs-theme-component ido-remaps ()
   "Remaps for ido-mode"
   (when ido-mode
-    (global-set-key [remap execute-extended-command] 'smex)))
+    (global-set-key [remap execute-extended-command] 'smex))
+  (setq smex-prompt-string (substitute-command-keys "\\[execute-extended-command] ")))
 
 (ergoemacs-theme-component ergoemacs-remaps ()
   "Remaps for ergoemacs-mode"
+  (when undo-tree-mode
+    (global-set-key [remap ergoemacs-redo] 'undo-tree-redo))
   (when ergoemacs-mode
-    (global-set-key [remap describe-key] 'ergoemacs-describe-key)))
+    (global-set-key [remap universal-argument]
+                    'ergoemacs-universal-argument)
+    (global-set-key [remap describe-key]
+                    'ergoemacs-describe-key)
+    (global-set-key [remap describe-mode]
+                    'ergoemacs-describe-major-mode)))
 
 (ergoemacs-theme-component ergoemacs-banish-shift ()
   "Banish Shift Combinations with <apps> SPC"
-  :variable-reg "Z"
+  :variable-reg ""
   (global-set-key (kbd "<menu> SPC SPC") (kbd "_")) ;low line (underscore)
   (global-set-key (kbd "<menu> SPC RET") (kbd "-"))
   (global-set-key (kbd "<menu> SPC '") (kbd "\""))
@@ -955,7 +988,8 @@
                  helm-remaps
                  multiple-cursors-remaps
                  quit
-                 apps-swap)
+                 apps-swap
+                 save-options-on-exit)
   :optional-off '(guru no-backspace search-reg
                        ergoemacs-banish-shift)
   :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
@@ -1000,7 +1034,8 @@
                  helm-remaps
                  multiple-cursors-remaps
                  quit
-                 apps-swap)
+                 apps-swap
+                 save-options-on-exit)
   :optional-off '(guru no-backspace search-reg
                        ergoemacs-banish-shift)
   :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
@@ -1052,6 +1087,7 @@
           (const :tag "Standard" :value nil)
           (symbol :tag "Other"))
   :set 'ergoemacs-set-default
+  :initialize #'custom-initialize-default
   :group 'ergoemacs-mode)
 
 (provide 'ergoemacs-themes)

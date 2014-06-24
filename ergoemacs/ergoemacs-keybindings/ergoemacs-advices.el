@@ -27,31 +27,31 @@
 ;; 
 
 ;;; Code:
+
+(eval-when-compile 
+  (require 'cl)
+  (require 'ergoemacs-macros 
+	   (expand-file-name "ergoemacs-macros" 
+			     (file-name-directory (or
+                                                   load-file-name
+                                                   (buffer-file-name)
+                                                   default-directory)))))
+
 (defvar ergoemacs-advices '()
   "List of advices to enable and disable when ergoemacs is running.")
 
-(defvar ergoemacs-dir
-  (file-name-directory
-   (or
-    load-file-name
-    (buffer-file-name)))
-  "Ergoemacs directory.")
-(add-to-list 'load-path ergoemacs-dir)
-(require 'ergoemacs-shortcuts)
-(require 'ergoemacs-unbind)
-
+(defvar ergoemacs-run-mode-hooks nil)
 (defmacro ergoemacs-define-overrides (&rest body)
   "Force the define-keys to work"
   `(let ((ergoemacs-run-mode-hooks t))
      ,@body))
-
+(defvar ergoemacs-mode)
+(defvar ergoemacs-hook-functions nil)
 (defadvice add-hook (around ergoemacs-add-hook-advice (hook function &optional append  local) activate)
   "Advice to allow `this-command' to be set correctly before running `pre-command-hook'
 If `pre-command-hook' is used and `ergoemacs-mode' is enabled add to `ergoemacs-pre-command-hook' instead."
   (cond
-   ((and (boundp 'ergoemacs-mode)
-         ergoemacs-mode (eq hook 'pre-command-hook)
-         (boundp 'ergoemacs-hook-functions)
+   ((and ergoemacs-mode (eq hook 'pre-command-hook)
          (memq hook ergoemacs-hook-functions))
     (add-hook 'ergoemacs-pre-command-hook function append local))
    (t
@@ -61,9 +61,7 @@ If `pre-command-hook' is used and `ergoemacs-mode' is enabled add to `ergoemacs-
   "Advice to allow `this-command' to be set correctly before running `pre-command-hook'.
 If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre-command-hook' instead."
   (cond
-   ((and (boundp 'ergoemacs-mode)
-         ergoemacs-mode (eq hook 'pre-command-hook)
-         (boundp 'ergoemacs-hook-functions)
+   ((and ergoemacs-mode (eq hook 'pre-command-hook)
          (memq hook ergoemacs-hook-functions))
     (remove-hook 'ergoemacs-pre-command-hook function local))
    (t
@@ -73,7 +71,7 @@ If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre
   "This does the right thing when modifying `ergoemacs-keymap'.
 Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
   (let ((is-global-p (equal keymap (current-global-map))))
-    (if (and (boundp 'ergoemacs-run-mode-hooks) ergoemacs-run-mode-hooks
+    (if (and ergoemacs-run-mode-hooks
              (not (equal keymap (current-global-map)))
              (not (equal keymap ergoemacs-keymap)))
         (let ((ergoemacs-run-mode-hooks nil)
@@ -92,83 +90,66 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
 (defvar ergoemacs-global-override-rm-keys '())
 ;;; Advices enabled or disabled with ergoemacs-mode
 (defvar ergoemacs-ignore-advice nil)
+
+(declare-function ergoemacs-theme-component--ignore-globally-defined-key
+                  "ergoemacs-theme-engine.el")
+(defvar ergoemacs-global-changed-cache)
+(defvar ergoemacs-global-not-changed-cache)
 (defun ergoemacs-global-set-key-after (key)
   (if ergoemacs-ignore-advice nil
-    (unless (or (and (vectorp key)
-                     (memq (elt key 0) '(menu-bar 27 remap)))
-                (and (not (vectorp key))
-                     (string= "ESC" (key-description key))))
-      (let ((ergoemacs-ignore-advice t))
-        (add-to-list 'ergoemacs-global-changed-cache (key-description key))
-        (when ergoemacs-global-not-changed-cache
-          (delete (key-description key) ergoemacs-global-not-changed-cache))
-        (add-to-list 'ergoemacs-global-override-rm-keys key)
-        (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
-          (ergoemacs-theme-remove-key-list (list key) t))))))
-
-(defadvice local-set-key (around ergoemacs-local-set-key-advice (key command) activate)
-  "This let you use `local-set-key' as usual when `ergoemacs-mode' is enabled."
-  (if (and (fboundp 'ergoemacs-mode) ergoemacs-mode)
-      (ergoemacs-local-set-key key command)
-    ad-do-it))
-(add-to-list 'ergoemacs-advices 'ergoemacs-local-set-key-advice)
-
-(defadvice local-unset-key (around ergoemacs-local-unset-key-advice (key))
-  "This let you use `local-unset-key' as usual when `ergoemacs-mode' is enabled."
-  (if (fboundp 'ergoemacs-mode)
-      (ergoemacs-local-unset-key key)
-    ad-do-it))
+    (let ((kd (key-description key)))
+      (unless (or (and (vectorp key)
+                       (memq (elt key 0) '(menu-bar 27 remap)))
+                  (and (not (vectorp key))
+                       (string= "ESC" kd)))
+        ;; Let `ergoemacs-mode' know these keys have changed.
+        (ergoemacs-pushnew kd ergoemacs-global-changed-cache :test 'equal)
+        (setq ergoemacs-global-not-changed-cache (delete kd ergoemacs-global-not-changed-cache))
+        ;; Remove the key from `ergoemacs-mode' bindings
+        (ergoemacs-theme-component--ignore-globally-defined-key key t)))))
 
 (add-to-list 'ergoemacs-advices 'ergoemacs-local-unset-key-advice)
 
 (eval-after-load "helm"
   '(progn
-     ;; (defadvice helm-M-x (around ergoemacs-helm-M-x-keys)
-;;        "Translates Helm M-x keys to ergoemacs style bindings."
-;;        (flet ((helm-M-x-transformer
-;;                (candidates sources)
-;;                "filtered-candidate-transformer to show bindings in emacs commands.
-;; Show global bindings and local bindings according to current `major-mode'."
-;;                (with-helm-current-buffer
-;;                  (loop with local-map = (helm-M-x-current-mode-map-alist)
-;;                        for cand in candidates
-;;                        for local-key  = (car (rassq cand local-map))
-     ;;                        for key        = (substitute-command-keys (format "\\[%s]" cand))
-;;                        collect
-;;                        (cons (cond ((and (string-match "^M-x" key) local-key)
-;;                                     (format "%s (%s)"
-;;                                             cand (propertize
-;;                                                   (if (and ergoemacs-use-ergoemacs-key-descriptions ergoemacs-mode)
-;;                                                       (ergoemacs-pretty-key local-key)
-;;                                                     local-key)
-;;                                                   'face 'helm-M-x-key)))
-;;                                    ((string-match "^M-x" key) cand)
-;;                                    (t (format "%s (%s)"
-;;                                               cand (propertize
-;;                                                     (if (and ergoemacs-use-ergoemacs-key-descriptions ergoemacs-mode)
-;;                                                         (ergoemacs-pretty-key key)
-;;                                                       key)
-;;                                                     'face 'helm-M-x-key))))
-;;                              cand) into ls
-;;                              finally return
-;;                              (sort ls #'helm-command-M-x-sort-fn)))))
-;;          ad-do-it))
-
-     ;; (ad-activate 'helm-M-x)
-     ))
+     (defadvice helm-M-x-transformer (around ergoemacs-helm-M-x-transformer activate)
+       "Make ``helm-M-x' work correctly with `ergoemacs-mode' pretty keys"
+       (let ((ergoemacs-use-M-x-p t))
+         ad-do-it))))
 
 
 (defadvice cua-mode (around ergoemacs-activate-only-selection-mode (arg) activate)
   "When `ergoemacs-mode' is enabled, enable `cua-selection-mode' instead of plain `cua-mode'."
-  (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
+  (when ergoemacs-mode
+    ;; Do NOT allow cua-mode to do the C-x and C-c
+    ;; hack, `ergoemacs-mode' needs to do a similar hack to allow
+    ;; backspace in key sequences.
     (setq-default cua-enable-cua-keys nil))
   ad-do-it
+  ;; Reset `cua--keymap-alist' -- make it compatible with
+  ;; `ergoemacs-mode'
+  (setq cua--rectangle-keymap (make-sparse-keymap))
+  (setq cua--rectangle-initialized nil)
+  (if ergoemacs-mode
+      (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
+    (setq cua--rectangle-modifier-key 'meta))
+  (cua--init-rectangles)
+  (setq cua--keymap-alist
+        (progn
+          (cua--init-rectangles)
+          `((cua--ena-prefix-override-keymap . ,cua--prefix-override-keymap)
+            (cua--ena-prefix-repeat-keymap . ,cua--prefix-repeat-keymap)
+            (cua--ena-cua-keys-keymap . ,cua--cua-keys-keymap)
+            (cua--ena-global-mark-keymap . ,cua--global-mark-keymap)
+            (cua--rectangle . ,cua--rectangle-keymap)
+            (cua--ena-region-keymap . ,cua--region-keymap)
+            (cua-mode . ,cua-global-keymap))))
   (when (and (boundp 'ergoemacs-mode) ergoemacs-mode)
     (customize-mark-as-set 'cua-enable-cua-keys)))
 
 (defadvice icicle-mode (around ergoemacs-icicle-play (arg) activate)
   "Allow `ergoemacs-mode' to play nicely with `icicle-mode'."
-  (let ((oee (and (boundp 'ergoemacs-mode) ergoemacs-mode)))
+  (let ((oee ergoemacs-mode))
     (when oee ;; Remove key bindings
       (ergoemacs-mode -1))
     ad-do-it
@@ -193,7 +174,6 @@ This require `ergoemacs-mode' to be enabled as well as
 "
       (cond
        ((and ergoemacs-helm-expand-user-dirs
-             (boundp 'ergoemacs-mode)
              ergoemacs-mode
              (helm-file-completion-source-p)
              (string-match "/\\(~[^/]*/\\)$" helm-pattern)
@@ -218,17 +198,202 @@ This assumes any key defined while running a hook is a user-defined hook."
   (let ((ergoemacs-run-mode-hooks t))
     ad-do-it))
 
-(defadvice turn-on-undo-tree-mode (around ergoemacs-undo-tree-mode activate)
-  "Make `ergoemacs-mode' and undo-tree compatible."
+
+;;; Unfortunately, the advice route doesn't seem to work for these
+;;; functions :(
+
+;;; key-description
+(declare-function ergoemacs-pretty-key "ergoemacs-translate.el")
+(declare-function ergoemacs-real-key-description
+                  "ergoemacs-advices.el" (keys &optional prefix) t)
+(fset 'ergoemacs-real-key-description (symbol-function 'key-description))
+(defvar ergoemacs-key-description-commands '(describe-function))
+(defun ergoemacs-key-description (keys &optional prefix)
+  "Allows `describe-function' to show the `ergoemacs-pretty-key' bindings.
+Uses `ergoemacs-real-key-description'."
+  (let ((ret (ergoemacs-real-key-description keys prefix)))
+    (when (and ergoemacs-mode
+               (memq this-command ergoemacs-key-description-commands))
+      (setq ret (ergoemacs-pretty-key ret)))
+    ret))
+
+(declare-function ergoemacs-real-substitute-command-keys "ergoemacs-advices.el" (string) t)
+(fset 'ergoemacs-real-substitute-command-keys (symbol-function 'substitute-command-keys))
+
+(defvar ergoemacs-original-keys-to-shortcut-keys-regexp)
+(defvar ergoemacs-original-keys-to-shortcut-keys)
+(declare-function ergoemacs-emulations "ergoemacs-mode.el")
+(declare-function ergoemacs-remove-shortcuts "ergoemacs-shortcuts.el")
+(defun ergoemacs-substitute-command (string &optional map)
+  "Substitutes command STRING
+will add MAP to substitution."
+  (save-match-data
+    (let* (ret
+           (test (ergoemacs-with-global
+                  (ergoemacs-real-substitute-command-keys
+                   (or (and map (concat map string)) string))))
+           (test-vect (read-kbd-macro test t))
+           (test-hash (gethash test-vect ergoemacs-original-keys-to-shortcut-keys)))
+      (if test-hash
+          (progn
+            (setq test (ergoemacs-real-key-description (nth 0 test-hash)))
+            (ergoemacs-pretty-key test))
+        (let (ergoemacs-modal
+              ergoemacs-repeat-keys
+              ergoemacs-read-input-keys)
+          (ergoemacs-pretty-key
+           (ergoemacs-real-substitute-command-keys
+            (or (and map (concat map string)) string))))))))
+
+(defun ergoemacs-substitute-map--1 (string)
+  (substring
+   (replace-regexp-in-string
+    "`\\(binding\\|Prefix Command\\|-------\\)'" "\\1"
+    (replace-regexp-in-string
+     "---|\n|-" "---|"
+     (replace-regexp-in-string
+      "^|'[ \t]*|$" "|-"
+      (replace-regexp-in-string
+       "' |\n.*(that binding is.*\n|'" "' (shadowed)"
+       (replace-regexp-in-string
+        "^" "|"
+        (replace-regexp-in-string
+         "$" "' |"
+         (replace-regexp-in-string
+          "\\([ \t]\\{2,\\}\\|\t\\)" "\\1 | `"
+          string))))))) 0 -2))
+
+(declare-function ergoemacs-unicode-char "ergoemacs-translate.el")
+(defun ergoemacs-substitute-map (string &optional function)
+  (save-match-data
+    (let* (ret
+           ergoemacs-use-unicode-brackets
+           (max1 0) (max2 0)
+           (function (or function 'ergoemacs-real-substitute-command-keys))
+           (test (ergoemacs-with-global
+                  (funcall function string)))
+           (shortcut-list '()))
+      (while (string-match (format "^%s.*$"ergoemacs-original-keys-to-shortcut-keys-regexp) test)
+        (push (match-string 0 test) shortcut-list)
+        (setq test
+              (replace-match "" nil nil test)))
+      (let (ergoemacs-modal ergoemacs-repeat-keys ergoemacs-read-input-keys
+                            ergoemacs-shortcut-keys)
+        (setq test (funcall function string))
+        (when (string-match ".*\n.*\n" test)
+          (setq ret (ergoemacs-substitute-map--1
+                     (concat (match-string 0 test)
+                             (mapconcat (lambda(x) x) shortcut-list "\n")
+                             (replace-match "" nil nil test))))))
+      (with-temp-buffer
+        (insert ret)
+        (goto-char (point-min))
+        (while (re-search-forward ".*\\(ergoemacs-shortcut\\|Prefix Command\\).*" nil t)
+          (delete-region (point-at-bol) (point-at-eol))
+          (when (looking-at "\n+")
+            (replace-match "")))
+        (while (search-forward "`??'" nil t)
+          (replace-match (concat " " (ergoemacs-unicode-char "λ" "?") "  ") t t))
+        (goto-char (point-min))
+        (forward-line 2)
+        (while (re-search-forward "^|\\(.*?\\)[ \t]+|" nil t)
+          (setq test (ergoemacs-pretty-key (match-string 1)))
+          (replace-match (format "| %s |" test) t t)
+          (setq max1 (max max1 (length test))
+                max2 (max max2 (length (buffer-substring (point) (point-at-eol))))))
+        (setq test (concat "|"
+                           (make-string (+ max1 2) ?-)
+                           "+"
+                           (make-string (max 0 (- max2 1)) ?-)
+                           "|"))
+        (goto-char (point-min))
+        (insert test "\n")
+        (goto-char (point-max))
+        (insert "\n" test "\n\n")
+        (goto-char (point-min))
+        (while (re-search-forward "|-.*\\(\n|-.*\\)*" nil t)
+          (replace-match test t t))
+        (goto-char (point-min))
+        (while (re-search-forward "^| *\\(.*?[^ ]\\) +| *\\(.*?[^ ]\\) +|$" nil t)
+          (replace-match (format "| \\1%s | \\2%s |"
+                                 (make-string (max 0 (- max1 (length (match-string 1)))) ? )
+                                 (make-string (max 0 (- max2 (+ 3 (length (match-string 2))))) ? )) t))
+        (setq ret (buffer-string)))
+      ret)))
+
+
+(defvar ergoemacs-mode)
+(defun ergoemacs-substitute-command-keys (string)
+  "`ergoemacs-mode' replacement for substitute-command-keys.
+Actual substitute-command-keys is always in `ergoemacs-real-substitute-command-keys'"
+  (if (not string) nil
+    (let (ret str mapvar)
+      (if (not ergoemacs-mode)
+          (setq ret (ergoemacs-real-substitute-command-keys string))
+        (with-temp-buffer
+          (insert string)
+          (goto-char (point-min))
+          (while (re-search-forward "\\(\\(?:\\\\=\\)?\\)\\\\\\(\\[\\|<\\|{\\)\\(.*?\\)\\(\\]\\|>\\|}\\)" nil t)
+            (cond
+             ((string-match-p "\\\\=" (match-string 1))
+              (replace-match "\\\\\\2\\3\\4" t nil))
+             ((and (string-match-p "<" (match-string 2))
+                   (string-match-p ">" (match-string 4)))
+              (setq mapvar (concat "\\<" (match-string 3) ">"))
+              (replace-match ""))
+             ((and (string-match-p "{" (match-string 2))
+                   (string-match-p "}" (match-string 4)))
+              (replace-match (ergoemacs-substitute-map (match-string 0)) t t))
+             ((and (string-match-p "\\[" (match-string 2))
+                   (string-match-p "\\]" (match-string 4)))
+              (replace-match (ergoemacs-substitute-command (match-string 0) mapvar) t t))))
+          (goto-char (point-min))
+          (while (re-search-forward "\\\\=" nil t)
+            (replace-match "" t t)
+            (re-search-forward "\\=\\\\=" nil t))
+          (goto-char (point-min))
+          (while (and (not ergoemacs-use-M-x-p) (re-search-forward "\\(\\<M-x\\|<execute>\\) " nil t))
+            (replace-match (ergoemacs-substitute-command "\\[execute-extended-command] " "\\<global-map>") t t))
+          (setq ret (buffer-string))))
+      ret)))
+
+(declare-function ergoemacs-real-completing-read "ergoemacs-advices.el"
+                  (prompt collection &optional
+                          predicate require-match
+                          initial-input hist def inherit-input-method) t)
+(fset 'ergoemacs-real-completing-read (symbol-function 'completing-read))
+(defun ergoemacs-completing-read (prompt collection &optional
+                                         predicate require-match
+                                         initial-input hist def inherit-input-method)
+  "Ergoemacs replacement of `completing-read'.
+Allows `execute-extended-command' to show the proper keys.
+The real command is always `ergoemacs-real-completing-read'.
+"
+  (ergoemacs-real-completing-read
+   (substitute-command-keys
+    (replace-regexp-in-string "\\<M-x " "\\[execute-extended-command] " prompt t t))
+   collection predicate require-match
+   initial-input hist def inherit-input-method))
+
+(declare-function ergoemacs-real-key-binding "ergoemacs-advices.el" (key &optional accept-default no-remap position) t)
+(fset 'ergoemacs-real-key-binding (symbol-function 'key-binding))
+(defun ergoemacs-key-binding (key &optional accept-default no-remap position)
+  "Return the binding for command KEY in the without `ergoemacs-mode' enabled.
+Uses `ergoemacs-real-key-binding' to get the key-binding."
   (ergoemacs-with-global
-   ad-do-it))
+   (ergoemacs-real-key-binding key accept-default no-remap position)))
 
-
-
-
+(defun ergoemacs-enable-c-advices (&optional disable)
+  "Enabling advices for C code and complex changes to functions.
+DISABLE when non-nil.
+Assumes ergoemacs-real-FUNCTION and ergoemacs-FUNCTION as the two functions to toggle"
+  (dolist (ad '(completing-read substitute-command-keys key-binding key-description))
+    (cond
+     (disable
+      (fset ad (symbol-function (intern (concat "ergoemacs-real-" (symbol-name ad))))))
+     (t
+      (fset ad (symbol-function (intern (concat "ergoemacs-" (symbol-name ad)))))))))
 (provide 'ergoemacs-advices)
-;;;;;;;;;;;;;;;;;;;;;;;;`';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-advices.el ends here
-;; Local Variables:
 ;; coding: utf-8-emacs
-;; End:

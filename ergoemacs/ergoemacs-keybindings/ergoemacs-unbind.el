@@ -28,7 +28,14 @@
 ;; 
 
 ;;; Code:
-
+(eval-when-compile 
+  (require 'cl)
+  (require 'ergoemacs-macros 
+           (expand-file-name "ergoemacs-macros" 
+                             (file-name-directory (or
+                                                   load-file-name
+                                                   (buffer-file-name)
+                                                   default-directory)))))
 (require 'edmacro)
 
 (defvar ergoemacs-emacs-default-bindings
@@ -631,9 +638,14 @@
     ("RET" (newline)))
   "Default Emacs Key Bindings")
 
-(defvar ergoemacs-unbind-keymap (make-sparse-keymap)
-  "Keymap for `ergoemacs-unbind-keys'")
-
+(defvar ergoemacs-single-command-keys)
+(defvar ergoemacs-shortcut-keymap)
+(defvar ergoemacs-keymap)
+(defvar keyfreq-mode)
+(defvar keyfreq-table)
+(defvar ergoemacs-describe-key)
+(declare-function ergoemacs-debug "ergoemacs-mode.el")
+(declare-function ergoemacs-real-key-binding "ergoemacs-advices.el" (key &optional accept-default no-remap position) t)
 (defun ergoemacs-undefined (&optional arg)
   "Ergoemacs Undefined key, tells where to perform the old action."
   (interactive "P")
@@ -659,8 +671,7 @@
           (setq local-fn (lookup-key ergoemacs-keymap key-kbd)))
         (functionp local-fn))
       (ergoemacs-debug "WARNING: The command %s is undefined when if shouldn't be..." local-fn)
-      (ergoemacs-vars-sync) ;; Try to fix issue.
-      (setq tmp (key-binding key-kbd))
+      (setq tmp (ergoemacs-real-key-binding key-kbd))
       (when (and tmp (not (equal tmp 'ergoemacs-undefined)))
         (setq local-fn tmp))
       (when (featurep 'keyfreq)
@@ -729,16 +740,12 @@
 (defun ergoemacs-reset-global-where-is ()
   "Reset `ergoemacs-where-is-global-hash'."
   (setq ergoemacs-where-is-global-hash (make-hash-table :test 'equal))
-  (mapc
-   (lambda(x)
-     (let ((key (read-kbd-macro (nth 0 x))))
-       (mapc
-        (lambda(fn)
-          (let ((keys (gethash fn ergoemacs-where-is-global-hash)))
-            (add-to-list 'keys key)
-            (puthash fn keys ergoemacs-where-is-global-hash)))
-        (nth 1 x))))
-   ergoemacs-emacs-default-bindings))
+  (dolist (x ergoemacs-emacs-default-bindings)
+    (let ((key (read-kbd-macro (nth 0 x))))
+      (dolist (fn (nth 1 x))
+        (let ((keys (gethash fn ergoemacs-where-is-global-hash)))
+          (ergoemacs-pushnew key keys :test 'equal)
+          (puthash fn keys ergoemacs-where-is-global-hash))))))
 
 
 ;;;###autoload
@@ -753,9 +760,7 @@
              (setq fn (lookup-key global-map (read-kbd-macro first)))
              (if (not (functionp fn))
                  elt
-	       ;; FIXME: Use `push' or `cl-pushnew' instead of
-               ;; `add-to-list'.
-               (add-to-list 'last fn)
+               (ergoemacs-pushnew fn last :test 'equal)
                `(,first ,last))))
          ergoemacs-emacs-default-bindings))
   (ergoemacs-reset-global-where-is))
@@ -806,6 +811,7 @@
 (defvar ergoemacs-global-changed-cache '()
   "Cache of global variables that have changed.")
 
+(defvar ergoemacs-dir)
 (defun ergoemacs-global-fix-defualt-bindings (kbd-code function)
   "Helper function to fix `ergoemacs-emacs-default-bindings' based on currently running emacs."
   (interactive)
@@ -817,6 +823,7 @@
       (insert (format "%s " function)))
     (write-file (expand-file-name "ergoemacs-unbind.el" ergoemacs-dir))))
 
+(declare-function ergoemacs-kbd "ergoemacs-translate.el")
 (defun ergoemacs-global-changed-p (key &optional is-variable complain fix)
   "Returns if a global key has been changed.  If IS-VARIABLE is
 true and KEY is a string, then lookup the keyboard equivalent
@@ -898,32 +905,30 @@ This should only be run when no global keys have been set.
                     (when fix
                       (unless (integerp trans-function)
                         (ergoemacs-global-fix-defualt-bindings key-kbd trans-function))))
-                  (add-to-list 'ergoemacs-global-changed-cache key-kbd))
-              (add-to-list 'ergoemacs-global-not-changed-cache key-kbd))
+                  (ergoemacs-pushnew key-kbd ergoemacs-global-changed-cache :test 'equal))
+              (ergoemacs-pushnew key-kbd ergoemacs-global-not-changed-cache :test 'equal))
             has-changed))))))
 
+(declare-function ergoemacs-get-fixed-layout "ergoemacs-translate.el")
+(declare-function ergoemacs-get-variable-layout "ergoemacs-translate.el")
 (defun ergoemacs-warn-globally-changed-keys (&optional fix)
   "Warns about globally changed keys. If FIX is true, fix the ergoemacs-unbind file."
   (interactive)
-  (mapc
-   (lambda(x)
-     (ergoemacs-global-changed-p (nth 0 x) nil t t))
-   ergoemacs-emacs-default-bindings)
+  (dolist (x ergoemacs-emacs-default-bindings)
+    (ergoemacs-global-changed-p (nth 0 x) nil t t))
   (message "Ergoemacs Keys warnings for this layout:")
-  (mapc
-   (lambda(x)
-     (and (eq 'string (type-of (nth 0 x)))
-          (ergoemacs-global-changed-p (nth 0 x) nil t t)))
-      (symbol-value (ergoemacs-get-fixed-layout)))
-  (mapc
-   (lambda(x)
-     (and (eq 'string (type-of (nth 0 x)))
-          (ergoemacs-global-changed-p (nth 0 x) t t)))
-   (symbol-value (ergoemacs-get-variable-layout))))
+  (dolist (x (symbol-value (ergoemacs-get-fixed-layout)))
+    (and (eq 'string (type-of (nth 0 x)))
+         (ergoemacs-global-changed-p (nth 0 x) nil t t)))
+  (dolist (x (symbol-value (ergoemacs-get-variable-layout)))
+    (and (eq 'string (type-of (nth 0 x)))
+         (ergoemacs-global-changed-p (nth 0 x) t t))))
 
 
 
 ;; Based on describe-key-briefly
+(declare-function ergoemacs-key-fn-lookup "ergoemacs-translate.el")
+(declare-function ergoemacs-pretty-key "ergoemacs-translate.el")
 (defun ergoemacs-where-is-old-binding (&optional key only-new-key)
   "Print the name of the function KEY invoked before to start ErgoEmacs minor mode."
   (interactive
