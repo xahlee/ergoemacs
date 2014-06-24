@@ -171,6 +171,8 @@
 "scan-sexps"
 "syntax-ppss"
 "forward-symbol"
+"forward-sexp"
+"backward-up-list"
 
 "set-default"
 
@@ -217,10 +219,10 @@
 "find-file"
 "forward-char"
 "forward-line"
-"forward-sexp"
 "generate-new-buffer"
 "global-unset-key"
-"goto-char"  "insert-file-contents"
+"goto-char"
+"insert-file-contents"
 "insert"
 "interactive"
 "kill-region"
