@@ -32,10 +32,43 @@
 
 
 
-(define-abbrev-table 'xjs-abbrev-table '(
- ("f" "function")
- )
-"abbrev table for `xah-js-mode'"
+(define-abbrev-table 'xjs-abbrev-table
+  '(
+    ("f" "function")
+
+    ("cl" "console.log(▮)" nil :system t)
+
+    ("do" "do { ▮; x++;} while (x != 5)" nil :system t)
+
+    ("function" "function () { ▮; }" nil :system t)
+    ("for" "for (var i = 0; i < 9; i++) { ▮; }" nil :system t)
+    ("if" "if ( ▮ ) {
+▮
+}" nil :system t)
+
+    ("else" "else { ▮ }" nil :system t)
+
+    ("switch" "switch(▮) {
+    case ▮:
+▮;
+        break;
+    case ▮:
+▮;
+        break;
+    default:
+        ▮;
+}" nil :system t)
+
+("case" "case ▮: ▮; break;" nil :system t)
+
+    ("try" "try {
+$1;
+} catch(error) {
+▮;
+}" nil :system t)
+    ("var" "var $1 = ▮;" nil :system t)
+    ("while" "while (x != 5) { ▮; x++;}" nil :system t))
+  "abbrev table for `xah-js-mode'"
   )
 
 
@@ -436,11 +469,6 @@
   (js-indent-line)
 )
 
-(defun xjs-indent-region ()
-  ""
-  (interactive)
-  nil)
-
 (defun xjs-complete-symbol-ido ()
   "Perform keyword completion on current word.
 
@@ -471,7 +499,7 @@ This uses `ido-mode' user interface style for completion."
   (interactive)
   (kill-all-local-variables)
 
-  (setq mode-name "Σjs")
+  (setq mode-name "∑js")
   (setq major-mode 'xah-js-mode)
 
   (setq font-lock-defaults '((xjs-font-lock-keywords)))
@@ -484,7 +512,6 @@ This uses `ido-mode' user interface style for completion."
   (setq-local comment-column 2)
 
   (setq-local indent-line-function 'xjs-complete-or-indent)
-  ;; (setq-local indent-region-function 'xjs-indent-region)
   (setq-local tab-always-indent 'complete)
   (add-hook 'completion-at-point-functions 'xjs-complete-symbol-ido nil 'local)
 

@@ -7,24 +7,43 @@
 ;; Keywords: languages, convenience
 
 ;; LICENSE:
-
-;; paypal me $5 or
+;; paypal me $5 
 ;; Buy Xah Emacs Tutorial
-;; http://ergoemacs.org/emacs/buy_xah_emacs_tutorial.html
+;; Please see: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
 ;;; Commentary:
 ;; Major mode for editing emacs lisp.
-;; home page: http://ergoemacs.org/emacs/xah-elisp-mode.html
+;; See: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
 ;;; History:
 ;; version 0.5, 2014-06-23 first “polished” release.
-;; version 0.4, 2014-06-22 now features completion and function abbrev/template. (without auto-complete-mode nor yasnippet)
-;; version 0.3, 2014-06-10 major kinda rewrite. use at your own risk.
-;; version 0.2.1, 2014-04-10 added keyword “remove”
-;; version 0.2, 2014-02-18 lots more keywords, and stuff.
 ;; version 0.1, 2013-03-23 first version
 
 (require 'lisp-mode)
+
+(defcustom xem-electric-pair-mode-activate-p t
+  "Whether to turn on `electric-pair-mode'.
+The value must t or nil."
+  :type '(booleanp)
+  :group 'xah-elisp-mode)
+
+(defcustom xem-show-paren-mode-activate-p t
+  "Whether to turn on paren highlighting globally.
+The value must t or nil."
+  :type '(booleanp)
+  :group 'xah-elisp-mode)
+
+(defcustom xem-override-paren-mode-style-p t
+  "Whether to override `show-paren-style'.
+The value must t or nil."
+  :type '(booleanp)
+  :group 'xah-elisp-mode)
+
+(defcustom xem-override-completion-face-p t
+  "Whether to override `completions-common-part' face style.
+The value must t or nil."
+  :type '(booleanp)
+  :group 'xah-elisp-mode)
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
@@ -153,12 +172,19 @@
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
 (setq xem-emacs-words '(
 
+"ido-completing-read"
+"ido-read-directory-name"
+
 "frame-parameter"
 "frame-parameters"
 "modify-frame-parameters"
 "set-frame-parameter"
 "modify-all-frames-parameters"
 
+"buffer-enable-undo"
+"buffer-disable-undo"
+
+"define-minor-mode"
 "set-buffer-modified-p"
 "file-readable-p"
 "buffer-live-p"
@@ -1173,22 +1199,37 @@
 This uses `ido-mode' user interface for completion."
   (interactive)
   (let* (
-         (bds (bounds-of-thing-at-point 'symbol))
-         (p1 (car bds))
-         (p2 (cdr bds))
-         (currentWord
-          (if  (or (null p1) (null p2) (equal p1 p2))
+         (ξbds (bounds-of-thing-at-point 'symbol))
+         (ξp1 (car ξbds))
+         (ξp2 (cdr ξbds))
+         (ξcurrent-sym
+          (if  (or (null ξp1) (null ξp2) (equal ξp1 ξp2))
               ""
-            (buffer-substring-no-properties p1 p2)))
-         finalResult)
-    (when (not currentWord) (setq currentWord ""))
-    (setq finalResult
-          (ido-completing-read "" xem-elisp-all-keywords nil nil currentWord ))
-    (delete-region p1 p2)
-    (insert finalResult)
-    (if (xem-expand-abbrev)
-        nil
-      (xem-add-paren-around-symbol))))
+            (buffer-substring-no-properties ξp1 ξp2)))
+         ξresult-sym)
+    (when (not ξcurrent-sym) (setq ξcurrent-sym ""))
+    (setq ξresult-sym
+          (ido-completing-read "" xem-elisp-all-keywords nil nil ξcurrent-sym ))
+    (delete-region ξp1 ξp2)
+    (insert ξresult-sym)
+
+    ;; ;; expand abbrev if doesn't start with left paren
+    ;; (when (not (xem-start-with-left-paren-p))
+    ;;   (if (xem-expand-abbrev)
+    ;;       nil
+    ;;     (progn 
+    ;;       (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol)))))
+
+    ))
+
+(defun xem-start-with-left-paren-p ()
+  "true or false"
+  (interactive)
+  (save-excursion
+    (forward-symbol -1) (backward-char 1)      
+    (if (looking-at "(")
+      t
+      nil)))
 
 (defun xem-add-paren-around-symbol ()
   "add paren around symbol before cursor and add a space before closing paren, place cursor ther.
@@ -1208,22 +1249,22 @@ Don't expand when in string or comment.
 Returns true if there's a expansion, else false."
   (interactive)
   (let (
-        p1 p2
-        ab-str
+        ξp1 ξp2
+        ξab-str
         (ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         (progn nil)
       (save-excursion
         (forward-symbol -1)
-        (setq p1 (point))
+        (setq ξp1 (point))
         (forward-symbol 1)
-        (setq p2 (point)))
+        (setq ξp2 (point)))
 
-      (setq ab-str (buffer-substring-no-properties p1 p2))
-      (if (abbrev-symbol ab-str)
+      (setq ξab-str (buffer-substring-no-properties ξp1 ξp2))
+      (if (abbrev-symbol ξab-str)
           (progn
-            (abbrev-insert (abbrev-symbol ab-str) ab-str p1 p2 )
-            (xem--abbrev-position-cursor p1)
+            (abbrev-insert (abbrev-symbol ξab-str) ξab-str ξp1 ξp2 )
+            (xem--abbrev-position-cursor ξp1)
             t)
         (progn nil)))))
 
@@ -1233,9 +1274,7 @@ this is called by emacs abbrev system."
   (let ((ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         (progn nil)
-      (if (looking-at "-") ; todo. this function won't see it. emacs call this function before inserting user's char
-          (progn nil)
-        (progn t)))))
+      t)))
 
 (put 'xem-expand-abbrev 'no-self-insert t)
 
@@ -1275,27 +1314,32 @@ If char before point is letters and char after point is whitespace or punctuatio
 Root sexp group is the outmost sexp unit."
   (interactive)
   (save-excursion
-    (let ( ξp1 ξp2)
+    (let (ξp1 ξp2)
       (xem-goto-outmost-bracket)
-      (setq  ξp1 (point))
-      (setq  ξp2 (scan-sexps (point) 1))
-      (save-restriction 
-        (narrow-to-region ξp1 ξp2)
-        (indent-sexp (point-max))
-        (xem-compact-parens-region 1 (point-max))))))
+      (setq ξp1 (point))
+      (setq ξp2 (scan-sexps (point) 1))
+      (progn
+        (goto-char ξp1)
+        (indent-sexp)
+        (xem-compact-parens-region ξp1 ξp2)))))
 
 (defun xem-goto-outmost-bracket (&optional φpos)
-  "Move cursor to the beginning of outer-most bracket, with respect to φpos."
+  "Move cursor to the beginning of outer-most bracket, with respect to φpos.
+Returns true if point is moved, else false."
   (interactive)
-  (let ((i 0)
-        (ξp1 (if (number-or-marker-p φpos)
+  (let ((ξi 0)
+        (ξp0 (if (number-or-marker-p φpos)
                  φpos
                (point))))
-    (goto-char ξp1)
+    (goto-char ξp0)
     (while
-        (and (< (setq i (1+ i)) 20)
+        (and (< (setq ξi (1+ ξi)) 20)
              (not (eq (nth 0 (syntax-ppss (point))) 0)))
-      (up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))))
+      (up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
+    (if (equal ξp0 (point))
+        nil
+      t
+      )))
 
 (defun xem-compact-parens (&optional φp1 φp2)
   "Remove whitespaces in ending repetition of parenthesises.
@@ -1306,20 +1350,20 @@ If there's a text selection, act on the region, else, on defun block."
      (save-excursion
        (xem-goto-outmost-bracket)
        (list (point) (scan-sexps (point) 1)))))
-  (let ((p1 φp1) (p2 φp2))
+  (let ((ξp1 φp1) (ξp2 φp2))
     (when (null φp1)
       (save-excursion
         (xem-goto-outmost-bracket)
-        (setq p1 (point))
-        (setq p2 (scan-sexps (point) 1))))
-    (xem-compact-parens-region p1 p2)))
+        (setq ξp1 (point))
+        (setq ξp2 (scan-sexps (point) 1))))
+    (xem-compact-parens-region ξp1 ξp2)))
 
-(defun xem-compact-parens-region (p1 p2)
+(defun xem-compact-parens-region (φp1 φp2)
   "Remove whitespaces in ending repetition of parenthesises in region."
   (interactive "r")
   (let (ξsyntax-state)
     (save-restriction
-      (narrow-to-region p1 p2)
+      (narrow-to-region φp1 φp2)
       (goto-char (point-min))
       (while (search-forward-regexp ")[ \t\n]+)" nil t)
         (setq ξsyntax-state (syntax-ppss (match-beginning 0)))
@@ -1339,7 +1383,7 @@ If there's a text selection, act on the region, else, on defun block."
  ("d" "(defun ▮ ()
   \"DOCSTRING\"
   (interactive)
-  (let (var)
+  (let (VAR)
 
   ))" nil :system t)
  ("i" "(insert ▮)" nil :system t)
@@ -1425,342 +1469,182 @@ If there's a text selection, act on the region, else, on defun block."
  ("yonp" "yes-or-no-p" nil :system t)
 
 ("add-hook" "(add-hook HOOK▮ FUNCTION)" nil :system t)
-
 ("and" "(and ▮)" nil :system t )
 
 ("append" "(append ▮)" nil :system t)
-
 ("add-to-list" "(add-to-list LIST-VAR▮ ELEMENT &optional APPEND COMPARE-FN)" nil :system t)
-
 ("apply" "(apply ▮)" nil :system t)
-
 ("aref" "(aref ARRAY▮ INDEX)" nil :system t)
-
 ("aset" "(aset ARRAY▮ IDX NEWELT)" nil :system t)
-
 ("assoc" "(assoc KEY▮ LIST)" nil :system t)
-
 ("assq" "(assq KEY▮ LIST)" nil :system t)
-
 ("autoload" "(autoload 'FUNCNAME▮ \"FILENAME\" &optional \"DOCSTRING\" INTERACTIVE TYPE)" nil :system t)
-
 ("backward-char" "(backward-char ▮)" nil :system t)
-
 ("beginning-of-line" "(beginning-of-line)" nil :system t)
-
 ("boundp" "(boundp '▮)" nil :system t)
-
 ("bounds-of-thing-at-point" "(bounds-of-thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
 
 ("buffer-file-name" "(buffer-file-name)" nil :system t)
-
 ("buffer-modified-p" "(buffer-modified-p ▮)" nil :system t)
-
 ("buffer-substring-no-properties" "(buffer-substring-no-properties START▮ END)" nil :system t)
-
 ("buffer-substring" "(buffer-substring START▮ END)" nil :system t)
-
 ("called-interactively-p" "(called-interactively-p 'interactive▮)" nil :system t)
-
 ("car" "(car ▮)" nil :system t)
-
 ("catch" "(catch TAG▮ BODY)" nil :system t)
-
 ("cdr" "(cdr ▮)" nil :system t)
-
 ("concat" "(concat ▮)" nil :system t)
-
 ("cond" "(cond
 (CONDITION▮ BODY)
 (CONDITION BODY)
 )" nil :system t)
-
 ("condition-case" "(condition-case ▮)" nil :system t)
-
 ("cons" "(cons ▮)" nil :system t)
-
 ("consp" "(consp ▮)" nil :system t)
-
 ("copy-directory" "(copy-directory ▮ NEWNAME &optional KEEP-TIME PARENTS)" nil :system t)
-
 ("copy-file" "(copy-file FILE▮ NEWNAME &optional OK-IF-ALREADY-EXISTS KEEP-TIME PRESERVE-UID-GID)" nil :system t)
-
 ("current-buffer" "(current-buffer)" nil :system t)
-
 ("custom-autoload" "(custom-autoload ▮ SYMBOL LOAD &optional NOSET)" nil :system t)
-
 ("defalias" "(defalias 'SYMBOL▮ 'DEFINITION &optional DOCSTRING)" nil :system t)
-
 ("defconst" "(defconst ▮ INITVALUE \"DOCSTRING\")" nil :system t)
-
 ("defcustom" "(defcustom ▮ VALUE \"DOC\" &optional ARGS)" nil :system t)
-
 ("define-key" "(define-key KEYMAPNAME▮ (kbd \"M-b\") 'FUNCNAME)" nil :system t)
-
 ("defsubst" "(defsubst ▮)" nil :system t)
-
 ("defun" "(defun ▮ ()
   \"DOCSTRING\"
   (interactive)
-  (let (var)
+  (let (VAR)
 
   ))" nil :system t)
-
 ("defvar" "(defvar ▮ &optional INITVALUE \"DOCSTRING\")" nil :system t)
-
 ("delete-char" "(delete-char ▮)" nil :system t)
-
 ("delete-directory" "(delete-directory ▮ &optional RECURSIVE)" nil :system t)
-
 ("delete-file" "(delete-file ▮)" nil :system t)
-
 ("delete-region" "(delete-region ▮)" nil :system t)
-
 ("directory-files" "(directory-files ▮ &optional FULL MATCH NOSORT)" nil :system t)
-
 ("dolist" "(dolist ▮)" nil :system t)
-
 ("dotimes" "(dotimes (VAR▮ COUNT [RESULT]) BODY)" nil :system t)
-
 ("elt" "(elt SEQUENCE▮ N)" nil :system t)
-
 ("end-of-line" "(end-of-line ▮&optional N)" nil :system t)
-
 ("eq" "(eq ▮)" nil :system t)
-
 ("equal" "(equal ▮)" nil :system t)
-
 ("error" "(error \"%s\" ▮)" nil :system t)
-
 ("expand-file-name" "(expand-file-name ▮ &optional relativedir)" nil :system t)
-
 ("format" "(format \"▮\" &optional OBJECTS)" nil :system t)
-
 ("fboundp" "(fboundp '▮)" nil :system t)
-
 ("file-directory-p" "(file-directory-p ▮)" nil :system t)
-
 ("file-exists-p" "(file-exists-p ▮)" nil :system t)
-
 ("file-name-directory" "(file-name-directory ▮)" nil :system t)
-
 ("file-name-extension" "(file-name-extension ▮ &optional PERIOD)" nil :system t)
-
 ("file-name-nondirectory" "(file-name-nondirectory ▮)" nil :system t)
-
 ("file-name-sans-extension" "(file-name-sans-extension ▮)" nil :system t)
-
 ("file-regular-p" "(file-regular-p ▮)" nil :system t)
-
 ("file-relative-name" "(file-relative-name ▮)" nil :system t)
-
 ("find-file" "(find-file ▮)" nil :system t)
-
 ("format" "(format \"%s\" ▮)" nil :system t)
-
 ("forward-char" "(forward-char ▮)" nil :system t)
-
 ("forward-line" "(forward-line ▮)" nil :system t)
-
 ("funcall" "(funcall ▮)" nil :system t)
-
 ("function" "(function ▮)" nil :system t)
-
 ("generate-new-buffer" "(generate-new-buffer ▮)" nil :system t)
-
 ("get" "(get SYMBOL▮ PROPNAME)" nil :system t)
-
 ("global-set-key" "(global-set-key (kbd \"C-▮\") 'COMMAND)" nil :system t)
-
 ("goto-char" "(goto-char ▮)" nil :system t)
-
 ("if" "(if ▮
     (progn )
   (progn )
 )" nil :system t)
-
 ("insert-file-contents" "(insert-file-contents ▮ &optional VISIT BEG END REPLACE)" nil :system t)
-
 ("insert" "(insert ▮)" nil :system t)
-
 ("interactive" "(interactive)" nil :system t)
-
 ("kbd" "(kbd \"▮\")" nil :system t)
-
 ("kill-buffer" "(kill-buffer ▮)" nil :system t)
-
 ("lambda" "(lambda (▮) BODY)" nil :system t)
-
 ("length" "(length ▮)" nil :system t)
-
 ("let" "(let (▮)
  x
 )" nil :system t)
-
 ("line-beginning-position" "(line-beginning-position)" nil :system t)
-
 ("line-end-position" "(line-end-position)" nil :system t)
-
-("looking-at" "(looking-at REGEXP▮)" nil :system t)
-
+("looking-at" "(looking-at \"REGEXP▮\")" nil :system t)
 ("make-directory" "(make-directory ▮ &optional PARENTS)" nil :system t)
-
 ("make-local-variable" "(make-local-variable ▮)" nil :system t)
-
 ("mapc" "(mapc '▮ SEQUENCE)" nil :system t)
-
 ("mapcar" "(mapcar '▮ SEQUENCE)" nil :system t)
-
 ("mapconcat" "(mapconcat FUNCTION▮ SEQUENCE SEPARATOR)" nil :system t)
-
 ("match-beginning" "(match-beginning N▮)" nil :system t)
-
 ("match-end" "(match-end N▮)" nil :system t)
-
 ("match-string" "(match-string ▮)" nil :system t)
-
 ("member" "(member ELT▮ LIST)" nil :system t)
-
 ("memq" "(memq ▮ LIST)" nil :system t)
-
 ("message" "(message \"%s▮\" ARGS)" nil :system t)
-
 ("narrow-to-region" "(narrow-to-region START▮ END)" nil :system t)
-
 ("nth" "(nth N▮ LIST)" nil :system t)
-
 ("null" "(null ▮)" nil :system t)
-
 ("number-to-string" "(number-to-string ▮)" nil :system t)
-
 ("or" "(or ▮)" nil :system t)
-
 ("point-max" "(point-max)" nil :system t)
-
 ("point-min" "(point-min)" nil :system t)
-
 ("point" "(point)" nil :system t)
-
 ("prin1" "(prin1 ▮)" nil :system t)
-
 ("princ" "(princ ▮)" nil :system t)
-
 ("print" "(print ▮)" nil :system t)
-
 ("progn" "(progn ▮)" nil :system t)
-
 ("push" "(push ▮)" nil :system t)
-
 ("put" "(put 'SYMBOL▮ PROPNAME VALUE)" nil :system t)
-
 ("random" "(random ▮)" nil :system t)
-
 ("rassoc" "(rassoc KEY▮ LIST)" nil :system t)
-
-("re-search-backward" "(re-search-backward REGEXP▮ &optional BOUND NOERROR COUNT)" nil :system t)
-
-("re-search-forward" "(re-search-forward REGEXP▮ &optional BOUND NOERROR COUNT)" nil :system t)
-
+("re-search-backward" "(re-search-backward \"REGEXP▮\" &optional BOUND NOERROR COUNT)" nil :system t)
+("re-search-forward" "(re-search-forward \"REGEXP▮\" &optional BOUND NOERROR COUNT)" nil :system t)
 ("read-directory-name" "(read-directory-name \"▮\" &optional DIR DEFAULT-DIRNAME MUSTMATCH INITIAL)" nil :system t)
-
 ("read-file-name" "(read-file-name \"▮\" &optional DIR DEFAULT-FILENAME MUSTMATCH INITIAL PREDICATE)" nil :system t)
-
 ("read-regexp" "(read-regexp \"▮\" &optional DEFAULT-VALUE)" nil :system t)
-
 ("read-string" "(read-string \"▮\" &optional INITIAL-INPUT HISTORY DEFAULT-VALUE INHERIT-INPUT-METHOD)" nil :system t)
-
 ("regexp-opt" "(regexp-opt STRINGS▮ &optional PAREN)" nil :system t)
-
 ("regexp-quote" "(regexp-quote ▮)" nil :system t)
-
 ("region-active-p" "(region-active-p)" nil :system t)
-
 ("region-beginning" "(region-beginning)" nil :system t)
-
 ("region-end" "(region-end)" nil :system t)
-
 ("rename-file" "(rename-file FILE▮ NEWNAME &optional OK-IF-ALREADY-EXISTS)" nil :system t)
-
 ("repeat" "(repeat ▮)" nil :system t)
-
-("replace-match" "(replace-match NEWTEXT▮ &optional FIXEDCASE LITERAL STRING SUBEXP)" nil :system t)
-
-("replace-regexp-in-string" "(replace-regexp-in-string REGEXP▮ REP STRING &optional FIXEDCASE LITERAL SUBEXP START)" nil :system t)
-
-("replace-regexp" "(replace-regexp REGEXP▮ TO-STRING &optional DELIMITED START END)" nil :system t)
-
+("replace-match" "(replace-match NEWTEXT▮ &optional FIXEDCASE LITERAL \"STRING\" SUBEXP)" nil :system t)
+("replace-regexp-in-string" "(replace-regexp-in-string \"REGEXP▮\" REP \"STRING\" &optional FIXEDCASE LITERAL SUBEXP START)" nil :system t)
+("replace-regexp" "(replace-regexp \"REGEXP▮\" TO-STRING &optional DELIMITED START END)" nil :system t)
 ("require" "(require ▮)" nil :system t)
-
 ("reverse" "(reverse ▮)" nil :system t)
-
 ("save-buffer" "(save-buffer ▮)" nil :system t)
-
 ("save-excursion" "(save-excursion ▮)" nil :system t)
-
 ("save-restriction" "(save-restriction ▮)" nil :system t)
-
 ("search-backward-regexp" "(search-backward-regexp \"▮\" &optional BOUND NOERROR COUNT)" nil :system t)
-
 ("search-backward" "(search-backward \"▮\" &optional BOUND NOERROR COUNT)" nil :system t)
-
 ("search-forward-regexp" "(search-forward-regexp \"▮\" &optional BOUND NOERROR COUNT)" nil :system t)
-
 ("search-forward" "(search-forward \"▮\" &optional BOUND NOERROR COUNT)" nil :system t)
-
 ("set-buffer" "(set-buffer ▮)" nil :system t)
-
 ("set-file-modes" "(set-file-modes ▮ MODE)" nil :system t)
-
 ("set-mark" "(set-mark ▮)" nil :system t)
-
 ("setq" "(setq ▮)" nil :system t)
-
 ("shell-command" "(shell-command ▮ &optional OUTPUT-BUFFER ERROR-BUFFER)" nil :system t)
-
 ("skip-chars-backward" "(skip-chars-backward \"▮\" &optional LIM)" nil :system t)
-
 ("skip-chars-forward" "(skip-chars-forward \"▮\" &optional LIM)" nil :system t)
-
 ("split-string" "(split-string ▮ &optional SEPARATORS OMIT-NULLS)" nil :system t)
-
 ("string-match-p" "(string-match-p \"REGEXP▮\" \"STRING\" &optional START)" nil :system t)
-
 ("string-match" "(string-match \"REGEXP▮\" \"STRING\" &optional START)" nil :system t)
-
 ("string-to-number" "(string-to-number \"▮\")" nil :system t)
-
 ("string" "(string ▮)" nil :system t)
-
 ("string=" "(string= ▮)" nil :system t)
-
 ("stringp" "(stringp ▮)" nil :system t)
-
 ("substring-no-properties" "(substring-no-properties ▮ FROM TO)" nil :system t)
-
 ("substring" "(substring STRING▮ FROM &optional TO)" nil :system t)
-
 ("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
-
 ("throw" "(throw TAG▮ VALUE)" nil :system t)
-
 ("unless" "(unless ▮)" nil :system t)
-
 ("vector" "(vector ▮)" nil :system t)
-
 ("when" "(when ▮)" nil :system t)
-
 ("while" "(while ▮)" nil :system t)
-
 ("widget-get" "(widget-get ▮)" nil :system t)
-
 ("with-current-buffer" "(with-current-buffer ▮)" nil :system t)
-
 ("with-temp-buffer" "(with-temp-buffer ▮)" nil :system t)
-
 ("with-temp-file" "(with-temp-file FILE▮)" nil :system t)
-
 ("write-file" "(write-file FILENAME▮ &optional CONFIRM)" nil :system t)
-
 ("write-region" "(write-region (point-min) (point-max) FILENAME &optional APPEND VISIT LOCKNAME MUSTBENEW)" nil :system t)
 
 ;; #name: read lines of a file
@@ -1831,10 +1715,7 @@ If there's a text selection, act on the region, else, on defun block."
 ;; )
 
 ("y-or-n-p" "(y-or-n-p \"PROMPT▮ \")" nil :system t)
-
-("yes-or-no-p" "(yes-or-no-p \"PROMPT▮ \")" nil :system t)
-
- )
+("yes-or-no-p" "(yes-or-no-p \"PROMPT▮ \")" nil :system t))
 
 "abbrev table for `xah-elisp-mode'"
 ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
@@ -1846,15 +1727,28 @@ If there's a text selection, act on the region, else, on defun block."
 
 ;; syntax coloring related
 
+(defface xem-function-param
+       '(
+         (t :foreground "black" :background "LightYellow"))
+       "face for function parameters."
+:group 'xah-elisp-mode )
+
+(defface xem-user-variable
+  '(
+    (t :foreground "magenta"))
+  "face for user variables."
+  :group 'xah-elisp-mode )
+
 (setq xem-font-lock-keywords
       (let (
-            (emacsWords (regexp-opt xem-emacs-words 'symbols) )
-            (emacsUserWords (regexp-opt xem-emacs-user-commands 'symbols) )
-            (emacsBuiltins (regexp-opt xem-keyword-builtin 'symbols) )
-            (elispLangWords (regexp-opt xem-elisp-lang-words 'symbols) )
-            (elispVars1 (regexp-opt xem-elisp-vars-1 'symbols) )
-            (elispVars2 (regexp-opt xem-elisp-vars-2 'symbols) )
-            )
+            (emacsWords (regexp-opt xem-emacs-words 'symbols))
+            (emacsUserWords (regexp-opt xem-emacs-user-commands 'symbols))
+            (emacsBuiltins (regexp-opt xem-keyword-builtin 'symbols))
+            (elispLangWords (regexp-opt xem-elisp-lang-words 'symbols))
+            (elispVars1 (regexp-opt xem-elisp-vars-1 'symbols))
+            (elispVars2 (regexp-opt xem-elisp-vars-2 'symbols))
+            (functionParameters "φ[-_?0-9A-Za-z]+" )
+            (userVars "ξ[-_?0-9A-Za-z]+" ))
         `(
           (,emacsWords . font-lock-function-name-face)
           (,emacsUserWords . font-lock-builtin-face)
@@ -1862,7 +1756,23 @@ If there's a text selection, act on the region, else, on defun block."
           (,elispLangWords . font-lock-keyword-face)
           (,elispVars1 . font-lock-variable-name-face)
           (,elispVars2 . font-lock-variable-name-face)
-          ) ) )
+          (,functionParameters . 'xem-function-param)
+          (,userVars . 'xem-user-variable))))
+
+;; font-lock-builtin-face
+;; font-lock-comment-delimiter-face
+;; font-lock-comment-face
+;; font-lock-constant-face
+;; font-lock-doc-face
+;; font-lock-function-name-face
+;; font-lock-keyword-face
+;; font-lock-negation-char-face
+;; font-lock-preprocessor-face
+;; font-lock-reference-face
+;; font-lock-string-face
+;; font-lock-type-face
+;; font-lock-variable-name-face
+;; font-lock-warning-face
 
 
 ;; ;; syntax table
@@ -1894,9 +1804,7 @@ If there's a text selection, act on the region, else, on defun block."
   (define-key xem-keymap (kbd "<menu> e p") 'xem-compact-parens)
   (define-key xem-keymap (kbd "<menu> e c") 'xem-complete-symbol)
 
-  (define-key xem-keymap (kbd "<menu> e e") 'xem-expand-abbrev)
-
-  )
+  (define-key xem-keymap (kbd "<menu> e e") 'xem-expand-abbrev))
 
 
 
@@ -1905,17 +1813,10 @@ If there's a text selection, act on the region, else, on defun block."
   "A major mode for emacs lisp.
 
 Most useful command is `xem-complete-or-indent'.
-Also, do use:
 
-`backward-sexp'
-`forward-sexp'
-`backward-up-list'
-`down-list'
-`mark-sexp'
-
-and
-
+i recommend you use these commands:
 URL `http://ergoemacs.org/emacs/emacs_navigating_keys_for_brackets.html'
+URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
 
 \\{xem-keymap}"
   (interactive)
@@ -1941,11 +1842,33 @@ URL `http://ergoemacs.org/emacs/emacs_navigating_keys_for_brackets.html'
 
   (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
+  (when xem-electric-pair-mode-activate-p
+    (electric-pair-mode 1) ; global only
+    )
+
+  (when xem-show-paren-mode-activate-p
+    (show-paren-mode 1) ; global only
+    )
+
+  (abbrev-mode 1)
+
+  (when xem-override-paren-mode-style-p
+    ;; highlight entire bracket expression
+    (setq show-paren-style 'expression)
+    ;; make the color used for show-paren-style more readable
+    (custom-set-faces
+     '(show-paren-match ((((class color) (background light)) (:background "azure2"))))))
+
+  (when xem-override-completion-face-p
+    ;; make the color used for completion more readable
+    (custom-set-faces
+     '(completions-common-part ((t (:inherit default :foreground "red"))))))
+
   (progn
-  ;; setup auto-complete-mode
+    ;; setup auto-complete-mode
     (when (fboundp 'auto-complete-mode)
       (add-to-list 'ac-modes 'xah-elisp-mode)))
-       ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
+  ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
 
   (if  (and  (>= emacs-major-version 24)
              (>= emacs-minor-version 4))
