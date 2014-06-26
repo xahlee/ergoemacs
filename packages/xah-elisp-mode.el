@@ -7,7 +7,7 @@
 ;; Keywords: languages, convenience
 
 ;; LICENSE:
-;; paypal me $5 
+;; paypal me $5
 ;; Buy Xah Emacs Tutorial
 ;; Please see: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
@@ -180,6 +180,8 @@ The value must t or nil."
 "modify-frame-parameters"
 "set-frame-parameter"
 "modify-all-frames-parameters"
+
+"with-syntax-table"
 
 "buffer-enable-undo"
 "buffer-disable-undo"
@@ -1213,20 +1215,16 @@ This uses `ido-mode' user interface for completion."
     (delete-region ξp1 ξp2)
     (insert ξresult-sym)
 
-    ;; ;; expand abbrev if doesn't start with left paren
-    ;; (when (not (xem-start-with-left-paren-p))
-    ;;   (if (xem-expand-abbrev)
-    ;;       nil
-    ;;     (progn 
-    ;;       (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol)))))
-
-    ))
+    ;; expand abbrev if doesn't start with left paren
+    (when (not (xem-start-with-left-paren-p))
+      (let ( (ξabbrev-expanded-p (xem-expand-abbrev)))
+        (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol))))))
 
 (defun xem-start-with-left-paren-p ()
   "true or false"
   (interactive)
   (save-excursion
-    (forward-symbol -1) (backward-char 1)      
+    (forward-symbol -1) (backward-char 1)
     (if (looking-at "(")
       t
       nil)))
@@ -1242,7 +1240,7 @@ becomes
   (forward-symbol -1) (insert "(") (forward-symbol 1) (insert " )")
   (backward-char 1))
 
-(defun xem-expand-abbrev (&optional φexpand-func)
+(defun xem-expand-abbrev-maybe (&optional φexpand-func)
   "Expand emacs lisp function name before cursor into template.
 Don't expand when in string or comment.
 
@@ -1253,20 +1251,29 @@ Returns true if there's a expansion, else false."
         ξab-str
         (ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
-        (progn nil)
-      (save-excursion
-        (forward-symbol -1)
-        (setq ξp1 (point))
-        (forward-symbol 1)
-        (setq ξp2 (point)))
+        nil
+      (xem-expand-abbrev))))
 
-      (setq ξab-str (buffer-substring-no-properties ξp1 ξp2))
-      (if (abbrev-symbol ξab-str)
-          (progn
-            (abbrev-insert (abbrev-symbol ξab-str) ξab-str ξp1 ξp2 )
-            (xem--abbrev-position-cursor ξp1)
-            t)
-        (progn nil)))))
+(defun xem-expand-abbrev ()
+  "Expand the symbol before cursor.
+Returns true if there's a expansion, else false."
+  (interactive)
+  (let (
+        ξp1 ξp2
+        ξab-str
+        )
+    (save-excursion
+      (forward-symbol -1)
+      (setq ξp1 (point))
+      (forward-symbol 1)
+      (setq ξp2 (point)))
+    (setq ξab-str (buffer-substring-no-properties ξp1 ξp2))
+    (if (abbrev-symbol ξab-str)
+        (progn
+          (abbrev-insert (abbrev-symbol ξab-str) ξab-str ξp1 ξp2 )
+          (xem--abbrev-position-cursor ξp1)
+          t)
+      nil)))
 
 (defun xem-abbrev-enable-function ()
   "determine whether to expand abbrev.
@@ -1276,7 +1283,7 @@ this is called by emacs abbrev system."
         (progn nil)
       t)))
 
-(put 'xem-expand-abbrev 'no-self-insert t)
+(put 'xem-expand-abbrev-maybe 'no-self-insert t)
 
 (defun xem--abbrev-position-cursor (&optional φpos)
   "Move cursor back to ▮.
@@ -1751,8 +1758,8 @@ If there's a text selection, act on the region, else, on defun block."
             (userVars "ξ[-_?0-9A-Za-z]+" ))
         `(
           (,emacsWords . font-lock-function-name-face)
-          (,emacsUserWords . font-lock-builtin-face)
-          (,emacsBuiltins . font-lock-type-face)
+          (,emacsUserWords . font-lock-type-face)
+          (,emacsBuiltins . font-lock-builtin-face)
           (,elispLangWords . font-lock-keyword-face)
           (,elispVars1 . font-lock-variable-name-face)
           (,elispVars2 . font-lock-variable-name-face)
@@ -1804,7 +1811,7 @@ If there's a text selection, act on the region, else, on defun block."
   (define-key xem-keymap (kbd "<menu> e p") 'xem-compact-parens)
   (define-key xem-keymap (kbd "<menu> e c") 'xem-complete-symbol)
 
-  (define-key xem-keymap (kbd "<menu> e e") 'xem-expand-abbrev))
+  (define-key xem-keymap (kbd "<menu> e e") 'xem-expand-abbrev-maybe))
 
 
 
@@ -1814,9 +1821,17 @@ If there's a text selection, act on the region, else, on defun block."
 
 Most useful command is `xem-complete-or-indent'.
 
-i recommend you use these commands:
+Press TAB before word to pretty format (indent).
+
+Press TAB after word to complete.
+
+Press SPACE to expand name to template.
+
+i also recommend you use these commands:
 URL `http://ergoemacs.org/emacs/emacs_navigating_keys_for_brackets.html'
 URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
+or
+URL `http://ergoemacs.github.io/ergoemacs-mode/'
 
 \\{xem-keymap}"
   (interactive)
@@ -1873,8 +1888,8 @@ URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
   (if  (and  (>= emacs-major-version 24)
              (>= emacs-minor-version 4))
       (progn
-        (setq abbrev-expand-function 'xem-expand-abbrev))
-    (progn (add-hook 'abbrev-expand-functions 'xem-expand-abbrev nil t)))
+        (setq abbrev-expand-function 'xem-expand-abbrev-maybe))
+    (progn (add-hook 'abbrev-expand-functions 'xem-expand-abbrev-maybe nil t)))
 
   (run-mode-hooks 'xah-elisp-mode-hook))
 
