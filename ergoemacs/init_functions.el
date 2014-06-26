@@ -67,58 +67,6 @@ the frame title bar."
                           (format "Topic: "))
                         nil nil mysymbol)))))
 
-(defun list-text-editing-modes ()
-  "Display a list of all text editing related major modes.
-
-The list includes all major modes for editing programing language
-files or such things as BBCode, but does not include major modes
-for dired, irc, mail, shell, etc."
-  (interactive)
-(with-output-to-temp-buffer "*Major Modes for Text Editing*"
-  (princ 
-         "###############################################
-# This is a list of text-editing related major modes.
-
-AutoHotKey • xahk-mode
-Bash • sh-mode
-C • c-mode
-C++ • c++-mode
-CSS • css-mode
-Emacs Lisp • emacs-lisp-mode
-HTML • html-mode
-Java • java-mode
-Javascript • js-mode
-LaTeX • latex-mode
-PHP • php-mode
-Perl • cperl-mode
-PowerShell • powershell-mode
-Python • python-mode
-Ruby • ruby-mode
-TCL • tcl-mode
-Visual Basic • visual-basic-mode
-XML • nxml-mode
-XML • xml-mode
-cmd.exe • dos-mode
-
-# The lines are formatted this way:
-# ‹purpose/language name› • ‹command name›
-
-# The list is not complete. They only include most popular languages and or those added by ErgoEmacs.
-You can install modes by adding MELPA:
-
-;; adding MELPA to package source
- (when (>= emacs-major-version 24)
-   (require 'package)
-   (package-initialize)
-   (add-to-list 'package-archives '(\"melpa\" . \"http://melpa.milkbox.net/packages/\") t)
-   )
-
-call `eval-region'
-then, call `list-packages'.
-"         )
-  )
-  )
-
 (defun toggle-whitespace-setting ()
   "Toggle some display settings for `whitespace-mode'."
   (interactive)
