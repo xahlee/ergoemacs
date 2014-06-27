@@ -42,9 +42,10 @@
 ;; 0.3, 2012-05-13 added comment handling. improved syntax coloring. Added keymap and syntax table."
 ;; 0.2, 2012-05-12 first version
 
-(require 'ido)
 (require 'xfrp_find_replace_pairs)
 (require 'xeu_elisp_util)
+
+(require 'ido)
 (require 'sgml-mode)
 (require 'htmlize)
 (require 'hi-lock) ; uses its face definitions
@@ -58,7 +59,7 @@
 )
 (setq xhm-html5-tag-names
 '(
-  ;; most frequently used should be on top. todo
+  ;; most frequently used should be on top. todo: reorder based on user. do a cache or such, look at ido-switch-buffer
 
 ("div" . ["b"])
 ("span" . ["w"])
@@ -80,7 +81,7 @@
 ("li" . ["l"])
 
 ("ol" . ["b"])
-("p" . ["z"])
+("p" . ["b"])
 ("pre" . ["b"])
 
 ("h1" . ["l"])
@@ -539,49 +540,6 @@ This command does the inverse of `xhm-htmlize-precode'."
   :group 'xah-html-mode)
 
 
-;; keybinding
-
-(defvar xhm-keymap nil "Keybinding for `xah-html-mode'")
-(progn
-  (setq xhm-keymap (make-sparse-keymap))
-  (define-key xhm-keymap (kbd "<C-right>") 'xhm-skip-tag-forward)
-  (define-key xhm-keymap (kbd "<C-left>") 'xhm-skip-tag-backward)
-
-  (define-prefix-command 'xhm-single-keys-keymap)
-
-  (define-key xhm-keymap (kbd "<menu> e") xhm-single-keys-keymap)
-  (define-key xhm-keymap (kbd "<tab>") xhm-single-keys-keymap)
-
-  (define-key xhm-single-keys-keymap (kbd "<backspace>") 'xhm-remove-html-tags)
-  (define-key xhm-single-keys-keymap (kbd "<return>") 'xhm-insert-br-tag)
-  (define-key xhm-single-keys-keymap (kbd "-") 'xhm-insert-hr-tag)
-  (define-key xhm-single-keys-keymap (kbd ".") 'xhm-lines-to-html-list)
-  (define-key xhm-single-keys-keymap (kbd "3") 'xhm-update-title)
-  (define-key xhm-single-keys-keymap (kbd "6") 'xhm-html-to-text)
-  (define-key xhm-single-keys-keymap (kbd "7") 'xhm-toggle-syntax-coloring-markup)
-  (define-key xhm-single-keys-keymap (kbd "8") 'xhm-get-precode-make-new-file)
-  (define-key xhm-single-keys-keymap (kbd "9") 'xhm-redo-syntax-coloring-buffer)
-  (define-key xhm-single-keys-keymap (kbd "c") 'xhm-make-citation)
-  (define-key xhm-single-keys-keymap (kbd "SPC") 'xhm-wrap-html-tag)
-  (define-key xhm-single-keys-keymap (kbd "k") 'xhm-htmlize-keyboard-shortcut-notation)
-  (define-key xhm-single-keys-keymap (kbd "l 3") 'xhm-source-url-linkify)
-  (define-key xhm-single-keys-keymap (kbd "l s") 'xhm-make-link-defunct)
-  (define-key xhm-single-keys-keymap (kbd "l u") 'xhm-wrap-url)
-  (define-key xhm-single-keys-keymap (kbd "l w") 'xhm-wikipedia-linkify)
-  (define-key xhm-single-keys-keymap (kbd "m") 'xhm-pre-source-code)
-  (define-key xhm-single-keys-keymap (kbd "p") 'xhm-wrap-p-tag)
-  (define-key xhm-single-keys-keymap (kbd "r ,") 'xhm-replace-html-chars-to-unicode)
-  (define-key xhm-single-keys-keymap (kbd "r .") 'xhm-replace-html-&<>-to-entities)
-  (define-key xhm-single-keys-keymap (kbd "r e") 'xhm-htmlize-elisp-keywords)
-  (define-key xhm-single-keys-keymap (kbd "r k") 'xhm-emacs-to-windows-kbd-notation)
-  (define-key xhm-single-keys-keymap (kbd "r m") 'xhm-make-html-table)
-  (define-key xhm-single-keys-keymap (kbd "t r") 'xhm-rename-html-inline-image)
-  (define-key xhm-single-keys-keymap (kbd "t u") 'xhm-extract-url)
-  (define-key xhm-single-keys-keymap (kbd "r v") 'xhm-make-html-table-undo)
-  (define-key xhm-single-keys-keymap (kbd "w") (lambda () (interactive) (xhm-wrap-html-tag "b" "w")))
-)
-
-
 
 (defun xhm-tag-self-closing? (φtag-name)
   "Return true if the tag is a self-closing tag, ⁖ br."
@@ -897,7 +855,7 @@ It will become:
   (interactive)
   (let (bds p1 p2 inputStr resultStr)
     (setq bds (get-selection-or-unit 'block))
-    (setq inputStr (elt bds 0) p1 (elt bds 1) p2 (elt bds 2)  )
+    (setq inputStr (elt bds 0) p1 (elt bds 1) p2 (elt bds 2))
     (save-excursion
       (setq resultStr
             (with-temp-buffer
@@ -907,16 +865,14 @@ It will become:
               (while
                   (search-forward-regexp  "\.html$" nil t)
                 (backward-char 1)
-                (xah-all-linkify)
-                )
+                (xah-all-linkify))
 
               (goto-char 1)
               (while
                   (not (equal (line-end-position) (point-max)))
                 (beginning-of-line) (insert "<li>")
                 (end-of-line) (insert "</li>")
-                (forward-line 1 )
-                )
+                (forward-line 1 ))
 
               (beginning-of-line) (insert "<li>")
               (end-of-line) (insert "</li>")
@@ -926,12 +882,9 @@ It will become:
               (goto-char (point-max))
               (insert "\n</ul>")
 
-              (buffer-string)
-              ) )
-      )
+              (buffer-string))))
     (delete-region p1 p2)
-    (insert resultStr)
-    ) )
+    (insert resultStr)))
 
 (defun xhm-make-html-table-string (φtextBlock φdelimiter)
   "Transform the string TEXTBLOCK into a HTML marked up table.
@@ -1528,16 +1481,6 @@ If there's a text selection, wrap p around each text block (separated by 2 newli
     )
   )
 
-(defun xhm-insert-br-tag ()
-  "Add <br /> tag."
-  (interactive)
-  (xhm-wrap-html-tag "br") )
-
-(defun xhm-insert-hr-tag ()
-  "Add <hr /> tag."
-  (interactive)
-  (xhm-wrap-html-tag "hr") )
-
 (defun xhm-emacs-to-windows-kbd-notation-string (φinput-string)
   "Change emacs keyboard-shortcut notation to Windows's notation.
 For example:
@@ -1636,48 +1579,42 @@ Some issues:
   ;; (interactive (let ((bds (get-selection-or-unit 'block))) (list (elt bds 1) (elt bds 2) ) ) )
   (interactive
    (cond
-    ((equal current-prefix-arg nil)    ; universal-argument not called
-     (let ((bds (get-selection-or-unit 'block))) (list (elt bds 1) (elt bds 2) ) ))
-    (t                                  ; all other cases
-     (list (point-min) (point-max) )) ) )
+    ((equal current-prefix-arg nil) ; universal-argument not called
+     (let ((bds (get-selection-or-unit 'block))) (list (elt bds 1) (elt bds 2))))
+    (t ; all other cases
+     (list (point-min) (point-max)))))
   (let*
       (inputStr
        resultStr
        (changedItems nil)
        (elispIdentifierRegex "\\([:-A-Za-z0-9]+\\)")
-       (wantedRegex (concat "“" elispIdentifierRegex "”") )
-       )
-    (setq inputStr (buffer-substring-no-properties φp1 φp2) )
+       (wantedRegex (concat "“" elispIdentifierRegex "”")))
+    (setq inputStr (buffer-substring-no-properties φp1 φp2))
     (setq resultStr
-            (let ( mStr (case-fold-search nil) (ξsomeStr inputStr) )
-              (with-temp-buffer
-                (insert ξsomeStr)
-                (goto-char 1)
-                (while (search-forward-regexp wantedRegex (point-max) t)
-                  (setq mStr (match-string 1) )
-                  (cond
-                   ((fboundp (intern mStr))
-                    (progn
-                      (setq changedItems (cons (format "ƒ %s" mStr) changedItems ) )
-                      (replace-match (concat "<code class=\"elisp-ƒ\">" mStr "</code>") t t)
-                      ))
-                   ((boundp (intern mStr))
-                    (progn
-                      (setq changedItems (cons (format "υ %s" mStr) changedItems ) )
-                      (replace-match (concat "<var class=\"elisp\">" mStr "</var>") t t)
-                       ))
-                   (t "do nothing")
-                   ) )
-                (buffer-string)
-                ) ))
+          (let ( mStr (case-fold-search nil) (ξsomeStr inputStr))
+            (with-temp-buffer
+              (insert ξsomeStr)
+              (goto-char 1)
+              (while (search-forward-regexp wantedRegex (point-max) t)
+                (setq mStr (match-string 1))
+                (cond
+                 ((fboundp (intern mStr))
+                  (progn
+                    (setq changedItems (cons (format "ƒ %s" mStr) changedItems ))
+                    (replace-match (concat "<code class=\"elisp-ƒ\">" mStr "</code>") t t)))
+                 ((boundp (intern mStr))
+                  (progn
+                    (setq changedItems (cons (format "υ %s" mStr) changedItems ))
+                    (replace-match (concat "<var class=\"elisp\">" mStr "</var>") t t)))
+                 (t "do nothing")))
+              (buffer-string))))
     (if (equal (length changedItems) 0)
         (progn (message "%s" "No change needed."))
       (progn
-            (delete-region φp1 φp2)
-            (insert resultStr)
-            (with-output-to-temp-buffer "*changed items*"
-              (mapcar (lambda (x) (princ x) (princ "\n") ) (reverse changedItems)) )
-         ) ) ))
+        (delete-region φp1 φp2)
+        (insert resultStr)
+        (with-output-to-temp-buffer "*changed items*"
+          (mapcar (lambda (x) (princ x) (princ "\n")) (reverse changedItems)))))))
 
 (defun xhm-htmlize-keyboard-shortcut-notation ()
   "Wrap a “kbd” tag around keyboard keys on text selection or current line.
@@ -1835,38 +1772,32 @@ Case shouldn't matter, except when it's emacs's key notation.
 
 (defun xhm-add-open/close-tag (φtag-name className φp1 φp2)
   "Add HTML open/close tags around region boundary φp1 φp2.
-This function does not `save-excursion'.
-"
+This function does not `save-excursion'."
   (let* (
-        (classStr (if (or (equal className nil) (string= className "") ) "" (format " class=\"%s\"" className)))
-        (insStrLeft (format "<%s%s>" φtag-name classStr) )
-        (insStrRight (format "</%s>" φtag-name ) )
-        )
+         (classStr (if (or (equal className nil) (string= className "")) "" (format " class=\"%s\"" className)))
+         (insStrLeft (format "<%s%s>" φtag-name classStr))
+         (insStrRight (format "</%s>" φtag-name )))
 
-      (goto-char φp1)
+    (goto-char φp1)
 
-      (if (xhm-tag-self-closing? φtag-name)
-          (progn (insert (format "<%s%s />" φtag-name classStr) ))
-        (progn
-          ;; (setq myText (buffer-substring-no-properties φp1 φp2)
-          (insert insStrLeft )
-          (goto-char (+ φp2 (length insStrLeft)))
-          (insert insStrRight )
-          )
-        )
-      ) )
+    (if (xhm-tag-self-closing? φtag-name)
+        (progn (insert (format "<%s%s />" φtag-name classStr)))
+      (progn
+        (insert insStrLeft )
+        (goto-char (+ φp2 (length insStrLeft)))
+        (insert insStrRight )))))
 
 (defun xhm-wrap-html-tag (φtag-name &optional className)
   "Insert/wrap HTML tag to current text unit or text selection.
 When there's no text selection, the tag will be wrapped around current {word, line, text-block}, depending on the tag used.
 
-If current line or word is empty, then insert open/end tags and place cursor between them."
-;; If `universal-argument' is called first, then also prompt for a “class” attribute. Empty value means don't add the attribute.
+If current line or word is empty, then insert open/end tags and place cursor between them.
+If `universal-argument' is called first, then also prompt for a “class” attribute. Empty value means don't add the attribute."
+
   (interactive
    (list
     (ido-completing-read "HTML tag:" xhm-html5-tag-list "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "div")
-    (if t
-;; current-prefix-arg
+    (if current-prefix-arg
         (read-string "class:" nil xhm-class-input-history "")
       nil ) ) )
   (let (bds p1 p2
@@ -1896,15 +1827,12 @@ If current line or word is empty, then insert open/end tags and place cursor bet
 "
   (interactive
    (list
-    (ido-completing-read "lang code:" (mapcar (lambda (x) (car x)) xhm-lang-name-map) "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "code")
-    )
-   )
+    (ido-completing-read "lang code:" (mapcar (lambda (x) (car x)) xhm-lang-name-map) "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "code")))
   (let (bds p1 p2)
     (setq bds (get-selection-or-unit 'block))
-    (setq p1 (elt bds 1) )
-    (setq p2 (elt bds 2) )
-    (xhm-add-open/close-tag "pre" φlang-code p1 p2))
-  )
+    (setq p1 (elt bds 1))
+    (setq p2 (elt bds 2))
+    (xhm-add-open/close-tag "pre" φlang-code p1 p2)))
 
 (defun xhm-rename-html-inline-image (φnew-file-path)
   "Replace current HTML inline image's file name.
@@ -1915,14 +1843,14 @@ When cursor is in HTML link file path, e.g.  <img src=\"gki/macosxlogo.png\" > a
    (let (
          (defaultInput (expand-file-name
                         (elt (get-selection-or-unit 'filepath) 0)
-                        (file-name-directory (or (buffer-file-name) default-directory )) )) )
-     (list (read-string "New name: " defaultInput nil defaultInput )) ) )
+                        (file-name-directory (or (buffer-file-name) default-directory )))))
+     (list (read-string "New name: " defaultInput nil defaultInput ))))
   (let* (
          (bds (get-selection-or-unit 'filepath))
-         (ξinputPath (elt bds 0) )
-         (p1 (aref bds 1) )
-         (p2 (aref bds 2) )
-         (ξffp (local-url-to-file-path (expand-file-name ξinputPath (file-name-directory (or (buffer-file-name) default-directory )) ))) ;full path
+         (ξinputPath (elt bds 0))
+         (p1 (aref bds 1))
+         (p2 (aref bds 2))
+         (ξffp (local-url-to-file-path (expand-file-name ξinputPath (file-name-directory (or (buffer-file-name) default-directory ))))) ;full path
          ;; (setq ξffp (windows-style-path-to-unix (local-url-to-file-path ξffp)))
          )
 
@@ -1932,10 +1860,21 @@ When cursor is in HTML link file path, e.g.  <img src=\"gki/macosxlogo.png\" > a
         (rename-file ξffp φnew-file-path )
         (message "rename to %s" φnew-file-path)
         (delete-region p1 p2)
-        (insert (xahsite-filepath-to-href-value φnew-file-path (or (buffer-file-name) default-directory)))
-        )
-      )
-    ))
+        (insert (xahsite-filepath-to-href-value φnew-file-path (or (buffer-file-name) default-directory)))))))
+
+(defun xhm-mark-unicode (φp1)
+  "Wrap 「<mark class=\"unicode\" title=\"U+…: ‹NAME›\"></mark>」 around current character.
+When called in elisp program, wrap the tag at cursor position φp1."
+  (interactive (list (point)))
+  (let* (
+         (ξcodepoint (string-to-char (buffer-substring-no-properties φp1 (1+ φp1))) )
+         (ξname (get-char-code-property ξcodepoint 'name))
+         )
+    (goto-char φp1)
+    (insert (format "<mark class=\"unicode\" title=\"U+%X: %s\">" ξcodepoint ξname) )
+    (forward-char 1)
+    (insert (format "</mark>") )
+    ) )
 
 (defun xhm-clean-whitespace ()
   "Delete redundant whitespace in HTML file.
@@ -1945,32 +1884,104 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
   (let* (
          (bds (get-selection-or-unit 'buffer))
          (p1 (elt bds 1))
-         (p2 (elt bds 2))
-         )
+         (p2 (elt bds 2)))
     (save-excursion
       (save-restriction
         (narrow-to-region p1 p2)
         (progn
           (goto-char (point-min))
           (while (search-forward-regexp "[ \t]+\n" nil "noerror")
-            (replace-match "\n") ))
-
+            (replace-match "\n")))
         (progn
           (goto-char (point-min))
           (while (search-forward-regexp " *<p>\n+" nil "noerror")
-            (replace-match "<p>") ))
+            (replace-match "<p>")))))))
 
-        )) ))
+
+
+(defun xhm-abbrev-enable-function ()
+  "Determine whether to expand abbrev.
+This is called by emacs abbrev system."
+  (let ((ξsyntax-state (syntax-ppss)))
+    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+        (progn nil)
+      t)))
+
+(setq xhm-abbrev-table nil)
+
+(define-abbrev-table 'xhm-abbrev-table
+  '(
+
+    ("html5" "<!DOCTYPE html>" nil :system t)
+    ("html4s" "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">" nil :system t)
+    ("html4t" "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">" nil :system t)
+    ("xhtml" "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">" nil :system t)
+    ("8html" "<!doctype html><html><head><meta charset=\"utf-8\" />
+<title>ttt</title>
+</head>
+<body>
+
+</body>
+</html>" nil :system t)
+
+    ("y-or-n-p" "(y-or-n-p \"PROMPT▮ \")" nil :system t))
+
+  "abbrev table for `xah-html-mode'"
+  ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
+  :regexp "\\([_-0-9A-Za-z]+\\)"
+  :case-fixed t
+  :enable-function 'xhm-abbrev-enable-function
+  )
+
+
+;; keybinding
+
+(defvar xhm-keymap nil "Keybinding for `xah-html-mode'")
+(progn
+  (setq xhm-keymap (make-sparse-keymap))
+  (define-key xhm-keymap (kbd "<C-right>") 'xhm-skip-tag-forward)
+  (define-key xhm-keymap (kbd "<C-left>") 'xhm-skip-tag-backward)
+
+  (define-key xhm-keymap (kbd "<tab>") 'xhm-wrap-html-tag)
+
+  (define-prefix-command 'xhm-single-keys-keymap)
+
+  (define-key xhm-keymap (kbd "<menu> e") xhm-single-keys-keymap)
+
+  (define-key xhm-single-keys-keymap (kbd "<backspace>") 'xhm-remove-html-tags)
+  (define-key xhm-single-keys-keymap (kbd ".") 'xhm-lines-to-html-list)
+  (define-key xhm-single-keys-keymap (kbd "3") 'xhm-update-title)
+  (define-key xhm-single-keys-keymap (kbd "6") 'xhm-html-to-text)
+  (define-key xhm-single-keys-keymap (kbd "7") 'xhm-toggle-syntax-coloring-markup)
+  (define-key xhm-single-keys-keymap (kbd "8") 'xhm-get-precode-make-new-file)
+  (define-key xhm-single-keys-keymap (kbd "9") 'xhm-redo-syntax-coloring-buffer)
+  (define-key xhm-single-keys-keymap (kbd "k") 'xhm-htmlize-keyboard-shortcut-notation)
+  (define-key xhm-single-keys-keymap (kbd "l 3") 'xhm-source-url-linkify)
+  (define-key xhm-single-keys-keymap (kbd "l s") 'xhm-make-link-defunct)
+  (define-key xhm-single-keys-keymap (kbd "l u") 'xhm-wrap-url)
+  (define-key xhm-single-keys-keymap (kbd "l w") 'xhm-wikipedia-linkify)
+  (define-key xhm-single-keys-keymap (kbd "m") 'xhm-pre-source-code)
+  (define-key xhm-single-keys-keymap (kbd "p") 'xhm-wrap-p-tag)
+  (define-key xhm-single-keys-keymap (kbd "r ,") 'xhm-replace-html-chars-to-unicode)
+  (define-key xhm-single-keys-keymap (kbd "r .") 'xhm-replace-html-&<>-to-entities)
+  (define-key xhm-single-keys-keymap (kbd "r e") 'xhm-htmlize-elisp-keywords)
+  (define-key xhm-single-keys-keymap (kbd "r k") 'xhm-emacs-to-windows-kbd-notation)
+  (define-key xhm-single-keys-keymap (kbd "r m") 'xhm-make-html-table)
+  (define-key xhm-single-keys-keymap (kbd "t u") 'xhm-extract-url)
+  (define-key xhm-single-keys-keymap (kbd "r v") 'xhm-make-html-table-undo)
+  (define-key xhm-single-keys-keymap (kbd "w") (lambda () (interactive) (xhm-wrap-html-tag "b" "w")))
+  (define-key xhm-single-keys-keymap (kbd "x") 'xhm-rename-html-inline-image)
+  (define-key xhm-single-keys-keymap (kbd "y") 'xhm-make-citation)
+
+)
 
 
 
 ;; define the mode
 (define-derived-mode xah-html-mode fundamental-mode
-  "Σhtml"
+  "∑html"
   "A simple major mode for HTML5.
 HTML5 keywords are colored.
-
-see file header for currrent status.
 
 \\{xhm-keymap}"
 
@@ -1992,24 +2003,24 @@ see file header for currrent status.
               )
           `(
 
+            ;; todo these multiline regex are bad. see elisp manual
+            ("<!--\\|-->" . font-lock-comment-delimiter-face)
+            (,(format "<!--%s-->" textNodeRegex) . (1 font-lock-comment-face))
+            (,(format "<h\\([1-6]\\)>%s</h\\1>" textNodeRegex) . (2 "bold"))
+            (,(format "“%s”" textNodeRegex) . (1 'xhm-curly“”-quoted-text-face))
+            (,(format "‘%s’" textNodeRegex) . (1 'xhm-curly‘’-quoted-text-face))
+            (,(format "<title>%s</title>" textNodeRegex) . (1 "bold"))
+            (,(format "<span%s>%s</span>" attriRegex textNodeRegex) . (1 "hi-pink"))
+            (,(format "<mark>%s</mark>" textNodeRegex) . (1 "hi-yellow"))
+            (,(format "<mark%s>%s</mark>" attriRegex textNodeRegex) . (1 "hi-yellow"))
+            (,(format "<b%s>%s</b>" attriRegex textNodeRegex) . (1 "bold"))
+
             (,htmlElementNamesRegex . font-lock-function-name-face)
             (,htmlAttributeNamesRegexp . font-lock-variable-name-face)
             (,cssPropertieNames . font-lock-type-face)
             (,cssValueNames . font-lock-keyword-face)
             (,cssColorNames . font-lock-preprocessor-face)
             (,cssUnitNames . font-lock-reference-face)
-
-            ;; todo these multiline regex are bad. see elisp manual
-            ("<!--\\|-->" . font-lock-comment-delimiter-face)
-            (,(format "<!--%s-->" textNodeRegex) . (1 font-lock-comment-face))
-            (,(format "“%s”" textNodeRegex) . (1 'xhm-curly“”-quoted-text-face))
-            (,(format "‘%s’" textNodeRegex) . (1 'xhm-curly‘’-quoted-text-face))
-            (,(format "<span%s>%s</span>" attriRegex textNodeRegex) . (1 "hi-pink"))
-            (,(format "<mark>%s</mark>" textNodeRegex) . (1 "hi-yellow"))
-            (,(format "<mark%s>%s</mark>" attriRegex textNodeRegex) . (1 "hi-yellow"))
-            (,(format "<b%s>%s</b>" attriRegex textNodeRegex) . (1 "bold"))
-            (,(format "<h\\([1-6]\\)>%s</h\\1>" textNodeRegex) . (2 "bold"))
-            (,(format "<title>%s</title>" textNodeRegex) . (1 "bold"))
 
             ) ) )
 
