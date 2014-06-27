@@ -9,7 +9,7 @@
 ;; Created: August 01 2007
 ;; Keywords: convenience
 ;; Version: 0
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "24.1") (undo-tree "0.6.5"))
 ;; URL: https://github.com/ergoemacs/ergoemacs-mode
 
 ;; ErgoEmacs is free software: you can redistribute it and/or modify
@@ -66,8 +66,7 @@
 ;; FIXME: Use cl-lib when available.
 ;;(require 'cl)
 (require 'easymenu)
-(require 'cua-base)
-(require 'cua-rect)
+(require 'undo-tree nil t)
 
 (defvar ergoemacs-debug ""
   "Debugging for `ergoemacs-mode'.")

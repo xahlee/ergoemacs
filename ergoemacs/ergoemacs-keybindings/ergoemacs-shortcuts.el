@@ -518,13 +518,15 @@ It will replace anything defined by `ergoemacs-translation'"
 (declare-function minibuffer-keyboard-quit "delsel.el")
 (declare-function ergoemacs-key-fn-lookup "ergoemacs-translate.el")
 (declare-function ergoemacs-modal-toggle "ergoemacs-modal.el")
-
+(declare-function cua-clear-rectangle-mark "cua-rect.el")
 (defun ergoemacs-keyboard-quit ()
   "Replacement for `keyboard-quit' and `minibuffer-keyboard-quit'."
   (cond
    ((minibufferp)
     (minibuffer-keyboard-quit))
-   ((and (boundp 'cua--rectangle) cua--rectangle (boundp 'cua-mode) cua-mode)
+   ((and (boundp 'cua--rectangle) cua--rectangle
+         (boundp 'cua-mode) cua-mode
+         (fboundp 'cua-clear-rectangle-mark))
     (cua-clear-rectangle-mark))
    (t
      (let (defined-fn
@@ -1185,13 +1187,20 @@ argument prompt.
                         (setq ergoemacs-deactivate-mark deactivate-mark)
                         (cond
                          ((eq local-fn 'keymap)
-                          (when real-read
-                            (push (list type
-                                        (listify-key-sequence key))
-                                  history))
-                          (setq continue-read t
-                                key key-trial
-                                pretty-key pretty-key-trial)
+                          ;; Test to see if major/minor modes have an
+                          ;; override for this keymap, see Issue 243.
+                          (let ((new-fn (and key (ergoemacs-with-major-and-minor-modes (ergoemacs-real-key-binding key-trial)))))
+                            (if (ignore-errors (commandp new-fn t))
+                                (progn
+                                  (setq local-fn 'major-minor-override-fn)
+                                  (ergoemacs-read-key-call new-fn nil key))
+                              (when real-read
+                                (push (list type
+                                            (listify-key-sequence key))
+                                      history))
+                              (setq continue-read t
+                                    key key-trial
+                                    pretty-key pretty-key-trial)))
                           ;; Found, exit
                           (throw 'ergoemacs-key-trials t))
                          ((eq (type-of local-fn) 'cons)
@@ -1736,10 +1745,11 @@ Setup C-c and C-x keys to be described properly.")
                 (when (and (previous-single-property-change (point) 'keymap)
                            (next-single-property-change (point) 'keymap))
                   ;; (ergoemacs-debug "Put into text properties")
-                  (put-text-property
-                   (previous-single-property-change (point) 'keymap)
-                   (next-single-property-change (point) 'keymap)
-                   'keymap override-text-map)))
+                  (ergoemacs-save-buffer-state
+                   (put-text-property
+                    (or (previous-single-property-change (point) 'keymap (current-buffer) (point-min)) (point-min))
+                    (or (next-single-property-change (point) 'keymap (current-buffer) (point-max)) (point-max))
+                    'keymap override-text-map))))
             (setq tmp-overlay (make-overlay (max (- (point) 1) (point-min))
                                             (min (+ (point) 1) (point-max))))
             (overlay-put tmp-overlay 'keymap lookup)
@@ -1872,11 +1882,11 @@ The keymaps are:
             (overlay-put found 'keymap override-text-map)
           ;; Overlay not found; change text property
           ;; (ergoemacs-debug "Put into text properties")
-          (put-text-property
-           (previous-single-property-change (point) 'keymap)
-           (next-single-property-change (point) 'keymap)
-           'keymap
-           override-text-map))
+          (ergoemacs-save-buffer-state
+           (put-text-property
+            (or (previous-single-property-change (point) 'keymap (current-buffer) (point-min)) (point-min))
+            (or (next-single-property-change (point) 'keymap (current-buffer) (point-max)) (point-max))
+            'keymap override-text-map)))
         ;; (ergoemacs-debug-keymap 'override-text-map)
         )))))
 

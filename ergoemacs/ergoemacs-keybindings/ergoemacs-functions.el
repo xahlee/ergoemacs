@@ -161,7 +161,7 @@ If an error occurs, display the error, and sit for 2 seconds before exiting"
               (ergoemacs-read-key (concat key " " next-key) 'normal))
           (funcall fn-cp arg))))
      ((or (region-active-p)
-          (and cua--rectangle (boundp 'cua-mode) cua-mode))
+          (and (boundp 'cua--rectangle) cua--rectangle (boundp 'cua-mode) cua-mode))
       (funcall fn-cp arg))
      (t
       (ergoemacs-read-key key 'normal)))))
@@ -302,12 +302,13 @@ If `narrow-to-region' is in effect, then cut that region only."
 (defvar cua-mode)
 (declare-function cua-copy-rectangle "cua-rect.el")
 (declare-function cua-copy-region "cua-base.el")
+(defvar cua--rectangle)
 (defun ergoemacs-copy-line-or-region (&optional arg)
   "Copy current line, or current text selection."
   (interactive "P")
   (cond
    ;;; cua-copy-rectangle
-   ((and cua--rectangle cua-mode)
+   ((and (boundp 'cua--rectangle) cua--rectangle cua-mode)
     (cua-copy-rectangle arg))
    ((and (region-active-p) cua-mode)
     (cua-copy-region arg))
@@ -441,14 +442,17 @@ See: `ergoemacs-forward-block'"
 (defcustom ergoemacs-back-to-indentation t
   "Allow `ergoemacs-beginning-of-line-or-what' to move cursor back to the beginning of the indentation.  Otherwise, it is always beginning of line."
   :type 'boolean
-  :group 'ergoemacs-mode)
+  :group 'ergoemacs-mode) ;
 
 (defcustom ergoemacs-end-of-comment-line t
-  "Allow `ergoemacs-end-of-line-or-what' to move cursor to the
-end of line, but ignore comments.
+  "When non-nil, treat comments different for beginning/end of line.
 
-It also allows `ergoemacs-beginning-of-line-or-what' to move the
-cursor to the beginning of the comment line. 
+ When non-nil `ergoemacs-end-of-line-or-what', the end of the line is the end of the code line first, then the end of the code + comment.
+
+When non-nil `ergoemacs-beginning-of-line-or-what' to move the
+cursor to the beginning of the comment, then end of code,
+followed by the beginning of indentation (if
+`ergoemacs-back-to-indentation' is true) and beginning of line.
 "
   :type 'boolean
   :group 'ergoemacs-mode)
@@ -608,7 +612,9 @@ the prefix arguments of `beginning-of-buffer',
 `ergoemacs-backward-block' and `scroll-down-command'
 "
   (interactive "^p")
-  (if (and ergoemacs-beginning-or-end-of-line-and-what
+  (let ((N N)
+        (single-u-prefix-p (eq current-prefix-arg '(4))))
+    (if (and ergoemacs-beginning-or-end-of-line-and-what
            (or (not ergoemacs-use-beginning-or-end-of-line-only)
                (and (eq 'on-repeat ergoemacs-use-beginning-or-end-of-line-only)
                     (eq last-command ergoemacs-beginning-of-line-or-what-last-command)))
@@ -616,11 +622,14 @@ the prefix arguments of `beginning-of-buffer',
       (progn
         (cond
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
-          (ergoemacs-shortcut-remap 'beginning-of-buffer))
+          (ergoemacs-shortcut-remap 'beginning-of-buffer)
+          (setq this-command 'beginning-of-buffer))
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
-          (ergoemacs-shortcut-remap 'ergoemacs-backward-block))
+          (ergoemacs-shortcut-remap 'ergoemacs-backward-block)
+          (setq this-command 'ergoemacs-backward-block))
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
-          (ergoemacs-shortcut-remap 'scroll-down-command)))
+          (ergoemacs-shortcut-remap 'scroll-down-command)
+          (setq this-command 'scroll-down-command)))
         (beginning-of-line))
     (setq N (or N 1))
     (when (not (= 1 N))
@@ -632,6 +641,7 @@ the prefix arguments of `beginning-of-buffer',
         ;; (setq prefix-arg nil)
         (setq current-prefix-arg nil)
         (ergoemacs-shortcut-remap 'move-beginning-of-line)
+        (setq this-command 'move-beginning-of-line)
         (push (point) pts))
       (when ergoemacs-back-to-indentation
         (save-excursion
@@ -641,32 +651,29 @@ the prefix arguments of `beginning-of-buffer',
         (save-excursion
           (when (not (eolp))
             (forward-char 1))
-          (let ((cs (condition-case err
-                        (let ((tmp (comment-search-backward (point-at-bol) t)))
-                          (if (and font-lock
-                                     (not
-                                      (eq (get-text-property (point) 'face)
-                                          'font-lock-comment-face))) nil
-                            tmp))
-                      (error nil))))
-            (when cs
-              (skip-syntax-forward " " (point-at-eol))
-              (unless (looking-at "$")
-                (push (point) pts))
-              (goto-char cs)
-              (skip-syntax-backward " " (point-at-bol))
-              (push (point) pts)))))   ;; Test
+          (save-excursion
+            (when (ignore-errors (comment-search-backward (point-at-bol) t))
+              (push (point) pts)
+              (when (and font-lock-mode
+                         (eq (get-text-property (point) 'face)
+                             'font-lock-comment-face))
+                (goto-char (max (point-at-bol) (previous-single-property-change (point) 'face (current-buffer) (point-at-bol))))
+                (skip-syntax-backward " " (point-at-bol))
+                (push (point) pts))))))
       (cond
        ((not pts)
         (call-interactively 'move-beginning-of-line))
        (t
-        (setq pts (sort pts '>))
+        (setq pts (sort pts '<))
         (dolist (x pts)
+          (save-excursion
+            (goto-char x)
+            (looking-at ".*"))
           (unless (>= x (point))
             (push x tmp)))
         (setq pts tmp)
         (when pts
-          (goto-char (nth 0 pts)))))))
+          (goto-char (nth 0 pts))))))))
   ;; ergoemacs shortcut changes this-command
   (setq ergoemacs-beginning-of-line-or-what-last-command this-command))
 
@@ -730,11 +737,14 @@ the prefix arguments of `end-of-buffer',
       (progn 
         (cond
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
-          (ergoemacs-shortcut-remap 'end-of-buffer))
+          (ergoemacs-shortcut-remap 'end-of-buffer)
+          (setq this-command 'end-of-buffer))
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
-          (ergoemacs-shortcut-remap 'ergoemacs-forward-block))
+          (ergoemacs-shortcut-remap 'ergoemacs-forward-block)
+          (setq this-command 'ergoemacs-forward-block))
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
           (ergoemacs-shortcut-remap 'scroll-up-command)
+          (setq this-command 'scroll-up-command)
           (beginning-of-line))))
     (setq N (or N 1))
     (when (not (= 1 N))
@@ -744,6 +754,7 @@ the prefix arguments of `end-of-buffer',
       (setq current-prefix-arg nil)
       (save-excursion
         (call-interactively 'move-end-of-line)
+        (setq this-command 'move-end-of-line)
         (push (point) pts))
       (when ergoemacs-end-of-comment-line
         (save-excursion
@@ -757,7 +768,8 @@ the prefix arguments of `end-of-buffer',
               (push (point) pts)))))
       (cond
        ((not pts)
-        (call-interactively 'move-end-of-line))
+        (call-interactively 'move-end-of-line)
+        (setq this-command 'move-end-of-line))
        (t
 	(setq pts (sort pts '<))
         (dolist (x pts)
@@ -797,7 +809,7 @@ the prefix arguments of `end-of-buffer',
   (let (p1 p2)
     (if (nth 3 (syntax-ppss))
         (progn
-          (backward-up-list 1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
+          (ergoemacs-backward-up-list 1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
           (setq p1 (point))
           (forward-sexp 1)
           (setq p2 (point))
@@ -1327,10 +1339,10 @@ Installs `undo-tree' if not present."
   (interactive "*P")
   (require 'undo-tree nil t)
   (cond
-   ((fboundp 'undo-tree-redo)
-    (call-interactively 'undo-tree-redo))
    ((fboundp 'redo)
     (call-interactively 'redo))
+   ((fboundp 'undo-tree-redo)
+    (call-interactively 'undo-tree-redo))
    (t
     (if (not (yes-or-no-p "Redo command not found, install undo-tree for redo?"))
         (error "Redo not found, need undo-tree or redo commands present.")
@@ -1716,7 +1728,7 @@ When in `browse-kill-ring-mode', cycle forward through the key ring.
   "Ergoemacs org-mode paste."
   (let ((regtxt (and cua--register (get-register cua--register))))
     (cond
-     ((and mark-active cua--rectangle)
+     ((and mark-active (boundp 'cua--rectangle) cua--rectangle)
       ;; call cua-paste
       (cua-paste arg))
      ((and cua--last-killed-rectangle
