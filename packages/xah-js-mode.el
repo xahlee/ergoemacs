@@ -62,12 +62,12 @@
 ("case" "case ▮: ▮; break;" nil :system t)
 
     ("try" "try {
-$1;
+▮;
 } catch(error) {
 ▮;
 }" nil :system t)
-    ("var" "var $1 = ▮;" nil :system t)
-    ("while" "while (x != 5) { ▮; x++;}" nil :system t))
+    ("var" "var ▮ = ▮;" nil :system t)
+    ("while" "while (▮ != ▮) { ▮; x++;}" nil :system t))
   "abbrev table for `xah-js-mode'"
   )
 
@@ -114,15 +114,17 @@ $1;
 
 "substring"
 
+"JSON"
+"Number"
+"Object"
+"Math"
 "Array"
 "Boolean"
 "Date"
 "Error"
-"EvalError"
 "Function"
-"JSON"
-"Number"
-"Object"
+
+"EvalError"
 "RangeError"
 "ReferenceError"
 "RegExp"

@@ -15,6 +15,9 @@
 ;; Major mode for editing emacs lisp.
 ;; See: http://ergoemacs.org/emacs/xah-elisp-mode.html
 
+;; todo
+;; 2014-06-30 don't expand abbrev (push-mark▮)
+
 ;;; History:
 ;; version 0.5, 2014-06-23 first “polished” release.
 ;; version 0.1, 2013-03-23 first version
@@ -54,6 +57,7 @@ The value must t or nil."
 "listp"
 "numberp"
 "functionp"
+"char-equal"
 
 "abs"
 
@@ -174,6 +178,7 @@ The value must t or nil."
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
 (setq xem-emacs-words '(
 
+"atomic-change-group"
 "ido-completing-read"
 "ido-read-directory-name"
 
@@ -434,6 +439,8 @@ The value must t or nil."
 (setq xem-elisp-vars-1 '(
 
 "current-prefix-arg"
+"deactivate-mark"
+
 
 "Buffer-menu-buffer+size-width"
 "Buffer-menu-mode-width"
@@ -1219,9 +1226,12 @@ This uses `ido-mode' user interface for completion."
     (delete-region ξp1 ξp2)
     (insert ξresult-sym)
 
+    ;; use case of completion
+
     (when (not (xem-start-with-left-paren-p))
       (let ( (ξabbrev-expanded-p (xem-expand-abbrev)))
-        (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol))))))
+        ;; (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol))
+))))
 
 (defun xem-start-with-left-paren-p ()
   "true or false"
@@ -1243,6 +1253,28 @@ becomes
   (forward-symbol -1) (insert "(") (forward-symbol 1) (insert " )")
   (backward-char 1))
 
+(defun xem-remove-paren-pair ()
+  "Remove closest outer paren around cursor or remove string quote and activate the region.
+Cursor is moved to the left deleted paren spot, mark is set to the right deleted paren spot.
+Call `exchange-point-and-mark' to highlight them.
+“closest outer paren” is based on left side of cursor.
+"
+  (interactive)
+  (let ((pos (point))
+        p1 p2
+        )
+    (atomic-change-group
+      (up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
+      (while (not (char-equal (char-after) ?\( ))
+        (up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
+      (setq p1 (point))
+      (forward-sexp)
+      (setq p2 (point))
+      (delete-char -1)
+      (push-mark (point) t t)
+      (goto-char p1)
+      (delete-char 1))))
+
 (defun xem-expand-abbrev-maybe (&optional φexpand-func)
   "Expand emacs lisp function name before cursor into template.
 Don't expand when in string or comment.
@@ -1256,6 +1288,8 @@ Returns true if there's a expansion, else false."
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         nil
       (xem-expand-abbrev))))
+
+(put 'xem-expand-abbrev-maybe 'no-self-insert t)
 
 (defun xem-expand-abbrev ()
   "Expand the symbol before cursor.
@@ -1285,8 +1319,6 @@ This is called by emacs abbrev system."
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         (progn nil)
       t)))
-
-(put 'xem-expand-abbrev-maybe 'no-self-insert t)
 
 (defun xem--abbrev-position-cursor (&optional φpos)
   "Move cursor back to ▮.
@@ -1601,6 +1633,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("print" "(print ▮)" nil :system t)
     ("progn" "(progn ▮)" nil :system t)
     ("push" "(push ▮)" nil :system t)
+    ("push-mark" "(push-mark ▮&optional LOCATION NOMSG ACTIVATE)" nil :system t)
     ("put" "(put 'SYMBOL▮ PROPNAME VALUE)" nil :system t)
     ("random" "(random ▮)" nil :system t)
     ("rassoc" "(rassoc KEY▮ LIST)" nil :system t)
@@ -1810,7 +1843,10 @@ If there's a text selection, act on the region, else, on defun block."
   (setq xem-keymap (make-sparse-keymap))
   (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
 
+  (define-key xem-keymap (kbd "<menu> e u") 'xem-add-paren-around-symbol)
+
   (define-key xem-keymap (kbd "<menu> e t") 'xem-prettify-root-sexp)
+  (define-key xem-keymap (kbd "<menu> e h") 'xem-remove-paren-pair)
 
   (define-key xem-keymap (kbd "<menu> e p") 'xem-compact-parens)
   (define-key xem-keymap (kbd "<menu> e c") 'xem-complete-symbol)
