@@ -162,8 +162,7 @@
   
   (global-set-key (kbd "<M-f4>") 'delete-frame) ;; Alt+f4 should work.
   
-  (global-set-key (kbd "<M-left>") 'ergoemacs-backward-open-bracket) ; Alt+←
-  (global-set-key (kbd "<M-right>") 'ergoemacs-forward-close-bracket) ; Alt+→
+   ; Alt+→
   (global-set-key (kbd "<M-up>") 'ergoemacs-backward-block) ; Alt+↑
   ;; Allow shift selection
   (global-set-key (kbd "<S-down-mouse-1>") 'mouse-save-then-kill)
@@ -503,7 +502,9 @@
 (ergoemacs-theme-component move-bracket ()
   "Move By Bracket"
   (global-set-key (kbd "M-J") 'ergoemacs-backward-open-bracket)
-  (global-set-key (kbd "M-L") 'ergoemacs-forward-close-bracket))
+  (global-set-key (kbd "M-L") 'ergoemacs-forward-close-bracket)
+  (global-set-key (kbd "<M-left>") 'ergoemacs-backward-open-bracket) ; Alt+←
+  (global-set-key (kbd "<M-right>") 'ergoemacs-forward-close-bracket))
 
 (ergoemacs-theme-component copy ()
   "Copy, Cut, Paste, Redo and Undo"
@@ -652,7 +653,7 @@
   "Select Items"
   (global-set-key (kbd "M-S-SPC") 'mark-paragraph)
   (global-set-key (kbd "M-8") '(er/expand-region ergoemacs-extend-selection))
-  (global-set-key (kbd "M-*") '(er/mark-outside-quotes ergoemacs-select-text-in-quote))
+  (global-set-key (kbd "M-*") '(er/mark-inside-quotes ergoemacs-select-text-in-quote))
   (global-set-key (kbd "M-6") 'ergoemacs-select-current-block)
   (global-set-key (kbd "M-7") 'ergoemacs-select-current-line))
 

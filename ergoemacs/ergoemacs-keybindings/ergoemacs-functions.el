@@ -302,6 +302,7 @@ If `narrow-to-region' is in effect, then cut that region only."
 (defvar cua-mode)
 (declare-function cua-copy-rectangle "cua-rect.el")
 (declare-function cua-copy-region "cua-base.el")
+(declare-function ergoemacs-shortcut-remap "ergoemacs-shortcuts.el")
 (defvar cua--rectangle)
 (defun ergoemacs-copy-line-or-region (&optional arg)
   "Copy current line, or current text selection."
@@ -315,11 +316,20 @@ If `narrow-to-region' is in effect, then cut that region only."
    ((region-active-p)
     (kill-ring-save (region-beginning) (region-end)))
    (t
-    (kill-ring-save (line-beginning-position) (line-beginning-position 2))))
+    ;; Hack away to support `org-mode' folded reg
+    (kill-ring-save
+     (save-excursion
+       (ergoemacs-shortcut-remap 'move-beginning-of-line)
+       (when (not (bolp))
+         (beginning-of-line))
+       (point))
+     (save-excursion
+       (ergoemacs-shortcut-remap 'move-end-of-line)
+       (call-interactively 'move-end-of-line)
+       (point)))))
   (deactivate-mark))
 
 (declare-function cua-cut-region "cua-base.el")
-(declare-function ergoemacs-shortcut-remap "ergoemacs-shortcuts.el")
 (defun ergoemacs-cut-line-or-region (&optional arg)
   "Cut the current line, or current text selection.
 Use `cua-cut-rectangle' or `cua-cut-region' when `cua-mode' is
@@ -346,6 +356,7 @@ major-modes like `org-mode'. "
     (ergoemacs-shortcut-remap 'kill-region)
     (deactivate-mark))
    (t
+    (ergoemacs-shortcut-remap 'move-beginning-of-line)
     (when (not (bolp))
       (beginning-of-line))
     ;; Keep prefix args.
@@ -654,10 +665,7 @@ the prefix arguments of `beginning-of-buffer',
           (save-excursion
             (when (ignore-errors (comment-search-backward (point-at-bol) t))
               (push (point) pts)
-              (when (and font-lock-mode
-                         (eq (get-text-property (point) 'face)
-                             'font-lock-comment-face))
-                (goto-char (max (point-at-bol) (previous-single-property-change (point) 'face (current-buffer) (point-at-bol))))
+              (when (re-search-backward (format "%s\\=" comment-start-skip) (point-at-bol) t)
                 (skip-syntax-backward " " (point-at-bol))
                 (push (point) pts))))))
       (cond
@@ -729,11 +737,8 @@ the prefix arguments of `end-of-buffer',
            (or (eolp)
                (and
                 (or
-                 (eq
-                  (ergoemacs-with-global
-                   (ergoemacs-real-key-binding (read-kbd-macro "<next>")))
-                  last-command))
-                    (bolp))))
+                 (memq last-command '(ergoemacs-forward-block scroll-up-command)))
+                (bolp))))
       (progn 
         (cond
          ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
@@ -783,9 +788,9 @@ the prefix arguments of `end-of-buffer',
 ;;; TEXT SELECTION RELATED
 
 (defun ergoemacs-select-current-line ()
-  "Select the current line."
+  "Select the current line"
   (interactive)
-  (end-of-line)
+  (end-of-line) ; move to end of line
   (set-mark (line-beginning-position)))
 
 (defun ergoemacs-select-current-block ()
@@ -803,50 +808,17 @@ the prefix arguments of `end-of-buffer',
         (setq p2 (point))))
     (set-mark p1)))
 
-(defun ergoemacs-select-text-in-ascii-quote ()
-  "Select text between ASCII quotes, single or double."
-  (interactive)
-  (let (p1 p2)
-    (if (nth 3 (syntax-ppss))
-        (progn
-          (ergoemacs-backward-up-list 1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
-          (setq p1 (point))
-          (forward-sexp 1)
-          (setq p2 (point))
-          (goto-char (1+ p1))
-          (set-mark (1- p2)))
-      (progn
-        (user-error "Cursor not inside quote")))))
-
-(defun ergoemacs-select-text-in-bracket ()
-  "Select text between the nearest brackets.
-Bracket here includes: () [] {} «» ‹› “” 〖〗 【】 「」 『』 （） 〈〉
- 《》 〔〕 ⦗⦘ 〘〙 ⦅⦆ 〚〛 ⦃⦄ ⟨⟩."
-  (interactive)
-  (with-syntax-table (standard-syntax-table)
-    (modify-syntax-entry ?\« "(»")
-    (modify-syntax-entry ?\» ")«")
-    (modify-syntax-entry ?\‹ "(›")
-    (modify-syntax-entry ?\› ")‹")
-    (modify-syntax-entry ?\“ "(”")
-    (modify-syntax-entry ?\” ")“")
-    (modify-syntax-entry ?\‘ "(’")
-    (modify-syntax-entry ?\’ ")‘")
-    (let (pos p1 p2)
-      (setq pos (point))
-      (search-backward-regexp "\\s(" nil t )
-      (setq p1 (point))
-      (forward-sexp 1)
-      (setq p2 (point))
-      (goto-char (1+ p1))
-      (set-mark (1- p2)))))
-
 (defun ergoemacs-select-text-in-quote ()
-  "Select text between the nearest brackets or quote."
-  (interactive)
-  (if (nth 3 (syntax-ppss))
-        (ergoemacs-select-text-in-ascii-quote)
-      (ergoemacs-select-text-in-bracket)))
+  "Select text between the nearest left and right delimiters.
+Delimiters are paired characters:
+ () [] {} «» ‹› “” 〖〗 【】 「」 『』 （） 〈〉 《》 〔〕 ⦗⦘ 〘〙 ⦅⦆ 〚〛 ⦃⦄ ⟨⟩
+ For practical purposes, also: \"\", but not single quotes."
+ (interactive)
+ (let (p1)
+   (skip-chars-backward "^<>([{“「『‹«（〈《〔【〖⦗〘⦅〚⦃⟨\"")
+   (setq p1 (point))
+   (skip-chars-forward "^<>)]}”」』›»）〉》〕】〗⦘〙⦆〛⦄⟩\"")
+   (set-mark p1)))
 
 ;; by Nikolaj Schumacher, 2008-10-20. Released under GPL.
 (defun ergoemacs-semnav-up (arg)

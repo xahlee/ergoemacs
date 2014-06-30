@@ -220,6 +220,8 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
                  ',(nth 0 kb)
                  '(lambda () ,@(nth 1 kb)))) ergoemacs-theme-comp-hash)))
 
+(declare-function ergoemacs-theme-get-version "ergoemacs-theme-engine.el")
+(declare-function ergoemacs-theme-set-version "ergoemacs-theme-engine.el")
 (defmacro ergoemacs-test-layout (&rest keys-and-body)
   (let ((kb (make-symbol "body-and-plist"))
         (plist (make-symbol "plist"))
@@ -228,6 +230,7 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
           plist (nth 0 kb)
           body (nth 1 kb))
     `(let ((old-ergoemacs-theme ergoemacs-theme)
+           (old-version (ergoemacs-theme-get-version))
            (macro
             ,(if (plist-get plist ':macro)
                  `(edmacro-parse-keys ,(plist-get plist ':macro) t)))
@@ -235,6 +238,7 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
        (ergoemacs-mode -1)
        (setq ergoemacs-theme ,(plist-get plist ':theme))
        (setq ergoemacs-keyboard-layout ,(or (plist-get plist ':layout) "us"))
+       (ergoemacs-theme-set-version ,(or (plist-get plist ':version) nil))
        (ergoemacs-mode 1)
        ,(if (plist-get plist :cua)
             `(cua-mode 1))
@@ -244,6 +248,7 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
          (ergoemacs-mode -1)
          (setq ergoemacs-theme old-ergoemacs-theme)
          (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
+         (ergoemacs-theme-set-version old-version)
          (ergoemacs-mode 1)))))
 
 (fset 'ergoemacs-theme-component--parse-keys-and-body
@@ -429,18 +434,6 @@ This was stole/modified from `c-save-buffer-state'"
             (buffer-modified-p)
             (set-buffer-modified-p nil)))))
 
-;;;###autoload
-
-(defmacro ergoemacs-backward-up-list (arg arg1 arg2)
-  "Allow the three argument list for emacs 24.4.
-
-See `backward-up-list' for more information on your emacs
-version's implementation of this function."
-  (cond
-   ((and (<= 24 emacs-major-version)
-         (<= 4 emacs-minor-version))
-    `(backward-up-list ,arg ,arg1 ,arg2))
-   (t `(backward-up-list ,arg))))
 
 (provide 'ergoemacs-macros)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
