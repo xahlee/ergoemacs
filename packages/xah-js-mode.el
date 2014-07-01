@@ -301,6 +301,7 @@
 (defvar xjs-dom-words nil "a list of keywords from DOM or browser.")
 (setq xjs-dom-words '(
 
+"querySelectorAll"
 "style"
 "setAttribute"
 "createTextNode"

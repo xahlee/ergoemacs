@@ -742,17 +742,14 @@ this is a quick 1 min hackjob, works only when there's no nesting."
   "Replace HTML chars & < > to HTML entities.
 This works on the current text selection or text block.
 The string replaced are:
- & → &amp;
- < → &lt;
- > → &gt;
+ & ⇒ &amp;
+ < ⇒ &lt;
+ > ⇒ &gt;
 
-if `universal-argument' is called, the replacement direction is reversed. That is
- &amp; ⇒ &
-etc.
+if `universal-argument' is called, the replacement direction is
+ reversed. That is &amp; ⇒ & etc.
 
-when called in lisp program, 
-φp1 φp2 are region begin/end.
-if φentity-to-char-p is true, change entities to chars instead.
+when called in lisp program, φp1 φp2 are region begin/end. if φentity-to-char-p is true, change entities to chars instead.
 
 See also:
 `xhm-replace-html-named-entities'

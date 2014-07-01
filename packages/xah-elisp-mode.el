@@ -290,6 +290,7 @@ The value must t or nil."
 "read-regexp"
 "read-string"
 "region-active-p"
+"use-region-p"
 "region-beginning"
 "region-end"
 "remove-hook"
@@ -1387,7 +1388,7 @@ Returns true if point is moved, else false."
   "Remove whitespaces in ending repetition of parenthesises.
 If there's a text selection, act on the region, else, on defun block."
   (interactive
-   (if (region-active-p)
+   (if (use-region-p)
        (list (region-beginning) (region-end))
      (save-excursion
        (xem-goto-outmost-bracket)
@@ -1483,6 +1484,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("ntr" "narrow-to-region" nil :system t)
     ("pm" "point-max" nil :system t)
     ("rap" "region-active-p" nil :system t)
+    ("urp" "use-region-p" nil :system t)
     ("rb" "region-beginning" nil :system t)
     ("re" "region-end" nil :system t)
     ("rf" "rename-file" nil :system t)
@@ -1681,6 +1683,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
     ("throw" "(throw TAG▮ VALUE)" nil :system t)
     ("unless" "(unless ▮)" nil :system t)
+    ("use-region-p" "(use-region-p)" nil :system t)
     ("vector" "(vector ▮)" nil :system t)
     ("when" "(when ▮)" nil :system t)
     ("while" "(while ▮)" nil :system t)
