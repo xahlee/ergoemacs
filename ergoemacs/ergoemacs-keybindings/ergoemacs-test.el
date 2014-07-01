@@ -509,24 +509,19 @@ Test next and prior translation."
     (should ret)))
 
 (ert-deftest ergoemacs-test-apps-copy ()
-  "Tests <apps> c on QWERTY cutting a region, not just a line."
+  "Tests <apps> c on QWERTY copying a region, not just a line."
   (ergoemacs-test-layout
-   :macro (format "<%s> c"
+   :macro (format "C-a <%s> c C-v"
                   (if (eq system-type 'windows-nt)
                       "apps" "menu"))
-   (save-excursion
-     (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
-     (insert ergoemacs-test-lorem-ipsum)
-     (push-mark (point))
-     (push-mark (point-max) nil t)
-     (goto-char (point-min))
-     (execute-kbd-macro macro)
-     (goto-char (point-max))
-     (ergoemacs-paste)
-     (should (string= (concat ergoemacs-test-lorem-ipsum
-                              ergoemacs-test-lorem-ipsum)
-                      (buffer-string)))
-     (kill-buffer (current-buffer)))))
+   (let ((test-string "1\n2\n3\n4"))
+     (save-excursion
+       (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+       (insert test-string)
+       (execute-kbd-macro macro)
+       (should (string= (concat test-string test-string)
+                        (buffer-string)))
+       (kill-buffer (current-buffer))))))
 
 (ert-deftest ergoemacs-test-shift-selection ()
   "Test that shift selection works properly.
@@ -771,20 +766,25 @@ Issue #186."
   "Issue #184; Not replace the \"selected all\" by paste."
   (let ((ret t)
         (ergoemacs-handle-ctl-c-or-ctl-x 'both))
-    (with-temp-buffer
-      (insert ergoemacs-test-lorem-ipsum)
-      (goto-char (point-min))
-      (push-mark)
-      (end-of-line)
-      (ergoemacs-copy-line-or-region)
-      (push-mark (point))
-      (push-mark (point-max) nil t)
-      (goto-char (point-min))
-      (ergoemacs-paste)
-      (message "`%s`" (buffer-string))
-      (setq ret (string= "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed\n"
-                         (buffer-string))))
-    (should ret)))
+    (ergoemacs-test-layout
+     :macro "C-v"
+     (save-excursion
+       (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+       (insert ergoemacs-test-lorem-ipsum)
+       (goto-char (point-min))
+       (push-mark)
+       (end-of-line)
+       (ergoemacs-copy-line-or-region)
+       (push-mark (point))
+       (push-mark (point-max) nil t)
+       (goto-char (point-min))
+       ;; Make sure the `pre-command-hook' and `post-command-hook' is
+       ;; run by calling the macro.
+       (execute-kbd-macro macro) 
+       ;; (ergoemacs-paste)
+       (should (string= "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed\n"
+                        (buffer-string)))
+       (kill-buffer (current-buffer))))))
 
 (ert-deftest ergoemacs-test-issue-184-paste-should-clear-mark ()
   "Issue #186.

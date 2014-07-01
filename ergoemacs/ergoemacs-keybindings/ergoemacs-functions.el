@@ -110,6 +110,7 @@
 
 If an error occurs, display the error, and sit for 2 seconds before exiting"
   (cond
+   (noninteractive)
    ((not (or custom-file user-init-file))
     (message "Not saving; \"emacs -q\" would overwrite customizations")
     (sit-for 1))
@@ -326,6 +327,7 @@ If `narrow-to-region' is in effect, then cut that region only."
      (save-excursion
        (ergoemacs-shortcut-remap 'move-end-of-line)
        (call-interactively 'move-end-of-line)
+       (re-search-forward "\\=\n" nil t) ;; Include newline
        (point)))))
   (deactivate-mark))
 
@@ -764,25 +766,23 @@ the prefix arguments of `end-of-buffer',
       (when ergoemacs-end-of-comment-line
         (save-excursion
           ;; See http://www.emacswiki.org/emacs/EndOfLineNoComments
-          (let ((cs (condition-case err
-                        (comment-search-forward (point-at-eol) t)
-                      (error nil))))
+          (let ((cs (ignore-errors (comment-search-forward (point-at-eol) t))))
             (when cs
               (goto-char cs)
               (skip-syntax-backward " " (point-at-bol))
               (push (point) pts)))))
+      (when pts
+        (setq pts (sort pts '<))
+        (dolist (x pts)
+          (unless (<= x (point))
+            (push x tmp)))
+        (setq pts (reverse tmp)))
       (cond
        ((not pts)
         (call-interactively 'move-end-of-line)
         (setq this-command 'move-end-of-line))
        (t
-	(setq pts (sort pts '<))
-        (dolist (x pts)
-          (unless (<= x (point))
-            (push x tmp)))
-	(setq pts (reverse tmp))
-        (when pts
-          (goto-char (nth 0 pts)))))))
+        (goto-char (nth 0 pts))))))
   (setq ergoemacs-beginning-of-line-or-what-last-command this-command))
 
 ;;; TEXT SELECTION RELATED
