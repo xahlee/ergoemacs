@@ -441,7 +441,8 @@ The value must t or nil."
 
 "current-prefix-arg"
 "deactivate-mark"
-
+"load-file-name"
+"buffer-file-name"
 
 "Buffer-menu-buffer+size-width"
 "Buffer-menu-mode-width"
