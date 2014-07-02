@@ -228,6 +228,14 @@
     :full-shortcut-keymap t
     (define-key helm-map (kbd "C-w") 'helm-keyboard-quit)
     (define-key helm-map (kbd "C-z") nil))
+
+  ;; Compatibility with Icicle (allows the use of
+  ;; `icicle-read-string-completing' directly)
+  (when icicle-mode
+    (global-set-key [remap ergoemacs-apropos-user-options] 'apropos-user-options))
+  
+  (when icicle-ido-like-mode
+    (global-set-key [remap ergoemacs-apropos-user-options] 'apropos-user-options))
   
   (when isearch-mode-hook
     :modify-map t
@@ -1067,7 +1075,7 @@
   (global-set-key (kbd "M-H") 'isearch-forward-regexp)
   (global-set-key (kbd "M-a") 'ergoemacs-move-cursor-previous-pane)
   (global-set-key (kbd "M-9") 'er/contract-region)
-  (global-set-key (kbd "M-t") 'execute-extended-command)
+  (global-set-key (kbd "M-;") 'execute-extended-command)
   ;;
   ;; Overwrite previous global definitions in `ergoemacs-mode'
   ;;
