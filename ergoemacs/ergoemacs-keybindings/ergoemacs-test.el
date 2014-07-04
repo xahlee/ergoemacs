@@ -32,10 +32,11 @@
   (require 'cl)
   (require 'ergoemacs-macros 
            (expand-file-name "ergoemacs-macros" 
-                             (file-name-directory (or
-                                                   load-file-name
-                                                   (buffer-file-name)
-                                                   default-directory)))))
+                             (or (and (boundp 'pkg-dir) pkg-dir)
+                                 (file-name-directory (or
+                                                       load-file-name
+                                                       (buffer-file-name)
+                                                       default-directory))))))
 
 (declare-function ergoemacs-set "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-define-key "ergoemacs-theme-engine.el")
@@ -1006,6 +1007,21 @@ Selected mark would not be cleared after paste."
                        (buffer-substring (point) (point-at-eol))))
       (call-interactively 'ergoemacs-end-of-line-or-what)
       (should (= (point) (point-at-eol))))))
+
+(declare-function package-list-packages-no-fetch "package.el")
+(ert-deftest ergoemacs-test-u-for-package-list-packages ()
+  "Test `package-list-packages' `substitute-command-keys'"
+  (require 'package)
+  (package-list-packages-no-fetch)
+  (should (string= (ergoemacs-pretty-key "U")
+                   (substitute-command-keys
+                    "\\[package-menu-mark-upgrades]")))
+  (kill-buffer (current-buffer)))
+
+(declare-function ergoemacs-real-key-binding "ergoemacs-advices.el" (key &optional accept-default no-remap position) t)
+(ert-deftest ergoemacs-test-unbind-commands-active ()
+  "Make sure the unbound keys work"
+  (should (eq 'ergoemacs-undefined (ergoemacs-real-key-binding (read-kbd-macro "C-x C-s")))))
 
 ;; (ert-deftest ergoemacs-test-5.3.7 ()
 ;;   "Test Ergoemacs 5.3.7 keys"

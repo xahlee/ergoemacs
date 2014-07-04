@@ -31,10 +31,11 @@
   (require 'cl)
   (require 'ergoemacs-macros 
            (expand-file-name "ergoemacs-macros" 
-                             (file-name-directory (or
-                                                   load-file-name
-                                                   (buffer-file-name)
-                                                   default-directory)))))
+                             (or (and (boundp 'pkg-dir) pkg-dir)
+                                 (file-name-directory (or
+                                                       load-file-name
+                                                       (buffer-file-name)
+                                                       default-directory))))))
 
 (autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
 (autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
@@ -58,6 +59,8 @@
   (undo-tree-mode 1)
   (shift-select-mode t)
   (delete-selection-mode 1)
+  (setq recentf-menu-before "Close")
+  (recentf-mode 1)
   ;; (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
   ;; (setq cua--rectangle-keymap (make-sparse-keymap))
   ;; (setq cua--rectangle-initialized nil)

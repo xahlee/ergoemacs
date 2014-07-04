@@ -50,14 +50,15 @@
 ;; 
 ;;; Code:
 
-(eval-when-compile
+(eval-when-compile 
   (require 'cl)
   (require 'ergoemacs-macros 
-	   (expand-file-name "ergoemacs-macros" 
-			     (file-name-directory (or
-			      load-file-name
-			      (buffer-file-name)
-			      default-directory)))))
+           (expand-file-name "ergoemacs-macros" 
+                             (or (and (boundp 'pkg-dir) pkg-dir)
+                                 (file-name-directory (or
+                                                       load-file-name
+                                                       (buffer-file-name)
+                                                       default-directory))))))
 
 
 ;;; ergoemacs pretty keys
@@ -114,6 +115,12 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
   :type 'boolean
   :group 'ergoemacs-mode)
 
+;; FIXME: invalidate/fix cache when changing.
+(defcustom ergoemacs-use-small-symbols nil
+  "Use small symbols to represent alt+ ctl+ etc. on windows/linux."
+  :type 'boolean
+  :group 'ergoemacs-mode)
+
 (defvar ergoemacs-use-M-x-p nil)
 
 (defvar ergoemacs-M-x)
@@ -146,6 +153,9 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
                           (goto-char (match-beginning 0))
                           (looking-at "-\\(RET\\|SPC\\|ESC\\)")))
                 (replace-match (format "-S%s%s" (downcase (match-string 1)) (match-string 2)))))
+            (goto-char (point-min))
+            (while (re-search-forward "\\_<[A-Z]\\_>" nil t)
+              (replace-match (format "S-%s" (match-string 0))))
             (goto-char (point-min))
             (while (re-search-forward "\\(S-\\)\\{2,\\}" nil t)
               (replace-match "S-" t t))
@@ -204,10 +214,11 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
             (goto-char (point-min))
             (while (re-search-forward "[+]\\([[:lower:]]\\)\\(】\\|\\]\\)" nil t)
               (replace-match (upcase (match-string 0)) t t))
-            (when (and (eq system-type 'darwin)
-                       (string= "⇧" (ergoemacs-unicode-char "⇧" ""))
-                       (string= "⌘" (ergoemacs-unicode-char "⌘" ""))
-                       (string= "⌥" (ergoemacs-unicode-char "⌥" "")))
+            (cond
+             ((and (eq system-type 'darwin)
+                   (string= "⇧" (ergoemacs-unicode-char "⇧" ""))
+                   (string= "⌘" (ergoemacs-unicode-char "⌘" ""))
+                   (string= "⌥" (ergoemacs-unicode-char "⌥" "")))
               (goto-char (point-min))
               (while (re-search-forward ".Opt[+]" nil t)
                 (replace-match "⌥"))
@@ -220,6 +231,21 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
               (goto-char (point-min))
               (while (re-search-forward "Ctl[+]" nil t)
                 (replace-match "^")))
+             ((and ergoemacs-use-small-symbols
+                   (string= "⇧" (ergoemacs-unicode-char "⇧" ""))
+                   (string= "♦" (ergoemacs-unicode-char "♦" "")))
+              (goto-char (point-min))
+              (while (re-search-forward ".Alt[+]" nil t)
+                (replace-match "♦"))
+              (goto-char (point-min))
+              (while (re-search-forward ".Shift[+]" nil t)
+                (replace-match "⇧"))
+              (goto-char (point-min))
+              (while (re-search-forward "Ctl[+]" nil t)
+                (replace-match "^"))))
+            (goto-char (point-min))
+            (unless (looking-at (regexp-quote ob))
+              (insert ob))
             (setq ret (buffer-string)))))
       ret))))
 

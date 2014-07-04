@@ -32,11 +32,12 @@
 (eval-when-compile 
   (require 'cl)
   (require 'ergoemacs-macros 
-	   (expand-file-name "ergoemacs-macros" 
-			     (file-name-directory (or
-						   load-file-name
-						   (buffer-file-name)
-						   default-directory)))))
+           (expand-file-name "ergoemacs-macros" 
+                             (or (and (boundp 'pkg-dir) pkg-dir)
+                                 (file-name-directory (or
+                                                       load-file-name
+                                                       (buffer-file-name)
+                                                       default-directory))))))
 
 (require 'redo "redo.elc" t) ; for redo shortcut
 
@@ -118,7 +119,7 @@ If an error occurs, display the error, and sit for 2 seconds before exiting"
     (message "Cannot save customizations; init file was not fully loaded")
     (sit-for 1))
    (t
-    (customize-save-customized))))
+    (ignore-errors (customize-save-customized)))))
 
 (defun ergoemacs-ctl-c (&optional arg)
   "Ergoemacs C-c key."

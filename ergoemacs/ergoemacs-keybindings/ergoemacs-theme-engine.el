@@ -55,10 +55,11 @@
   (require 'cl)
   (require 'ergoemacs-macros 
            (expand-file-name "ergoemacs-macros" 
-                             (file-name-directory (or
-                                                   load-file-name
-                                                   (buffer-file-name)
-                                                   default-directory)))))
+                             (or (and (boundp 'pkg-dir) pkg-dir)
+                                 (file-name-directory (or
+                                                       load-file-name
+                                                       (buffer-file-name)
+                                                       default-directory))))))
 
 ;;; Not sure why `adjoin' may be called at run-time; sigh.
 (autoload 'adjoin "cl.el")
@@ -1401,6 +1402,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             ergoemacs-read-input-keymap final-read-map
             ergoemacs-read-emulation-mode-map-alist `((ergoemacs-read-input-keys ,@final-read-map))
             ergoemacs-shortcut-keymap final-shortcut-map
+            ergoemacs-unbind-keymap final-unbind-map
             ergoemacs-emulation-mode-map-alist
             (reverse
              (append
