@@ -52,7 +52,7 @@
 
 ;;; DOCUMENTATION
 
-;; Just some simple useful commands
+;; Some simple useful commands for looking up references in browser
 ;; For detail, see http://ergoemacs.org/emacs/emacs_lookup_ref.html
 
 ;; donate $3 please. Paypal to xah@xahlee.org , thanks.
@@ -81,32 +81,32 @@
 "http://www.etymonline.com/index.php?search=�" ; etymology
 ] )
 
-(defun lookup-word-on-internet (&optional input-word site-to-use)
+(defun lookup-word-on-internet (&optional φinput-word φsite-to-use)
   "Look up current word or text selection in a online reference site.
 This command launches/switches you to default browser.
 
-Optional argument INPUT-WORD and SITE-TO-USE can be given.
-SITE-TO-USE a is URL string in this form: 「http://en.wiktionary.org/wiki/�」.
+Optional argument ΦINPUT-WORD and ΦSITE-TO-USE can be given.
+ΦSITE-TO-USE a is URL string in this form: 「http://en.wiktionary.org/wiki/�」.
 the 「�」 is a placeholder for the query string.
 
-If SITE-TO-USE is nil, Google Search is used.
+If ΦSITE-TO-USE is nil, Google Search is used.
 
 For a list of online reference sites, see:
  URL `http://ergoemacs.org/emacs/emacs_lookup_ref.html'"
   (interactive)
   (let (ξword refUrl myUrl)
     (setq ξword
-          (if input-word
-              input-word
+          (if φinput-word
+              φinput-word
             (if (region-active-p)
                 (buffer-substring-no-properties (region-beginning) (region-end))
-              (thing-at-point 'word) )) )
+              (thing-at-point 'symbol) )) )
 
     (setq ξword (replace-regexp-in-string " " "%20" (asciify-text ξword)))
 
     (setq refUrl
-          (if site-to-use
-              site-to-use
+          (if φsite-to-use
+              φsite-to-use
             "http://www.google.com/search?q=�" ) )
 
     (setq myUrl (replace-regexp-in-string "�" ξword refUrl t t))
@@ -120,57 +120,57 @@ For a list of online reference sites, see:
      ((string-equal system-type "darwin") ; Mac
       (browse-url myUrl) ) ) ))
 
-(defun lookup-google (&optional input-word)
+(defun lookup-google (&optional φinput-word)
   "Lookup current word or text selection in Google Search.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.google.com/search?q=�" ))
-    (lookup-word-on-internet input-word dictUrl) ) )
+    (lookup-word-on-internet φinput-word dictUrl) ) )
 
-(defun lookup-wikipedia (&optional input-word)
+(defun lookup-wikipedia (&optional φinput-word)
   "Lookup current word or text selection in Wikipedia.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://en.wikipedia.org/wiki/�" ))
-    (lookup-word-on-internet input-word dictUrl) ) )
+    (lookup-word-on-internet φinput-word dictUrl) ) )
 
-(defun lookup-word-dict-org (&optional input-word)
+(defun lookup-word-dict-org (&optional φinput-word)
   "Lookup definition of current word or text selection in URL `http://dict.org/'.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�" ))
-    (lookup-word-on-internet input-word dictUrl)
+    (lookup-word-on-internet φinput-word dictUrl)
     ) )
 
-(defun lookup-word-definition (&optional input-word)
+(defun lookup-word-definition (&optional φinput-word)
   "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.thefreedictionary.com/�") )
-    (lookup-word-on-internet input-word dictUrl) ) )
+    (lookup-word-on-internet φinput-word dictUrl) ) )
 
-(defun lookup-answers.com (&optional input-word)
+(defun lookup-answers.com (&optional φinput-word)
   "Lookup current word or text selection in URL `http://answers.com/'.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.answers.com/main/ntquery?s=�"
 ) )
-    (lookup-word-on-internet input-word dictUrl) ) )
+    (lookup-word-on-internet φinput-word dictUrl) ) )
 
-(defun lookup-wiktionary (&optional input-word)
+(defun lookup-wiktionary (&optional φinput-word)
   "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://en.wiktionary.org/wiki/�" ))
-    (lookup-word-on-internet input-word dictUrl) ) )
+    (lookup-word-on-internet φinput-word dictUrl) ) )
 
-(defun lookup-all-dictionaries (&optional input-word)
+(defun lookup-all-dictionaries (&optional φinput-word)
   "Lookup definition in many dictionaries.
 Current word or text selection is used as input.
 The dictionaries used are in `all-dictionaries'.
 
 See also `lookup-word-on-internet'."
   (interactive)
-  (mapc (lambda (dictUrl) (lookup-word-on-internet input-word dictUrl)) all-dictionaries) )
+  (mapc (lambda (dictUrl) (lookup-word-on-internet φinput-word dictUrl)) all-dictionaries) )
 
 (provide 'lookup-word-on-internet)
