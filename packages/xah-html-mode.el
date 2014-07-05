@@ -389,7 +389,6 @@ This function requires the `htmlize-buffer' from 〔htmlize.el〕 by Hrvoje Niks
            (p2 (elt t78730 2))
            ;; (ξmodeName (elt (cdr (assoc ξlangCode φlang-code-map)) 0))
            (ξmodeName (xhm-langcode-to-major-mode-name ξlangCode φlang-code-map)))
-      ;; remove beginning or trailing whitespace
       (xhm-htmlize-region p1 p2 ξmodeName t))))
 
 (defun xhm-htmlize-region (φp1 φp2 φmode-name &optional φtrim-whitespace-boundary?)
@@ -1960,6 +1959,9 @@ This is called by emacs abbrev system."
     ("8w" "width" nil :system t)
     ("8h" "height" nil :system t)
     ("bgc" "background-color" nil :system t)
+
+    ("css1" "<link rel=\"stylesheet\" href=\"../../lbasic.css\" />")
+    ("css2" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
 
     ;; todo
 ;; http://xahlee.info/js/css_colors.html
