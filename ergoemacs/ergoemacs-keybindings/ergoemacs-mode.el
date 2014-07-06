@@ -8,7 +8,7 @@
 ;; Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 ;; Created: August 01 2007
 ;; Keywords: convenience
-;; Version: 5.14.07
+;; Version: 5.14.7.1
 ;; Package-Requires: ((emacs "24.1") (undo-tree "0.6.5"))
 ;; URL: https://github.com/ergoemacs/ergoemacs-mode
 
@@ -146,7 +146,7 @@
   (load "ergoemacs-layouts"))
 
 ;; Ergoemacs-keybindings version
-(defconst ergoemacs-mode-version "5.14.07-0"
+(defconst ergoemacs-mode-version "5.14.7.1"
   "Ergoemacs-keybindings minor mode version number.")
 
 (defconst ergoemacs-mode-changes "Delete window Alt+0 changed to Alt+2.
@@ -232,25 +232,6 @@ Valid values are:
           (const :tag "Do not allow fast repeat commands." nil)
           (const :tag "Allow fast repeat command of the current movement command" single)
           (const :tag "Allow fast repeat of all movement commands" all)))
-
-(defun ergoemacs-repeat-movement-full-keymap ()
-  "Allow movement commands to be repeated without pressing the ALT key"
-  (let (ergoemacs-modal
-        ergoemacs-repeat-keys
-        ergoemacs-read-input-keys
-        (keymap (make-sparse-keymap)))
-    (dolist (key (append (where-is-internal 'ergoemacs-shortcut-movement)
-                         (where-is-internal 'ergoemacs-shortcut-movement-no-shift-select)))
-      (when (= 1 (length key))
-        (let ((mods (event-modifiers (elt key 0))))
-          (when (memq 'meta mods)
-            (define-key keymap
-              (vector
-               (event-convert-list
-                (append (delete 'meta mods)
-                        (list (event-basic-type (elt key 0))))))
-              `(lambda() (interactive) (ergoemacs-read-key ,(key-description key))))))))
-    keymap))
 
 (defvar ergoemacs-curr-prefix-arg nil)
 (defvar ergoemacs-repeat-keys nil)

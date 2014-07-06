@@ -1,6 +1,6 @@
 ;;; ergoemacs-advices.el --- advices for ErgoEmacs
 
-;; Copyright (C) 2013, 2014  Free Software Foundation, Inc.
+;; Copyright © 2013, 2014  Free Software Foundation, Inc.
 
 ;; Maintainer: Matthew L. Fidler
 ;; Keywords: convenience
@@ -30,13 +30,7 @@
 
 (eval-when-compile 
   (require 'cl)
-  (require 'ergoemacs-macros 
-	   (expand-file-name "ergoemacs-macros" 
-			     (or (and (boundp 'pkg-dir) pkg-dir)
-                                 (file-name-directory (or
-                                                   load-file-name
-                                                   (buffer-file-name)
-                                                   default-directory))))))
+  (require 'ergoemacs-macros))
 
 (defvar ergoemacs-advices '()
   "List of advices to enable and disable when ergoemacs is running.")
