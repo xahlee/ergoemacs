@@ -2019,11 +2019,18 @@ This is called by emacs abbrev system."
 
   (define-prefix-command 'xhm-single-keys-keymap)
 
+  ;; . p  g c
+  ;; e u  h t
+
   (define-key xhm-keymap (kbd "<menu> e") xhm-single-keys-keymap)
 
   (define-key xhm-single-keys-keymap (kbd ".") 'xhm-lines-to-html-list)
   (define-key xhm-single-keys-keymap (kbd "m") 'xhm-pre-source-code)
   (define-key xhm-single-keys-keymap (kbd "p") 'xhm-wrap-p-tag)
+  (define-key xhm-single-keys-keymap (kbd "l u") 'xhm-wrap-url)
+  (define-key xhm-single-keys-keymap (kbd "r ,") 'xhm-replace-html-chars-to-unicode)
+  (define-key xhm-single-keys-keymap (kbd "r .") 'xhm-replace-html-&<>-to-entities)
+
 
   (define-key xhm-single-keys-keymap (kbd "<backspace>") 'xhm-remove-html-tags)
   (define-key xhm-single-keys-keymap (kbd "3") 'xhm-update-title)
@@ -2034,16 +2041,12 @@ This is called by emacs abbrev system."
   (define-key xhm-single-keys-keymap (kbd "k") 'xhm-htmlize-keyboard-shortcut-notation)
   (define-key xhm-single-keys-keymap (kbd "l 3") 'xhm-source-url-linkify)
   (define-key xhm-single-keys-keymap (kbd "l s") 'xhm-make-link-defunct)
-  (define-key xhm-single-keys-keymap (kbd "l u") 'xhm-wrap-url)
   (define-key xhm-single-keys-keymap (kbd "l w") 'xhm-wikipedia-linkify)
-  (define-key xhm-single-keys-keymap (kbd "r ,") 'xhm-replace-html-chars-to-unicode)
-  (define-key xhm-single-keys-keymap (kbd "r .") 'xhm-replace-html-&<>-to-entities)
   (define-key xhm-single-keys-keymap (kbd "r e") 'xhm-htmlize-elisp-keywords)
   (define-key xhm-single-keys-keymap (kbd "r k") 'xhm-emacs-to-windows-kbd-notation)
   (define-key xhm-single-keys-keymap (kbd "r m") 'xhm-make-html-table)
   (define-key xhm-single-keys-keymap (kbd "t u") 'xhm-extract-url)
   (define-key xhm-single-keys-keymap (kbd "r v") 'xhm-make-html-table-undo)
-  (define-key xhm-single-keys-keymap (kbd "w") (lambda () (interactive) (xhm-wrap-html-tag "b" "w")))
   (define-key xhm-single-keys-keymap (kbd "x") 'xhm-rename-html-inline-image)
   (define-key xhm-single-keys-keymap (kbd "y") 'xhm-make-citation)
 
