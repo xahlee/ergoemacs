@@ -1220,14 +1220,17 @@ FULL-SHORTCUT-MAP-P "
 (defvar ergoemacs-theme)
 (defvar ergoemacs-keymap)
 (defvar ergoemacs-shortcut-keys)
+(defvar ergoemacs-no-shortcut-keys)
 (defvar ergoemacs-read-input-keys)
 (defvar ergoemacs-unbind-keys)
 (defvar ergoemacs-unbind-keymap)
 (defvar ergoemacs-read-input-keymap)
 (defvar ergoemacs-read-emulation-mode-map-alist)
 (defvar ergoemacs-shortcut-keymap)
+(defvar ergoemacs-no-shortcut-keymap)
 (defvar ergoemacs-emulation-mode-map-alist)
 (defvar ergoemacs-shortcut-emulation-mode-map-alist)
+(defvar ergoemacs-no-shortcut-emulation-mode-map-alist)
 (defvar ergoemacs-mode)
 (defmethod ergoemacs-theme-obj-install ((obj ergoemacs-theme-component-map-list) &optional remove-p)
   (with-slots (read-map
@@ -1242,7 +1245,8 @@ FULL-SHORTCUT-MAP-P "
           ;; (shortcut-map (or shortcut-map (make-sparse-keymap)))
           ;; (map (or map (make-sparse-keymap)))
           (menu-keymap (make-sparse-keymap))
-          final-map final-shortcut-map final-read-map final-unbind-map
+          final-map final-shortcut-map final-no-shortcut-map
+          final-read-map final-unbind-map
           (rm-list (append rm-keys ergoemacs-global-override-rm-keys)) 
           (i 0))
       ;; Get all the major-mode hooks that will be called or modified
@@ -1338,6 +1342,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
         ;; respect.
         ;; The removing of keys doesn't really work right now.
         (setq final-shortcut-map (copy-keymap shortcut-map)
+              final-no-shortcut-map (copy-keymap no-shortcut-map)
               final-unbind-map (copy-keymap unbind-map)
               final-read-map (copy-keymap read-map)
               final-map (copy-keymap map)
@@ -1352,11 +1357,12 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                                           final-read-map)
                                      (ergoemacs-rm-key final-read-map key))
                   final-shortcut-map (ergoemacs-rm-key final-shortcut-map key)
+                  final-no-shortcut-map (ergoemacs-rm-key final-no-shortcut-map key)
                   final-map (ergoemacs-rm-key final-map key)
                   final-unbind-map (ergoemacs-rm-key final-unbind-map key))))
         ;; Add `ergoemacs-mode' menu.
         (define-key menu-keymap [menu-bar ergoemacs-mode]
-          `("ErgoEmacs" . ,(ergoemacs-keymap-menu ergoemacs-theme)))
+          `("ErgoEmacs" . ,(ergoemacs-keymap-menu (or ergoemacs-theme "standard"))))
         ;; Coaleasing the keymaps needs to be done after removing the
         ;; keys, otherwise the keys are not removed...  Probably
         ;; playing with pointers in C.
@@ -1387,16 +1393,19 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
       ;; Turn on/off ergoemacs-mode
       (set-default 'ergoemacs-mode (not remove-p))
       (set-default 'ergoemacs-shortcut-keys (not remove-p))
+      (set-default 'ergoemacs-no-shortcut-keys nil)
       (set-default 'ergoemacs-read-input-keys (not remove-p))
       (set-default 'ergoemacs-unbind-keys (not remove-p))
       (setq ergoemacs-mode (not remove-p)
             ergoemacs-keymap final-map
             ergoemacs-shortcut-keys (not remove-p)
+            ergoemacs-no-shortcut-keys nil
             ergoemacs-read-input-keys (not remove-p)
             ergoemacs-unbind-keys (not remove-p)
             ergoemacs-read-input-keymap final-read-map
             ergoemacs-read-emulation-mode-map-alist `((ergoemacs-read-input-keys ,@final-read-map))
             ergoemacs-shortcut-keymap final-shortcut-map
+            ergoemacs-no-shortcut-keymap final-no-shortcut-map
             ergoemacs-unbind-keymap final-unbind-map
             ergoemacs-emulation-mode-map-alist
             (reverse
@@ -1412,7 +1421,10 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                    (cons remap map)))
                (ergoemacs-get-hooks obj "-mode\\'"))))
             ergoemacs-shortcut-emulation-mode-map-alist
-            `((ergoemacs-shortcut-keys ,@final-shortcut-map)))
+            `((ergoemacs-shortcut-keys ,@final-shortcut-map))
+            ergoemacs-no-shortcut-emulation-mode-map-alist
+            `((ergoemacs-no-shortcut-keys ,@final-no-shortcut-map))
+            )
       ;; Apply variables and mode changes.
       (if remove-p
           (progn
@@ -1781,7 +1793,7 @@ COMPONENT can be defined as component::version"
 
 (defun ergoemacs-theme-get-obj (&optional theme version)
   "Get the VERSION of THEME from `ergoemacs-theme-get-component' and `ergoemacs-theme-components'"
-  (ergoemacs-theme-get-component (ergoemacs-theme-components (or theme ergoemacs-theme)) version (or theme ergoemacs-theme)))
+  (ergoemacs-theme-get-component (ergoemacs-theme-components (or theme ergoemacs-theme "standard")) version (or theme ergoemacs-theme "standard")))
 
 (defun ergoemacs-keymap-empty-p (keymap &optional dont-collapse)
   "Determines if the KEYMAP is an empty keymap.
@@ -1813,7 +1825,7 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
   "Current `ergoemacs-mode' theme object")
 (defun ergoemacs-theme-install (&optional theme  version)
   "Gets the keymaps for THEME for VERSION."
-  (setq ergoemacs-theme--object (ergoemacs-theme-get-obj (or theme ergoemacs-theme) (or version (ergoemacs-theme-get-version))))
+  (setq ergoemacs-theme--object (ergoemacs-theme-get-obj (or theme ergoemacs-theme "standard") (or version (ergoemacs-theme-get-version))))
   (ergoemacs-theme-obj-install ergoemacs-theme--object))
 
 (defun ergoemacs-apply-inits (&rest ignore)
@@ -1847,7 +1859,7 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
         (when (ergoemacs-global-changed-p key)
           (when reset ;; Reset keymaps
             ;; Reset keymaps.
-            (dolist (map '(ergoemacs-shortcut-keymap ergoemacs-read-input-keymap ergoemacs-keymap ergoemacs-unbind-keymap))
+            (dolist (map '(ergoemacs-no-shortcut-keymap ergoemacs-shortcut-keymap ergoemacs-read-input-keymap ergoemacs-keymap ergoemacs-unbind-keymap))
               (when (symbol-value map)
                 (set map (ergoemacs-rm-key (symbol-value map) key))
                 (setq lk (lookup-key (symbol-value map) key))
@@ -1872,7 +1884,9 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
             (setq ergoemacs-read-emulation-mode-map-alist
                   (list (cons 'ergoemacs-read-input-keys ergoemacs-read-input-keymap))
                   ergoemacs-shortcut-emulation-mode-map-alist
-                  (list (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap)))
+                  (list (cons 'ergoemacs-shortcut-keys ergoemacs-shortcut-keymap))
+                  ergoemacs-no-shortcut-emulation-mode-map-alist
+                  (list (cons 'ergoemacs-no-shortcut-keys ergoemacs-no-shortcut-keymap)))
             ;;Put maps in `minor-mode-map-alist'
             (ergoemacs-shuffle-keys t))
           (when (and (or (commandp lk t)
@@ -1894,17 +1908,17 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
     (setq ergoemacs-theme-version
           (mapcar
            (lambda(elt)
-             (if (not (equal ergoemacs-theme (nth 0 elt)))
+             (if (not (equal (or ergoemacs-theme "standard") (nth 0 elt)))
                  elt
                (setq found t)
-               (list ergoemacs-theme version)))
+               (list (or ergoemacs-theme "standard") version)))
            ergoemacs-theme-version))
     (unless found
-      (push (list ergoemacs-theme version) ergoemacs-theme-version))))
+      (push (list (or ergoemacs-theme "standard") version) ergoemacs-theme-version))))
 
 (defun ergoemacs-theme-get-version ()
   "Gets the current version for the current theme"
-  (let ((theme-ver (assoc ergoemacs-theme ergoemacs-theme-version)))
+  (let ((theme-ver (assoc (or ergoemacs-theme "standard") ergoemacs-theme-version)))
     (if (not theme-ver) nil
       (car (cdr theme-ver)))))
 
@@ -1912,7 +1926,7 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
 (defun ergoemacs-theme-components (&optional theme)
   "Get a list of components used for the current theme.
 This respects `ergoemacs-theme-options'."
-  (let* ((theme (or theme ergoemacs-theme))
+  (let* ((theme (or theme ergoemacs-theme "standard"))
          (theme-plist (gethash (if (stringp theme) theme
                                  (symbol-name theme))
                                ergoemacs-theme-hash))
@@ -2024,7 +2038,7 @@ If OFF is non-nil, turn off the options instead."
 
 (defun ergoemacs-theme-option-enabled-p (option)
   "Determines if OPTION is enabled."
-  (let ((plist (gethash ergoemacs-theme ergoemacs-theme-hash))
+  (let ((plist (gethash (or ergoemacs-theme "standard") ergoemacs-theme-hash))
         options-on options-off)
     (setq options-on (plist-get plist ':optional-on)
           options-off (plist-get plist ':optional-off))
@@ -2137,7 +2151,7 @@ If OFF is non-nil, turn off the options instead."
            `(,(intern theme) menu-item ,(concat theme " - " (plist-get (gethash theme ergoemacs-theme-hash) ':description))
              (lambda() (interactive)
                (ergoemacs-set-default 'ergoemacs-theme ,theme))
-             :button (:radio . (string= ergoemacs-theme ,theme))))
+             :button (:radio . (string= (or ergoemacs-theme "standard") ,theme))))
          (sort (ergoemacs-get-themes) 'string<))))
     ,(ergoemacs-keymap-menu-theme-options theme)
     ,(ergoemacs-keymap-menu-theme-version theme)
@@ -2222,7 +2236,7 @@ If OFF is non-nil, turn off the options instead."
        (interactive)
        (customize-save-variable 'ergoemacs-smart-paste ergoemacs-smart-paste)
        (customize-save-variable 'ergoemacs-use-menus ergoemacs-use-menus)
-       (customize-save-variable 'ergoemacs-theme ergoemacs-theme)
+       (customize-save-variable 'ergoemacs-theme (or ergoemacs-theme "standard"))
        (customize-save-variable 'ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
        (customize-save-variable 'ergoemacs-ctl-c-or-ctl-x-delay ergoemacs-ctl-c-or-ctl-x-delay)
        (customize-save-variable 'ergoemacs-handle-ctl-c-or-ctl-x ergoemacs-handle-ctl-c-or-ctl-x)

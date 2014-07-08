@@ -236,6 +236,7 @@ Valid values are:
 (defvar ergoemacs-curr-prefix-arg nil)
 (defvar ergoemacs-repeat-keys nil)
 (defvar ergoemacs-shortcut-keys nil)
+(defvar ergoemacs-no-shortcut-keys nil)
 (defvar ergoemacs-unbind-keys nil)
 (defvar ergoemacs-read-input-keys nil)
 
@@ -260,6 +261,9 @@ Valid values are:
 
 (defvar ergoemacs-shortcut-keymap (make-sparse-keymap)
   "ErgoEmacs minor mode shortcut keymap")
+
+(defvar ergoemacs-no-shortcut-keymap (make-sparse-keymap)
+  "ErgoEmacs minor mode shortcut-free keymap")
 
 (defvar ergoemacs-read-input-keymap (make-sparse-keymap)
   "Ergoemacs minor mode shortcut input keymap.")
@@ -289,7 +293,7 @@ Valid values are:
                     (if (not (eq 'ergoemacs-mode (nth 0 x)))
                         x
                       `(ergoemacs-mode ,(concat
-                                         (if (not ergoemacs-theme)
+                                         (if (string= "standard" (or ergoemacs-theme "standard"))
                                              " ErgoEmacs"
                                            (concat " Ergo"
                                                    (upcase (substring ergoemacs-theme 0 1))
@@ -309,7 +313,7 @@ Valid values are:
   "Setups keys based on a particular layout. Based on `ergoemacs-keyboard-layout'."
   (interactive)
   (ergoemacs-debug "Ergoemacs layout: %s" ergoemacs-keyboard-layout)
-  (ergoemacs-debug "Ergoemacs theme: %s" ergoemacs-theme)
+  (ergoemacs-debug "Ergoemacs theme: %s" (or ergoemacs-theme "standard"))
   (ergoemacs-debug "Emacs Version: %s" (emacs-version))
   (let ((ergoemacs-state (if (boundp 'ergoemacs-mode) ergoemacs-mode nil))
         (layout
@@ -363,6 +367,9 @@ Valid values are:
 (defvar ergoemacs-shortcut-emulation-mode-map-alist nil
   "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
 
+(defvar ergoemacs-no-shortcut-emulation-mode-map-alist nil
+  "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
+
 (defun ergoemacs-emulations (&optional remove)
   "Add ergoemacs emulations to `emulation-mode-map-alist'.
 When REMOVE is true, remove the emulations."
@@ -370,7 +377,8 @@ When REMOVE is true, remove the emulations."
                            ergoemacs-read-emulation-mode-map-alist
                            ergoemacs-repeat-emulation-mode-map-alist
                            ergoemacs-emulation-mode-map-alist
-                           ergoemacs-shortcut-emulation-mode-map-alist)))
+                           ergoemacs-shortcut-emulation-mode-map-alist
+                           ergoemacs-no-shortcut-emulation-mode-map-alist)))
     (funcall (if remove #'remove-hook #'add-hook) 'emulation-mode-map-alists hook)))
 
 (defvar ns-alternate-modifier)
@@ -415,8 +423,8 @@ bindings the keymap is:
   ;; This will possibly allow swapping of C-c and M-c.
   (if ergoemacs-mode
       (progn
-        (setq ergoemacs-debug-heading-start-time (float-time))
-        (setq ergoemacs-debug-heading-last-time (float-time))
+        (setq ergoemacs-debug-heading-start-time (float-time)
+              ergoemacs-debug-heading-last-time (float-time))
         (ergoemacs-debug "* Ergoemacs-mode is turning ON.")
         (when cua-mode
           (cua-mode -1)
@@ -426,8 +434,8 @@ bindings the keymap is:
         ;;   (setq ergoemacs-org-CUA-compatible org-CUA-compatible))
         (ergoemacs-emulations)
         ;; Setup keys
-        (setq ergoemacs-shortcut-keymap (make-sparse-keymap))
-        (ergoemacs-setup-keys t)
+        (setq ergoemacs-shortcut-keymap (make-sparse-keymap)
+              ergoemacs-no-shortcut-keymap (make-sparse-keymap))
         (ergoemacs-debug-heading "Ergoemacs Keys have loaded.")
         (when (and ergoemacs-use-mac-command-as-meta
                    (eq system-type 'darwin))
@@ -441,14 +449,6 @@ bindings the keymap is:
             (when am
               (setq ergoemacs-old-ns-alternate-modifier (symbol-value am))
               (set am nil))))
-        ;; Turn on menu
-        (if ergoemacs-use-menus
-            (progn
-              (require 'ergoemacs-menus)
-              (ergoemacs-menus-on))
-          (when (featurep 'ergoemacs-menus)
-            (ergoemacs-menus-off)))
-        (ergoemacs-debug-heading "Ergoemacs Menus have loaded.")
         (when (ergoemacs-real-key-binding [ergoemacs-single-command-keys])
           (if (not ergoemacs-read-key-overriding-overlay-save)
               (setq overriding-terminal-local-map ergoemacs-read-key-overriding-terminal-local-save)
@@ -457,6 +457,15 @@ bindings the keymap is:
         ;; Fix `substitute-command-keys'
         (ergoemacs-enable-c-advices)
         (setq ergoemacs-unbind-keys t)
+        (ergoemacs-setup-keys t)
+        ;; Turn on menu
+        (if ergoemacs-use-menus
+            (progn
+              (require 'ergoemacs-menus)
+              (ergoemacs-menus-on))
+          (when (featurep 'ergoemacs-menus)
+            (ergoemacs-menus-off)))
+        (ergoemacs-debug-heading "Ergoemacs Menus have loaded.")
         (add-hook 'pre-command-hook 'ergoemacs-pre-command-hook)
         (ergoemacs-populate-pre-command-hook)
         (ergoemacs-debug-heading "Ergoemacs-mode turned ON."))
@@ -736,6 +745,7 @@ This is done by checking if this is a command that supports shift selection or c
         (progn
           (when ergoemacs-mode
             (setq ergoemacs-shortcut-keys t)
+            (setq ergoemacs-no-shortcut-keys nil)
             (ergoemacs-shuffle-keys)
             (when (not unread-command-events)
               (ergoemacs-install-shortcuts-up)))
