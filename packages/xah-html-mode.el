@@ -1997,7 +1997,7 @@ This is called by emacs abbrev system."
 </body>
 </html>" nil :system t)
 
-    ("y-or-n-p" "(y-or-n-p \"PROMPT▮ \")" nil :system t))
+    )
 
   "abbrev table for `xah-html-mode'"
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
@@ -2055,7 +2055,7 @@ This is called by emacs abbrev system."
 
 
 ;; define the mode
-(define-derived-mode xah-html-mode fundamental-mode
+(define-derived-mode xah-html-mode prog-mode
   "∑html"
   "A simple major mode for HTML5.
 HTML5 keywords are colored.
@@ -2102,6 +2102,7 @@ HTML5 keywords are colored.
             ) ) )
 
   (setq font-lock-defaults '((xhm-font-lock-keywords)))
+  (setq local-abbrev-table xhm-abbrev-table)
 
   (set-syntax-table xhm-syntax-table)
   (use-local-map xhm-keymap)

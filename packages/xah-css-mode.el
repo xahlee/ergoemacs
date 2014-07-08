@@ -241,8 +241,34 @@ WARNING: not robust."
 
 
 
+(defun xcm-abbrev-enable-function ()
+  "Determine whether to expand abbrev.
+This is called by emacs abbrev system."
+  (let ((ξsyntax-state (syntax-ppss)))
+    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+        (progn nil)
+      t)))
+
+(setq xcm-abbrev-table nil)
+
+(define-abbrev-table 'xcm-abbrev-table
+  '(
+
+    ("bgc" "background-color" nil :system t))
+
+  "abbrev table for `xah-css-mode'"
+  ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
+  :regexp "\\([_-0-9A-Za-z]+\\)"
+  :case-fixed t
+  :enable-function 'xcm-abbrev-enable-function
+  )
+
+
+
+(require 'prog-mode)
+
 ;; define the mode
-(define-derived-mode xah-css-mode fundamental-mode
+(define-derived-mode xah-css-mode prog-mode
   "ξCSS "
   "A major mode for CSS.
 
@@ -253,6 +279,7 @@ CSS keywords are colored. Basically that's it.
   (set-syntax-table xcm-syntax-table)
   (setq font-lock-defaults '((xcm-font-lock-keywords)))
 
+  (setq local-abbrev-table xcm-abbrev-table)
   (set (make-local-variable 'comment-start) "/*")
   (set (make-local-variable 'comment-start-skip) "/\\*+[ \t]*")
   (set (make-local-variable 'comment-end) "*/")

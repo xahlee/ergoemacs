@@ -582,6 +582,21 @@ Examples of changes:
 ["motherfucker" "momf��ker"]
 ))))
 
+(defun xah-twitterfy ()
+  "shorten words for twitter."
+  (interactive)
+  (let* ((bds (get-selection-or-unit 'block))
+         (p1 (elt bds 1))
+         (p2 (elt bds 2)))
+    (replace-pairs-region p1 p2 '(
+                                  [" are " " r "]
+                                  [" you " " u "]
+                                  [", " "，"]
+                                  ["..." "…"]
+                                  [". " "。"]
+                                  ["。 " "。"]
+                                  ))))
+
 (defun xah-escape-quotes ()
   "Replace 「\"」 by 「\\\"」 in current line or text selection."
   (interactive)
