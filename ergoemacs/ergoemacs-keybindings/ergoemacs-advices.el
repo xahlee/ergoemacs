@@ -283,6 +283,14 @@ This assumes any key defined while running a hook is a user-defined hook."
                              " Never show it again.")))))
 
 
+(defadvice easy-menu-filter-return (around ergoemacs-easy-menu-filter-return activate)
+  "Makes sure that the keys are correct in the menu."
+  (let ((ret (ignore-errors ad-do-it)))
+    (when ergoemacs-mode
+      (ergoemacs-preprocess-menu-keybindings ret))
+    ret))
+
+
 ;;; Unfortunately, the advice route doesn't seem to work for these
 ;;; functions :(
 
@@ -306,6 +314,7 @@ Uses `ergoemacs-real-key-description'."
 
 (defvar ergoemacs-original-keys-to-shortcut-keys-regexp)
 (defvar ergoemacs-original-keys-to-shortcut-keys)
+(defvar ergoemacs-unbind-keys)
 (declare-function ergoemacs-emulations "ergoemacs-mode.el")
 (declare-function ergoemacs-remove-shortcuts "ergoemacs-shortcuts.el")
 (defun ergoemacs-substitute-command (string &optional map)
@@ -511,4 +520,6 @@ Assumes ergoemacs-real-FUNCTION and ergoemacs-FUNCTION as the two functions to t
 (provide 'ergoemacs-advices)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-advices.el ends here
+;; Local Variables:
 ;; coding: utf-8-emacs
+;; End:
