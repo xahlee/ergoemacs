@@ -59,6 +59,17 @@ The value must t or nil."
 "functionp"
 "char-equal"
 
+"delete"
+
+"memq"
+"delq"
+"remq"
+"memql"
+"member"
+"remove"
+"member-ignore-case"
+"delete-dups"
+
 "abs"
 
 "url-unhex-string"
@@ -113,8 +124,6 @@ The value must t or nil."
 "mapconcat"
 "maphash"
 "max"
-"member"
-"memq"
 "message"
 "min"
 "nil"
@@ -171,7 +180,6 @@ The value must t or nil."
 "float"
 "vectorp"
 "vconcat"
-"remove"
 "car-safe"
 ))
 
@@ -1621,7 +1629,18 @@ If there's a text selection, act on the region, else, on defun block."
     ("match-end" "(match-end N▮)" nil :system t)
     ("match-string" "(match-string ▮)" nil :system t)
     ("member" "(member ELT▮ LIST)" nil :system t)
-    ("memq" "(memq ▮ LIST)" nil :system t)
+    ("memq" "(memq ELT▮ LIST)" nil :system t)
+
+    ("delq" "(delq ELT▮ LIST)" nil :system t)
+
+    ("remq" "(remq OBJECT▮ LIST)" nil :system t)
+    ("memql" "(memql OBJECT▮ LIST)" nil :system t)
+    ("member" "(member OBJECT▮ LIST)" nil :system t)
+    ("delete" "(delete OBJECT▮ SEQUENCE)" nil :system t)
+    ("remove" "(remove OBJECT▮ SEQUENCE)" nil :system t)
+    ("member-ignore-case" "(member-ignore-case OBJECT▮ LIST)" nil :system t)
+    ("delete-dups" "(delete-dups LIST▮)" nil :system t)
+
     ("message" "(message \"%s▮\" ARGS)" nil :system t)
     ("narrow-to-region" "(narrow-to-region START▮ END)" nil :system t)
     ("nth" "(nth N▮ LIST)" nil :system t)

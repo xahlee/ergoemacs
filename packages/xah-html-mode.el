@@ -1960,8 +1960,8 @@ This is called by emacs abbrev system."
     ("8h" "height" nil :system t)
     ("bgc" "background-color" nil :system t)
 
-    ("css1" "<link rel=\"stylesheet\" href=\"../../lbasic.css\" />")
-    ("css2" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
+    ("css" "<link rel=\"stylesheet\" href=\"../lbasic.css\" />")
+    ("style" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
 
     ;; todo
 ;; http://xahlee.info/js/css_colors.html
