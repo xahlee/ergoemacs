@@ -440,17 +440,11 @@ It will replace anything defined by `ergoemacs-translation'"
     next-key))
 
 (declare-function ergoemacs-pretty-key "ergoemacs-translate.el")
-(defvar ergoemacs-alt-text
-  (replace-regexp-in-string
-   "[Qq]" "" (ergoemacs-pretty-key "M-q")))
+(defvar ergoemacs-alt-text "M-")
 
-(defvar ergoemacs-ctl-text
-  (replace-regexp-in-string
-   "[Qq]" "" (ergoemacs-pretty-key "C-q")))
+(defvar ergoemacs-ctl-text "C-")
 
-(defvar ergoemacs-alt-ctl-text
-  (replace-regexp-in-string
-   "[Qq]" "" (ergoemacs-pretty-key "C-q")))
+(defvar ergoemacs-alt-ctl-text "M-C-")
 
 (defun ergoemacs-read-key-next-key-is-alt (&optional type pretty-key)
   "The next key read is an Alt+ key. (or M- )"
@@ -479,14 +473,16 @@ It will replace anything defined by `ergoemacs-translation'"
 (defun ergoemacs-read-key-next-key-is-alt-ctl (&optional type pretty-key)
   "The next key read is an Alt+Ctrl+ key. (or C-M- )"
   (interactive)
-  (when (and type pretty-key)
-    (let* ((next-key (ergoemacs-translate
-                      (vector
-                       (ergoemacs-read-event nil pretty-key ergoemacs-alt-ctl-text))))
-           (key (plist-get next-key ':alt-ctl-key))
-           (pretty (plist-get next-key ':alt-ctl-pretty))
-           (kbd (plist-get next-key ':alt-ctl)))
-      (ergoemacs-read-key-install-next-key next-key key pretty kbd))))
+  (if (or type pretty-key)
+      (when (and type pretty-key)
+        (let* ((next-key (ergoemacs-translate
+                          (vector
+                           (ergoemacs-read-event nil pretty-key ergoemacs-alt-ctl-text))))
+               (key (plist-get next-key ':alt-ctl-key))
+               (pretty (plist-get next-key ':alt-ctl-pretty))
+               (kbd (plist-get next-key ':alt-ctl)))
+          (ergoemacs-read-key-install-next-key next-key key pretty kbd)))
+    (warn "This should be called from ergoemacs read key sequence only.")))
 
 (defun ergoemacs-read-key-next-key-is-quoted (&optional type pretty-key)
   "The next key read is quoted."
@@ -515,35 +511,50 @@ It will replace anything defined by `ergoemacs-translation'"
 (declare-function ergoemacs-modal-toggle "ergoemacs-modal.el")
 (declare-function cua-clear-rectangle-mark "cua-rect.el")
 (defun ergoemacs-keyboard-quit ()
-  "Replacement for `keyboard-quit' and `minibuffer-keyboard-quit'."
-  (cond
-   ((minibufferp)
-    (minibuffer-keyboard-quit))
-   ((and (boundp 'cua--rectangle) cua--rectangle
-         (boundp 'cua-mode) cua-mode
-         (fboundp 'cua-clear-rectangle-mark))
-    (cua-clear-rectangle-mark))
-   (t
-    (let (defined-fn
-           ergoemacs-shortcut-keys
-           ergoemacs-no-shortcut-keys
-           ergoemacs-read-input-keys
-           ergoemacs-mode)
-      (setq defined-fn (ergoemacs-key-fn-lookup 'keyboard-quit))
-      (setq defined-fn
-            (condition-case err
-                (ergoemacs-real-key-binding defined-fn)
-              (error nil)))
-      (cond
-       (defined-fn
-         (ergoemacs-read-key-call defined-fn))
-       ((and ergoemacs-modal
-             (let ((hash (gethash (nth 0 ergoemacs-modal-list) ergoemacs-translations)))
-               (and hash
-                    (not (plist-get hash ':modal-always))))) ;; Exit modal 
-        (ergoemacs-modal-toggle (nth 0 ergoemacs-modal-list)))
-       (t
-        (keyboard-quit))))))
+  "Replacement for `keyboard-quit' and `minibuffer-keyboard-quit'.
+
+- In a minibuffer, do `minibuffer-keyboard-quit'.  When a
+- `cua-mode' rectangle is active, clear the selected rectangle.
+- If the 【q】 key is bound to a non self-insert function, exit
+  by this function. (By convention, the 【q】 key is often quit)
+- If `ergoemacs-mode' knows of the quit function, use that
+- If an `ergoemacs-mode' modal translation is active, deactivate it.
+- Otherwise issue `keyboard-quit'
+"
+  (let (tmp)
+    (cond
+     ((minibufferp)
+      (minibuffer-keyboard-quit))
+     ((and (boundp 'cua--rectangle) cua--rectangle
+           (boundp 'cua-mode) cua-mode
+           (fboundp 'cua-clear-rectangle-mark))
+      (cua-clear-rectangle-mark))
+     ((or (progn
+            (setq tmp (key-binding "q"))
+            (and (not (symbolp tmp)) (commandp tmp t)))
+          (not (string-match "self-insert" (symbol-name tmp))))
+      (call-interactively (key-binding "q")))
+     (t
+      (let (defined-fn
+             ergoemacs-shortcut-keys
+             ergoemacs-no-shortcut-keys
+             ergoemacs-read-input-keys
+             ergoemacs-mode)
+        (setq defined-fn (ergoemacs-key-fn-lookup 'keyboard-quit))
+        (setq defined-fn
+              (condition-case err
+                  (ergoemacs-real-key-binding defined-fn)
+                (error nil)))
+        (cond
+         (defined-fn
+           (ergoemacs-read-key-call defined-fn))
+         ((and ergoemacs-modal
+               (let ((hash (gethash (nth 0 ergoemacs-modal-list) ergoemacs-translations)))
+                 (and hash
+                      (not (plist-get hash ':modal-always))))) ;; Exit modal 
+          (ergoemacs-modal-toggle (nth 0 ergoemacs-modal-list)))
+         (t
+          (keyboard-quit)))))))
   (setq ergoemacs-describe-key nil))
 
 

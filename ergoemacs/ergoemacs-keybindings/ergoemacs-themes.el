@@ -43,7 +43,10 @@
 
 (ergoemacs-theme-component standard-vars ()
   "Enabled/changed variables/modes"
-  (setq org-CUA-compatible t
+  (setq ergoemacs-alt-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-q"))
+        ergoemacs-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "C-q"))
+        ergoemacs-alt-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-C-q"))
+        org-CUA-compatible t
         org-support-shift-select t
         set-mark-command-repeat-pop t
         org-special-ctrl-a/e t
@@ -276,7 +279,7 @@
 
   ;; Ergoemacs fixed keys...
   
-  (global-set-key (kbd "<M-f4>") 'delete-frame) ;; Alt+f4 should work.
+  (global-set-key (kbd "<M-f4>") 'ergoemacs-delete-frame) ;; Alt+f4 should work.
   
    ; Alt+→
   (global-set-key (kbd "<M-up>") 'ergoemacs-backward-block) ; Alt+↑
@@ -794,7 +797,6 @@
 (ergoemacs-theme-component quit ()
   "Escape exits"
   (global-set-key (kbd "<escape>") 'keyboard-quit)
-  (define-key browse-kill-ring-mode-map (kbd "<escape>") 'browse-kill-ring-quit)
   (when isearch-mode-hook
     :modify-map t
     :full-shortcut-keymap t
@@ -1030,7 +1032,9 @@
     (global-set-key [remap describe-key]
                     'ergoemacs-describe-key)
     (global-set-key [remap describe-mode]
-                    'ergoemacs-describe-major-mode)))
+                    'ergoemacs-describe-major-mode)
+    (global-set-key [remap ergoemacs-print-buffer-confirm]
+                    'pr-interface)))
 
 (ergoemacs-theme-component ergoemacs-banish-shift ()
   "Banish Shift Combinations with <apps> SPC"
