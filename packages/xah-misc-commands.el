@@ -591,10 +591,13 @@ Examples of changes:
     (replace-pairs-region p1 p2 '(
                                   [" are " " r "]
                                   [" you " " u "]
+                                  [" and " " ＆ "]
                                   [", " "，"]
                                   ["..." "…"]
                                   [". " "。"]
                                   ["。 " "。"]
+                                  ["? " "？"]
+                                  ["! " "！"]
                                   ))))
 
 (defun xah-escape-quotes ()

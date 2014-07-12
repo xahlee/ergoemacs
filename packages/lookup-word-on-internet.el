@@ -100,7 +100,7 @@ For a list of online reference sites, see:
               input-word
             (if (region-active-p)
                 (buffer-substring-no-properties (region-beginning) (region-end))
-              (thing-at-point 'symbol) )) )
+              (thing-at-point 'word) )) )
 
     (setq ξword (replace-regexp-in-string " " "%20" (asciify-text ξword)))
 

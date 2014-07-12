@@ -32,6 +32,8 @@
 
 
 
+(setq xjs-abbrev-table nil)
+
 (define-abbrev-table 'xjs-abbrev-table
   '(
     ("f" "function" nil :system t)
@@ -71,13 +73,14 @@
 } catch(error) {
 ▮;
 }" nil :system t)
-    ("var" "var ▮ = ▮;" nil :system t)
+    ("v" "var ▮ = ▮;" nil :system t)
     ("addEventListener" "addEventListener(\"click\", FUNCTION , false);" nil :system t)
     ("forEach" "forEach(FUNCTION▮ , contexObject);" nil :system t)
 
     )
     
   "abbrev table for `xah-js-mode'"
+  :case-fixed t
   )
 
 

@@ -2001,7 +2001,7 @@ This is called by emacs abbrev system."
 
   "abbrev table for `xah-html-mode'"
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
-  :regexp "\\([_-0-9A-Za-z]+\\)"
+  ;; :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
   :enable-function 'xhm-abbrev-enable-function
   )
