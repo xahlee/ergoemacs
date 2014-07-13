@@ -1962,6 +1962,7 @@ This is called by emacs abbrev system."
 
     ("css" "<link rel=\"stylesheet\" href=\"../lbasic.css\" />")
     ("style" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
+    ("refresh" "<meta http-equiv=\"refresh\" content=\"0; url=http://example.com/\">")
 
     ;; todo
 ;; http://xahlee.info/js/css_colors.html

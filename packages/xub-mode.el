@@ -18,9 +18,11 @@
 ;; you need to browse a file full of unicode characters, just type M-x
 ;; xub-mode.
 
-;; To install, place this file in the directory 〔~/.emacs.d/〕. Create that dir if it doesn't exist.
+;; To install, place this file in the directory 〔~/.emacs.d/lisp/〕. Create that dir if it doesn't exist.
 
-;; Then, place the following code in your emacs init file, 〔~/.emacs〕.
+;; Then, place the following code in your emacs init file 〔~/.emacs.d/init.el〕.
+
+;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 
 ;; ;; set auto loading of xub-mode when xub-mode is called.
 ;; (autoload 'xub-mode "xub-mode" "Load xub-mode for browsing Unicode." t)
@@ -39,9 +41,7 @@
 
 ;; Get unicode files to browse at: http://ergoemacs.org/emacs/unicode-browser.html
 
-;; To see the inline documentation in emacs, type “C-h m”
-;; (describe-mode). (if you have not load the mode, first type
-;; Alt+x xub-mode)
+;; To see the inline documentation in emacs, type “C-h m” (describe-mode). (if you have not load the mode, first type Alt+x xub-mode)
 
 ;; donate $3 please. Paypal to xah@xahlee.org , thanks.
 
@@ -106,64 +106,54 @@
              "Author: Xah Lee\n\n"
              "Version: " xub-version "\n\n"
              "To see inline documentation, type “Alt+x describe-mode” while you are in xub-mode.\n\n"
-             "Home page: URL `http://ergoemacs.org/emacs/unicode-browser.html' \n\n")
-     )
-    )
-  )
+             "Home page: URL `http://ergoemacs.org/emacs/unicode-browser.html' \n\n"))))
 
 (defun xub-zoom-in ()
   "Make font size larger."
   (interactive)
-  (text-scale-increase 1)
-  )
+  (text-scale-increase 1))
 
 (defun xub-zoom-out ()
   "Make font size smaller."
   (interactive)
-  (text-scale-decrease 1)
-  )
+  (text-scale-decrease 1))
 
 (defun xub-left-click ()
   "Show info about the character under cursor."
   (interactive)
-  (xub-display-info)
-  )
+  (xub-display-info))
 
 (defun xub-show-right ()
   "Move cursor forward then show info about the character under cursor."
   (interactive)
- (forward-char)
- (xub-display-info)
-  )
+  (forward-char)
+  (xub-display-info))
 
 (defun xub-display-info ()
   "Display char info."
-(describe-char (point))
- ;; (if (looking-at " \\|\n")
- ;;     (message "space or newline")
- ;;   (describe-char (point)) )
+  (describe-char (point))
+  ;; (if (looking-at " \\|\n")
+  ;;     (message "space or newline")
+  ;;   (describe-char (point)) )
   )
 
 (defun xub-show-left ()
   "Move cursor backward then show info about the character under cursor."
   (interactive)
- (backward-char)
- (xub-display-info)
-  )
+  (backward-char)
+  (xub-display-info))
 
 (defun xub-show-up ()
   "Move cursor up then show info about the character under cursor."
   (interactive)
   (call-interactively 'previous-line)
-  (xub-display-info)
-  )
+  (xub-display-info))
 
 (defun xub-show-down ()
   "Move cursor down then show info about the character under cursor."
   (interactive)
   (call-interactively 'next-line)
-  (xub-display-info)
-  )
+  (xub-display-info))
 
 (defun xub-mode ()
   "Major mode for browsing unicode characters.

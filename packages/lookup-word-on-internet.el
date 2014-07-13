@@ -23,21 +23,18 @@
 ;;; REQUIREMENT
 
 ;; You need to have 2 elisp util 〔xeu_elisp_util.el〕 and 〔xfrp_find_replace_pairs.el〕, available at
-;; http://code.google.com/p/ergoemacs/source/browse/trunk/packages/xeu_elisp_util.el
-;; http://code.google.com/p/ergoemacs/source/browse/trunk/packages/xfrp_find_replace_pairs.el
-
-;; here's linux shell command to download them:
-;; wget http://ergoemacs.googlecode.com/svn/trunk/packages/xeu_elisp_util.el
-;; wget http://ergoemacs.googlecode.com/svn/trunk/packages/xfrp_find_replace_pairs.el
+;; https://github.com/xahlee/xeu_elisp_util.el
+;; https://github.com/xahlee/xfrp_find_replace_pairs.el
 
 ;;; INSTALL
 
-;; To install, place this file 〔lookup-word-on-internet.el〕 in the directory 〔~/.emacs.d/〕.
+;; To install, place this file 〔lookup-word-on-internet.el〕 in the directory 〔~/.emacs.d/lisp/〕.
 
-;; also place the files 〔xeu_elisp_util.el〕 and 〔xfrp_find_replace_pairs.el〕 in 〔~/.emacs.d/〕, if you haven't done already.
+;; also place the files 〔xeu_elisp_util.el〕 and 〔xfrp_find_replace_pairs.el〕 in 〔~/.emacs.d/lisp/〕, if you haven't done already.
 
 ;; Then, place the following code in your emacs init file
 
+;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; (autoload 'lookup-google "lookup-word-on-internet" "Lookup in browser" t)
 ;; (autoload 'lookup-wikipedia "lookup-word-on-internet" "Lookup in browser" t)
 ;; (autoload 'lookup-word-dict-org "lookup-word-on-internet" "Lookup in browser" t)
@@ -45,9 +42,9 @@
 ;; (autoload 'lookup-wiktionary "lookup-word-on-internet" "Lookup word in browser" t)
 
 ;; ;; Suggested keys
-;; (global-set-key (kbd "<f1> 1") 'lookup-google)
-;; (global-set-key (kbd "<f1> 2") 'lookup-wikipedia)
-;; (global-set-key (kbd "<f1> 3") 'lookup-word-definition)
+;; (global-set-key (kbd "<f1> 7") 'lookup-google)
+;; (global-set-key (kbd "<f1> 8") 'lookup-wikipedia)
+;; (global-set-key (kbd "<f1> 9") 'lookup-word-definition)
 ;; …
 
 ;;; DOCUMENTATION
@@ -55,7 +52,10 @@
 ;; Just some simple useful commands
 ;; For detail, see http://ergoemacs.org/emacs/emacs_lookup_ref.html
 
-;; donate $3 please. Paypal to xah@xahlee.org , thanks.
+;; like it? buy my emacs tutorial
+
+;; Buy Xah Emacs Tutorial
+;; http://ergoemacs.org/emacs/buy_xah_emacs_tutorial.html
 
 ;;; HISTORY
 
@@ -69,7 +69,7 @@
 ;;; Code:
 
 
-(require 'xeu_elisp_util)
+(require 'xeu_elisp_util) ; need asciify-text
 
 (defvar all-dictionaries nil "A vector of dictionaries. Used by `lookup-all-dictionaries'. http://wordyenglish.com/words/dictionary_tools.html ")
 (setq all-dictionaries [
@@ -100,65 +100,69 @@ For a list of online reference sites, see:
               input-word
             (if (region-active-p)
                 (buffer-substring-no-properties (region-beginning) (region-end))
-              (thing-at-point 'symbol))))
+              (thing-at-point 'word) )) )
 
     (setq ξword (replace-regexp-in-string " " "%20" (asciify-text ξword)))
 
     (setq refUrl
           (if site-to-use
               site-to-use
-            "http://www.google.com/search?q=�" ))
+            "http://www.google.com/search?q=�" ) )
 
     (setq myUrl (replace-regexp-in-string "�" ξword refUrl t t))
     (cond
      ((string-equal system-type "windows-nt") ; any flavor of Windows
-      (browse-url-default-windows-browser myUrl))
+      (browse-url-default-windows-browser myUrl)
+      )
      ((string-equal system-type "gnu/linux")
-      (browse-url myUrl))
+      (browse-url myUrl)
+      )
      ((string-equal system-type "darwin") ; Mac
-      (browse-url myUrl)))))
+      (browse-url myUrl) ) ) ))
 
 (defun lookup-google (&optional input-word)
   "Lookup current word or text selection in Google Search.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.google.com/search?q=�" ))
-    (lookup-word-on-internet input-word dictUrl)))
+    (lookup-word-on-internet input-word dictUrl) ) )
 
 (defun lookup-wikipedia (&optional input-word)
   "Lookup current word or text selection in Wikipedia.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://en.wikipedia.org/wiki/�" ))
-    (lookup-word-on-internet input-word dictUrl)))
+    (lookup-word-on-internet input-word dictUrl) ) )
 
 (defun lookup-word-dict-org (&optional input-word)
   "Lookup definition of current word or text selection in URL `http://dict.org/'.
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�" ))
-    (lookup-word-on-internet input-word dictUrl)))
+    (lookup-word-on-internet input-word dictUrl)
+    ) )
 
 (defun lookup-word-definition (&optional input-word)
   "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'.
 See also `lookup-word-on-internet'."
   (interactive)
-  (let ((dictUrl "http://www.thefreedictionary.com/�"))
-    (lookup-word-on-internet input-word dictUrl)))
+  (let ((dictUrl "http://www.thefreedictionary.com/�") )
+    (lookup-word-on-internet input-word dictUrl) ) )
 
 (defun lookup-answers.com (&optional input-word)
   "Lookup current word or text selection in URL `http://answers.com/'.
 See also `lookup-word-on-internet'."
   (interactive)
-  (let ((dictUrl "http://www.answers.com/main/ntquery?s=�"))
-    (lookup-word-on-internet input-word dictUrl)))
+  (let ((dictUrl "http://www.answers.com/main/ntquery?s=�"
+) )
+    (lookup-word-on-internet input-word dictUrl) ) )
 
 (defun lookup-wiktionary (&optional input-word)
   "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
 See also `lookup-word-on-internet'."
   (interactive)
   (let ((dictUrl "http://en.wiktionary.org/wiki/�" ))
-    (lookup-word-on-internet input-word dictUrl)))
+    (lookup-word-on-internet input-word dictUrl) ) )
 
 (defun lookup-all-dictionaries (&optional input-word)
   "Lookup definition in many dictionaries.
@@ -167,6 +171,6 @@ The dictionaries used are in `all-dictionaries'.
 
 See also `lookup-word-on-internet'."
   (interactive)
-  (mapc (lambda (dictUrl) (lookup-word-on-internet input-word dictUrl)) all-dictionaries))
+  (mapc (lambda (dictUrl) (lookup-word-on-internet input-word dictUrl)) all-dictionaries) )
 
 (provide 'lookup-word-on-internet)
