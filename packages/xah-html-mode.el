@@ -421,7 +421,7 @@ This command does the inverse of `xhm-htmlize-precode'."
    (let* (
           (t55238 (xhm-get-precode-langCode))
           (list (elt t55238 1) (elt t55238 2)))))
-  (save-restriction 
+  (save-restriction
     (narrow-to-region φp1 φp2)
     (xhm-remove-span-tag-region (point-min) (point-max))
     (xhm-code-tag-to-brackets (point-min) (point-max))))
@@ -757,7 +757,7 @@ See also:
   (interactive
    (let ((bds (get-selection-or-unit 'block)))
      (list (elt bds 1) (elt bds 2) (if current-prefix-arg t nil))))
-  (save-excursion 
+  (save-excursion
     (if φentity-to-char-p
         (replace-pairs-region φp1 φp2 '( ["&amp;" "&"] ["&lt;" "<"] ["&gt;" ">"] ))
       (replace-pairs-region φp1 φp2 '( ["&" "&amp;"] ["<" "&lt;"] [">" "&gt;"] )))))
@@ -1009,7 +1009,7 @@ if `universal-argument' is called first, don't convert the html entities.
 
 When done, the cursor is placed at φp2.
 
-when called in lisp program, 
+when called in lisp program,
 φp1 φp2 are region begin/end.
 If φchange-entity-p is true, convert html entities to char.
 "
@@ -1020,12 +1020,12 @@ If φchange-entity-p is true, convert html entities to char.
   (save-restriction
     (narrow-to-region φp1 φp2)
     (replace-regexp-pairs-region (point-min) (point-max) '(["<code class=\"[^\"]+\">" "「"] ["<var class=\"[^\"]+\">" "‹"]))
-    (replace-pairs-region 
+    (replace-pairs-region
      (point-min) (point-max)
-     '( 
-       ["<code>" "「"] 
+     '(
+       ["<code>" "「"]
        ["</code>" "」"]
-       ["<var>" "‹"] 
+       ["<var>" "‹"]
        ["</var>" "›"] ))
     (when φchange-entity-p (xhm-replace-html-&<>-to-entities (point-min) (point-max) "ΦENTITY-TO-CHAR-P"))
     (goto-char (point-max))))
@@ -1954,6 +1954,17 @@ This is called by emacs abbrev system."
 (define-abbrev-table 'xhm-abbrev-table
   '(
 
+    ("tla" "<div class=\"¤tla\"><a href=\"url\">text</a></div>")
+    ("8menu" "〖a ▸ b ▸ c〗")
+    ("8key" "【Alt+f】")
+    ("8song" "singer ❀ 〈title〉")
+    ("faq" "<div class=\"a\">
+<p class=\"q\">How to do this?</p>
+<p>this way</p>
+</div>
+
+")
+
     ("8c" "class=\"\"" nil :system t)
 
     ("8w" "width" nil :system t)
@@ -2031,7 +2042,6 @@ This is called by emacs abbrev system."
   (define-key xhm-single-keys-keymap (kbd "l u") 'xhm-wrap-url)
   (define-key xhm-single-keys-keymap (kbd "r ,") 'xhm-replace-html-chars-to-unicode)
   (define-key xhm-single-keys-keymap (kbd "r .") 'xhm-replace-html-&<>-to-entities)
-
 
   (define-key xhm-single-keys-keymap (kbd "<backspace>") 'xhm-remove-html-tags)
   (define-key xhm-single-keys-keymap (kbd "3") 'xhm-update-title)

@@ -158,6 +158,40 @@ WARNING: not robust."
 
 ) )
 
+(defvar xcm-all-keywords nil "list of all elisp keywords")
+(setq xcm-all-keywords (append xcm-html-tag-names
+                                     xcm-color-names
+                                     xcm-property-names
+                                     xcm-pseudo-selector-names
+                                     xcm-media-xxx
+                                     xcm-unit-names
+                                     xcm-value-kwds
+                                     ))
+
+
+;; completion
+
+(defun xcm-complete-symbol ()
+  "Perform keyword completion on current word.
+This uses `ido-mode' user interface for completion."
+  (interactive)
+  (let* (
+         (ξbds (bounds-of-thing-at-point 'symbol))
+         (ξp1 (car ξbds))
+         (ξp2 (cdr ξbds))
+         (ξcurrent-sym
+          (if  (or (null ξp1) (null ξp2) (equal ξp1 ξp2))
+              ""
+            (buffer-substring-no-properties ξp1 ξp2)))
+         ξresult-sym)
+    (when (not ξcurrent-sym) (setq ξcurrent-sym ""))
+    (setq ξresult-sym
+          (ido-completing-read "" xcm-all-keywords nil nil ξcurrent-sym ))
+    (delete-region ξp1 ξp2)
+    (insert ξresult-sym)
+
+    ))
+
 
 ;; syntax table
 (defvar xcm-syntax-table nil "Syntax table for `xah-css-mode'.")
@@ -216,7 +250,7 @@ WARNING: not robust."
          (+ (match-beginning 0) 3)
          (match-end 0)
          'face (list :background
- (concat "#" (mapconcat 'identity 
+ (concat "#" (mapconcat 'identity
                         (mapcar
                          (lambda (x) (format "%02x" (round (* x 255))))
                          (color-hsl-to-rgb
@@ -231,14 +265,28 @@ WARNING: not robust."
           ) ) )
 
 
-;; keybinding
+;; indent/reformat related
 
-(defvar xcm-keymap nil "Keybinding for `xah-css-mode'")
-(progn
-  (setq xcm-keymap (make-sparse-keymap))
-;  (define-key xcm-keymap [remap comment-dwim] 'xcm-comment-dwim)
-)
+(defun xcm-complete-or-indent ()
+  "Do keyword completion or indent/prettify-format.
 
+If char before point is letters and char after point is whitespace or punctuation, then do completion, except when in string or comment. In these cases, do `xcm-prettify-root-sexp'."
+  (interactive)
+  ;; consider the char to the left or right of cursor. Each side is either empty or char.
+  ;; there are 4 cases:
+  ;; space▮space → do indent
+  ;; space▮char → do indent
+  ;; char▮space → do completion
+  ;; char ▮char → do indent
+  (let ( (ξsyntax-state (syntax-ppss)))
+    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+        (progn
+          (xcm-prettify-root-sexp))
+      (progn (if
+                 (and (looking-back "[-_a-zA-Z]")
+                      (or (eobp) (looking-at "[\n[:blank:][:punct:]]")))
+                 (xcm-complete-symbol)
+               (xcm-prettify-root-sexp))))))
 
 
 (defun xcm-abbrev-enable-function ()
@@ -262,6 +310,20 @@ This is called by emacs abbrev system."
   :case-fixed t
   :enable-function 'xcm-abbrev-enable-function
   )
+
+
+;; keybinding
+
+(when (string-equal system-type "windows-nt")
+  (define-key key-translation-map (kbd "<apps>") (kbd "<menu>")))
+
+(defvar xcm-keymap nil "Keybinding for `xah-css-mode'")
+
+(progn
+  (setq xcm-keymap (make-sparse-keymap))
+  (define-key xcm-keymap (kbd "<tab>") 'xcm-complete-or-indent)
+;  (define-key xcm-keymap [remap comment-dwim] 'xcm-comment-dwim)
+)
 
 
 
