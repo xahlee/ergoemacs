@@ -1,4 +1,4 @@
-;;; ergoemacs-menus.el --- toggle ErgoEmacs-style menus
+;;; ergoemacs-menus.el --- toggle ErgoEmacs-style menus -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2013, 2014 Free Software Foundation, Inc.
 
@@ -38,6 +38,7 @@
   "http://ergoemacs.github.io/")
 
 (declare-function ergoemacs-pretty-key "ergoemacs-translate.el")
+(defvar ergoemacs-use-unicode-char)
 (defun ergoemacs-kbd-to-key (key)
   "Convert key Emacs key code to ergoemacs-key-code."
   (let ((ergoemacs-use-unicode-char nil))
@@ -89,6 +90,9 @@
       (ergoemacs-preprocess-menu-keybindings (car (cdr (cdr (cdr x))))))))
 
 (defvar ergoemacs-handle-ctl-c-or-ctl-x)
+(defvar ergoemacs-no-shortcut-keys)
+(defvar ergoemacs-shortcut-keys)
+(defvar ergoemacs-read-input-keys)
 (defun ergoemacs-shortcut-for-command (cmd)
   "Figures out ergoemacs-mode menu's preferred key-binding for CMD."
   (cond
@@ -152,16 +156,17 @@
            (text :tag "Alternative Description:")))
   :group 'ergoemacs-mode)
 
-(defun ergoemacs-get-major-mode-name (major-mode)
-  "Gets the major-mode language name.
+
+(defun ergoemacs-get-major-mode-name (mode)
+  "Gets the MODE language name.
 Tries to get the value from `ergoemacs-mode-names'.  If not guess the language name."
-  (let ((ret (assoc major-mode ergoemacs-mode-names)))
+  (let ((ret (assoc mode ergoemacs-mode-names)))
     (if (not ret)
         (setq ret (replace-regexp-in-string
                    "-" " "
                    (replace-regexp-in-string
                     "-mode" ""
-                    (symbol-name major-mode))))
+                    (symbol-name mode))))
       (setq ret (car (cdr ret))))
     (setq ret (concat (upcase (substring ret 0 1))
                       (substring ret 1)))
@@ -180,7 +185,7 @@ All other modes are assumed to be minor modes or unimportant.
 "
   ;; Get known major modes
   (let ((ret '())
-        all dups cur-let cur-lst current-letter
+        all dups cur-lst current-letter
         added-modes
         (modes '()))
     (dolist (elt (append
@@ -190,9 +195,7 @@ All other modes are assumed to be minor modes or unimportant.
                   auto-mode-alist))
       (unless (memq (cdr elt) modes)
         (when (and (functionp (cdr elt))
-                   (string-match "-mode$" (condition-case err
-                                              (symbol-name (cdr elt))
-                                            (error ""))))
+                   (ignore-errors (string-match "-mode$" (symbol-name (cdr elt)))))
           (unless (or (memq (cdr elt) ergoemacs-excluded-major-modes)
                       (member (downcase (symbol-name (cdr elt))) added-modes))
             (let* ((name (ergoemacs-get-major-mode-name (cdr elt)))

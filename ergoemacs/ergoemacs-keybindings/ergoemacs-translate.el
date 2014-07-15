@@ -1,4 +1,4 @@
-;;; ergoemacs-translate.el --- Keyboard translation functions
+;;; ergoemacs-translate.el --- Keyboard translation functions -*- lexical-binding: t -*-
 
 ;; Copyright © 2013-2014  Free Software Foundation, Inc.
 
@@ -997,9 +997,9 @@ Based on `ergoemacs-with-ergoemacs'"
       ergoemacs-command-shortcuts-hash)
      (if (not use-apps)
          (while (and ret (eq (elt (nth 0 ret) 0) 'apps))
-           (pop ret))
+           (setq ret (cdr ret)))
        (while (and ret (not (eq (elt (nth 0 ret) 0) 'apps)))
-         (pop ret)))
+         (setq ret (cdr ret))))
      (setq ret (nth 0 ret))
      ret)))
 

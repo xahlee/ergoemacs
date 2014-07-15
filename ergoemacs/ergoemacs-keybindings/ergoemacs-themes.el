@@ -1,6 +1,6 @@
-;;; ergoemacs-themes.el --- ErgoEmacs keybindings and themes
+;;; ergoemacs-themes.el --- ErgoEmacs keybindings and themes -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013, 2014 Free Software Foundation, Inc.
+;; Copyright © 2013, 2014 Free Software Foundation, Inc.
 
 ;; Maintainer: Matthew L. Fidler
 ;; Keywords: convenience
@@ -34,6 +34,7 @@
 (autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
 (autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
 (autoload 'wdired-exit "wdired" "ergoemacs-autoload." t)
+
 
 (require 'advice)
 
@@ -175,7 +176,7 @@
           :help "Customize recently opened files menu and options"
           :active t]
          ))
-  (recentf-mode 1)
+  (ergoemacs-recentf-mode 1)
   ;; (setq cua--rectangle-modifier-key ergoemacs-cua-rect-modifier)
   ;; (setq cua--rectangle-keymap (make-sparse-keymap))
   ;; (setq cua--rectangle-initialized nil)
