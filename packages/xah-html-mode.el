@@ -1696,6 +1696,7 @@ Case shouldn't matter, except when it's emacs's key notation.
                        ["SPC" "<kbd>Space</kbd>"]
                        ["capslock" "<kbd>Caps Lock</kbd>"]
                        ["f-lock" "<kbd>F Lock</kbd>"]
+                       ["f lock" "<kbd>F Lock</kbd>"]
                        ["numlock" "<kbd>Num Lock</kbd>"]
                        ["scrolllock" "<kbd>Scroll Lock</kbd>"]
                        ["tab" "<kbd>Tab ↹</kbd>"]
