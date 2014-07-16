@@ -494,16 +494,39 @@ It will replace anything defined by `ergoemacs-translation'"
           (kbd (plist-get next-key ':normal)))
       (ergoemacs-read-key-install-next-key next-key key pretty kbd))))
 
+(defvar guide-key-mode)
+(defvar guide-key/guide-key-sequence)
+(declare-function guide-key/popup-function "guide-key.el")
+(declare-function guide-key/close-guide-buffer "guide-key.el")
+(declare-function guide-key/popup-guide-buffer-p "guide-key.el")
+(defvar ergoemacs-read-key-last-help nil)
+(defvar ergoemacs-read-key nil
+  "Current key for `ergoemacs-read-key'")
 (defun ergoemacs-read-key-help ()
   "Show help for the current sequence KEY."
   (interactive)
   ;; Eventually...
-  (let ((cb (current-buffer))
-        (key (and (boundp 'key) key)))
-    (save-excursion
-      (with-help-window (help-buffer)
-        (set-buffer (help-buffer))
-        (describe-buffer-bindings cb key)))))
+  (if (not ergoemacs-read-key) nil
+    (if (and (boundp 'guide-key-mode) guide-key-mode)
+        (let ((key ergoemacs-read-key))
+          (if (equal ergoemacs-read-key-last-help ergoemacs-read-key)
+              (progn
+                (setq ergoemacs-read-key-last-help nil)
+                (setq guide-key/guide-key-sequence (delete (key-description ergoemacs-read-key) guide-key/guide-key-sequence))
+                (guide-key/close-guide-buffer))
+            ;; Not using pushnew because the test is equal and
+            ;; guide-key/guide-key-sequence is a global variable.
+            (add-to-list 'guide-key/guide-key-sequence (key-description ergoemacs-read-key))
+            (setq ergoemacs-read-key-last-help ergoemacs-read-key)
+            (guide-key/popup-function key))
+          t)
+      (let ((cb (current-buffer))
+            (key ergoemacs-read-key))
+        (save-excursion
+          (with-help-window (help-buffer)
+            (set-buffer (help-buffer))
+            (describe-buffer-bindings cb key)))
+        nil))))
 
 (defvar ergoemacs-modal-list)
 (declare-function minibuffer-keyboard-quit "delsel.el")
@@ -611,6 +634,9 @@ In addition, when the function is called:
 
 "
   (setq ergoemacs-deactivate-mark nil)
+  (when (and ergoemacs-read-key-last-help (boundp 'guide-key-mode) guide-key-mode)
+    (setq ergoemacs-read-key-last-help nil)
+    (guide-key/close-guide-buffer))
   (cond
    (ergoemacs-test-fn
     (setq ergoemacs-test-fn function))
@@ -983,6 +1009,7 @@ Otherwise add new translation to key-plist and return it."
     key-plist))
 
 (defvar ergoemacs-command-shortcuts-hash)
+
 (defun ergoemacs-read-key (&optional key type initial-key-type universal)
   "Read keyboard input and execute command.
 The KEY is the keyboard input where the reading begins.  If nil,
@@ -998,13 +1025,15 @@ argument prompt.
 "
   (setq ergoemacs-deactivate-mark nil)
   (let ((continue-read t)
+        (guide-key/guide-key-sequence '())
+        (guide-key/recursive-key-sequence-flag t)
         (real-type (or type 'normal))
         (first-type (or type 'normal))
         deactivate-mark
         pretty-key
         pretty-key-undefined
         next-key
-        (key key)
+        (ergoemacs-read-key key)
         key-trial
         pretty-key-trial
         orig-pretty-key
@@ -1019,8 +1048,8 @@ argument prompt.
         (curr-universal nil)
         ergoemacs--input tmp
         history)
-    (setq ergoemacs--input (ergoemacs-to-sequence key)
-          key nil)
+    (setq ergoemacs--input (ergoemacs-to-sequence ergoemacs-read-key)
+          ergoemacs-read-key nil)
     (while continue-read
       (setq continue-read nil
             force-key nil)
@@ -1028,6 +1057,11 @@ argument prompt.
         (setq type real-type)
         (setq curr-universal first-universal)
         (setq real-type nil))
+      (when (and ergoemacs-read-key (boundp 'guide-key-mode) guide-key-mode
+                 (not (equal ergoemacs-read-key-last-help ergoemacs-read-key))
+                 (guide-key/popup-guide-buffer-p ergoemacs-read-key))
+        (setq ergoemacs-read-key-last-help ergoemacs-read-key)
+        (guide-key/popup-function ergoemacs-read-key))
       (setq real-read (not ergoemacs--input))
       (setq base (concat ":" (symbol-name type))
             next-key (vector
@@ -1041,19 +1075,25 @@ argument prompt.
         (setq tmp "<return>")))
       (if (string= tmp (key-description
                         (ergoemacs-key-fn-lookup 'keyboard-quit)))
-          (if (and (not key))
-              (ergoemacs-keyboard-quit)
-            (unless (minibufferp)
-              (let (message-log-max)
-                (setq tmp (gethash type ergoemacs-translation-text))
-                (message "%s%s%s Canceled with %s"
-                         (if ergoemacs-describe-key
-                             "Help for: " "")
-                         (if tmp (nth 5 tmp) "")
-                         (or pretty-key "") 
-                         (if ergoemacs-use-ergoemacs-key-descriptions
-                             (plist-get next-key ':normal-pretty)
-                           (concat (plist-get next-key ':normal) " ")))))
+          (cond
+           ((and (not ergoemacs-read-key))
+            (ergoemacs-keyboard-quit))
+           ((and ergoemacs-read-key-last-help (boundp 'guide-key-mode) guide-key-mode)
+            (setq ergoemacs-read-key-last-help nil
+                  guide-key/guide-key-sequence (delete (key-description ergoemacs-read-key) guide-key/guide-key-sequence)
+                  continue-read t)
+            (guide-key/close-guide-buffer))
+           (t (unless (minibufferp)
+                (let (message-log-max)
+                  (setq tmp (gethash type ergoemacs-translation-text))
+                  (message "%s%s%s Canceled with %s"
+                           (if ergoemacs-describe-key
+                               "Help for: " "")
+                           (if tmp (nth 5 tmp) "")
+                           (or pretty-key "") 
+                           (if ergoemacs-use-ergoemacs-key-descriptions
+                               (plist-get next-key ':normal-pretty)
+                             (concat (plist-get next-key ':normal) " "))))))
             (setq ergoemacs-describe-key nil))
         (setq tmp (plist-get next-key ':normal-key))
         ;; See if there is a local equivalent of this...
@@ -1071,7 +1111,7 @@ argument prompt.
                     ergoemacs--input (nth 1 tmp)
                     real-read nil
                     real-type (nth 0 tmp))
-              (setq key nil
+              (setq ergoemacs-read-key nil
                     pretty-key nil
                     type 'normal
                     key-trial nil
@@ -1079,12 +1119,12 @@ argument prompt.
                     pretty-key-trial nil
                     pretty-key nil))
           (if (and (eq local-fn 'ergoemacs-read-key-swap)
-                   (or (not curr-universal) key))
+                   (or (not curr-universal) ergoemacs-read-key))
               (progn
                 ;; Swap translation
                 (when (and real-read ergoemacs-backspace-will-undo-swap-translation)
                   (push (list type
-                              (listify-key-sequence key))
+                              (listify-key-sequence ergoemacs-read-key))
                         history))
                 (setq type (ergoemacs-read-key-swap first-type type)
                       continue-read t))
@@ -1108,9 +1148,7 @@ argument prompt.
               (setq force-key t)
               (setq local-fn nil))
             (if (eq local-fn 'ergoemacs-read-key-help)
-                (progn
-                  (ergoemacs-read-key-help)
-                  (setq continue-read nil))
+                (setq continue-read (ergoemacs-read-key-help))
               (if local-fn
                   (ergoemacs-read-key-call local-fn)
                 (setq pretty-key-undefined nil)
@@ -1125,7 +1163,7 @@ argument prompt.
                 (setq next-key (ergoemacs-read-key-add-translation next-key (concat base "-shift-translated")))
                 (push (concat base "-shift-translated-et") key-trials)
                 
-                (when (and key ergoemacs-translate-emacs-keys)
+                (when (and ergoemacs-read-key ergoemacs-translate-emacs-keys)
                   (setq tmp (gethash (plist-get next-key
                                                 (intern (concat base "-key")))
                                      ergoemacs-command-shortcuts-hash))
@@ -1133,18 +1171,18 @@ argument prompt.
                              (condition-case err
                                  (interactive-form (nth 0 tmp))
                                (error nil)))
-                    (dolist (key (ergoemacs-shortcut-function-binding (nth 0 tmp)))
-                      (let ((key-base (concat ":" (md5 (format "%s" key))))
+                    (dolist (ergoemacs-read-key (ergoemacs-shortcut-function-binding (nth 0 tmp)))
+                      (let ((key-base (concat ":" (md5 (format "%s" ergoemacs-read-key))))
                             (ergoemacs-use-ergoemacs-key-descriptions t))
                         ;; First add translation to next-key
                         (setq next-key
                               (plist-put next-key
                                          (intern (concat key-base "-key"))
-                                         key))
+                                         ergoemacs-read-key))
                         (setq next-key
                               (plist-put next-key
                                          (intern key-base)
-                                         (key-description key)))
+                                         (key-description ergoemacs-read-key)))
                         (setq next-key
                               (plist-put next-key
                                          (intern (concat key-base "-pretty"))
@@ -1170,8 +1208,8 @@ argument prompt.
                           ;; If :shift-translated is nil, go to next option.
                           (when (plist-get next-key (intern (concat tmp "-key")))
                             (setq key-trial
-                                  (if key
-                                      (vconcat key (plist-get next-key (intern (concat tmp "-key"))))
+                                  (if ergoemacs-read-key
+                                      (vconcat ergoemacs-read-key (plist-get next-key (intern (concat tmp "-key"))))
                                     (plist-get next-key (intern (concat tmp "-key"))))
                                   pretty-key-trial
                                   (if pretty-key
@@ -1193,7 +1231,7 @@ argument prompt.
                         (setq local-fn
                               (if key-trial
                                   (ergoemacs-read-key-lookup
-                                   key pretty-key
+                                   ergoemacs-read-key pretty-key
                                    key-trial pretty-key-trial
                                    force-key) nil))
                         (setq ergoemacs-deactivate-mark deactivate-mark)
@@ -1201,29 +1239,29 @@ argument prompt.
                          ((eq local-fn 'keymap)
                           ;; Test to see if major/minor modes have an
                           ;; override for this keymap, see Issue 243.
-                          (let ((new-fn (and key (ergoemacs-with-major-and-minor-modes (ergoemacs-real-key-binding key-trial)))))
+                          (let ((new-fn (and ergoemacs-read-key (ergoemacs-with-major-and-minor-modes (ergoemacs-real-key-binding key-trial)))))
                             (if (ignore-errors (commandp new-fn t))
                                 (progn
                                   (setq local-fn 'major-minor-override-fn)
-                                  (ergoemacs-read-key-call new-fn nil key))
+                                  (ergoemacs-read-key-call new-fn nil ergoemacs-read-key))
                               (when real-read
                                 (push (list type
-                                            (listify-key-sequence key))
+                                            (listify-key-sequence ergoemacs-read-key))
                                       history))
                               (setq continue-read t
-                                    key key-trial
+                                    ergoemacs-read-key key-trial
                                     pretty-key pretty-key-trial)))
                           ;; Found, exit
                           (throw 'ergoemacs-key-trials t))
                          ((eq (type-of local-fn) 'cons)
                           (when real-read
                             (push (list type
-                                        (listify-key-sequence key))
+                                        (listify-key-sequence ergoemacs-read-key))
                                   history))
                           ;; ergoemacs-shortcut reset ergoemacs-read-key
                           (setq continue-read t
                                 ergoemacs--input (ergoemacs-to-sequence (nth 0 local-fn))
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 type 'normal
                                 real-type (nth 1 local-fn)
@@ -1237,7 +1275,7 @@ argument prompt.
                                (not current-prefix-arg))
                           (setq curr-universal t
                                 continue-read t
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 key-trial nil
                                 key-trials nil
@@ -1248,7 +1286,7 @@ argument prompt.
                                (listp current-prefix-arg))
                           (setq curr-universal t
                                 continue-read t
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 key-trial nil
                                 key-trials nil
@@ -1262,22 +1300,22 @@ argument prompt.
                          ((eq local-fn 'keymap)
                           (when real-read
                             (push (list type
-                                        (listify-key-sequence key))
+                                        (listify-key-sequence ergoemacs-read-key))
                                   history))
                           (setq continue-read t
-                                key key-trial
+                                ergoemacs-read-key key-trial
                                 pretty-key pretty-key-trial)
                           ;; Found, exit
                           (throw 'ergoemacs-key-trials t))
                          ((eq (type-of local-fn) 'cons)
                           (when real-read
                             (push (list type
-                                        (listify-key-sequence key))
+                                        (listify-key-sequence ergoemacs-read-key))
                                   history))
                           ;; ergoemacs-shortcut reset ergoemacs-read-key
                           (setq continue-read t
                                 ergoemacs--input (ergoemacs-to-sequence (nth 0 local-fn))
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 type 'normal
                                 real-type (nth 1 local-fn)
@@ -1291,7 +1329,7 @@ argument prompt.
                                (not current-prefix-arg))
                           (setq curr-universal t
                                 continue-read t
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 key-trial nil
                                 key-trials nil
@@ -1302,7 +1340,7 @@ argument prompt.
                                (listp current-prefix-arg))
                           (setq curr-universal t
                                 continue-read t
-                                key nil
+                                ergoemacs-read-key nil
                                 pretty-key nil
                                 key-trial nil
                                 key-trials nil
@@ -1324,7 +1362,8 @@ argument prompt.
   (when ergoemacs-deactivate-mark
     (setq deactivate-mark ergoemacs-deactivate-mark
           ergoemacs-mark-active nil))
-  (setq ergoemacs-describe-key nil))
+  (setq ergoemacs-describe-key nil
+        ergoemacs-read-key-last-help nil))
 
 (defun ergoemacs-read-key-default (&optional arg)
   "The default command for `ergoemacs-mode' read-key.

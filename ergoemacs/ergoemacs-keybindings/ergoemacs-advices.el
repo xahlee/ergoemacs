@@ -62,6 +62,13 @@ If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre
    (t
     ad-do-it)))
 
+(defadvice describe-buffer-bindings (around ergoemacs-describe-buffer-bindings activate)
+  "Describes buffer bindings without `ergoemacs-read-input-keys' enabled"
+  (let (ergoemacs-read-input-keys
+        ergoemacs-read-shortcut-keys
+        ergoemacs-read-no-shortcut-keys)
+    ad-do-it))
+
 (defadvice define-key (around ergoemacs-define-key-advice (keymap key def) activate)
   "This does the right thing when modifying `ergoemacs-keymap'.
 Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
@@ -151,6 +158,28 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
     ad-do-it
     (when oee ;; Add them back.  Now icy-mode should play nice.
       (ergoemacs-mode 1))))
+
+(defadvice guide-key/close-guide-buffer (around ergoemacs-guide-key/close-guide-buffer activate)
+  "Don't close guide buffer when reading ergoemacs-mode keys."
+  (unless (and ergoemacs-mode ergoemacs-read-key
+               ergoemacs-read-key-last-help
+               (equal ergoemacs-read-key-last-help ergoemacs-read-key))
+    ad-do-it))
+
+(defadvice guide-key/format-guide-buffer (around ergoemacs-guide-key/format-guide-buffer-advice (key-seq &optional regexp) activate)
+  "Format keys in `ergoemacs-mode' style"
+  (when ergoemacs-mode
+    (goto-char (point-min))
+    (while (re-search-forward (format"^%s \\([^ \t]+\\)" (regexp-quote (key-description key-seq))) nil t)
+      (replace-match (concat (key-description key-seq) " " (substring (ergoemacs-pretty-key (match-string 1)) 1 -1)) t t)))
+  ad-do-it
+  (when (and ergoemacs-mode ergoemacs-use-unicode-brackets)
+    (goto-char (point-min))
+    (while (re-search-forward "\\(^\\|  \\)\\[" nil t)
+      (replace-match (format "\\1%s" (ergoemacs-unicode-char "【" "[")))
+      (skip-chars-forward "^\\]")
+      (when (looking-at "\\]")
+        (replace-match (ergoemacs-unicode-char "】" "]"))))))
 
 (defcustom ergoemacs-helm-expand-user-dirs 't
   "Expand user directories under helm.
@@ -511,6 +540,8 @@ The real command is always `ergoemacs-real-completing-read'.
 Uses `ergoemacs-real-key-binding' to get the key-binding."
   (ergoemacs-with-global
    (ergoemacs-real-key-binding key accept-default no-remap position)))
+
+
 
 (defun ergoemacs-enable-c-advices (&optional disable)
   "Enabling advices for C code and complex changes to functions.
