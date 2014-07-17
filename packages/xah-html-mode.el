@@ -52,6 +52,8 @@
 
 (defvar xah-html-mode-hook nil "Standard hook for `xah-html-mode'")
 
+
+
 (defcustom xhm-html5-tag-names nil
   "A alist of HTML5 tag names. For each element, the keys is tag names, value is a vector of one element, w means word, l means line, b means block, others are placeholder for unknown. The purpose of the value is to indicate the default way to wrap the tag around cursor. "
 ; todo: need to go the the list and look at the type carefully. Right now it's just quickly done. lots are “z”, for unkown. Also, some are self closing tags, current has mark of “n”.
@@ -1172,45 +1174,47 @@ tempStr
         (goto-char ξfrom)
         (insert outputStr) )) ) )
 
-(defun xhm-extract-url (φhtml-text &optional φconvert-relative-URL?)
+(defun xhm-extract-url (φhtml-text &optional φconvert-relative-URL-p)
   "Returns a list of URLs in the HTML text string φhtml-text.
 
-When called interactively, use text selection as input, or current text block between blank lines. Output URLs in a buffer named 「*extract URL output*」, also copy output to `kill-ring'.
+When called interactively, use text selection as input, or current paragraph. output is copied to `kill-ring'.
 
-If `universal-argument' is called first, tries to convert relative URL to HTTP form.
+If `universal-argument' is called first, convert relative URL to full path.
 
-WARNING: this function extract all text of the form 「<a … href=\"…\" …>」 by a simple regex. It does not extract single quote form 「href='…'」 nor 「src=\"…\"」 , nor other considerations."
-  (interactive (list (elt (get-selection-or-unit 'block) 0) current-prefix-arg ) )
+When called in lisp program, φhtml-text is the input string.
+
+This command extracts all text of the form
+ <‹letter› … href/src=\"…\" …>
+on a single line, by regex. The quote may be single quote."
+  (interactive (list 
+                (if (use-region-p)
+                    (progn (buffer-substring-no-properties (region-beginning) (region-end)))
+                  (progn (thing-at-point 'paragraph)))
+                current-prefix-arg ))
   (let ((urlList (list)))
     (with-temp-buffer
       (insert φhtml-text)
       (goto-char 1)
-      (while (re-search-forward "<a.+?href=\"\\([^\"]+?\\)\".+?>" nil "NOERROR")
-        (setq urlList (cons (match-string 1) urlList))
-        )
-      (goto-char 1)
-      (while (re-search-forward "<img.+?src=\"\\([^\"]+?\\)\".+?>" nil "NOERROR")
-        (setq urlList (cons (match-string 1) urlList))
-        ) )
-(message "%S" urlList )
-    (setq urlList (reverse urlList) )
-    (when φconvert-relative-URL?
+      (while (re-search-forward
+              "<[[:alpha:]]+.+?\\(href\\|src\\)[[:blank:]]*=[[:blank:]]*\\([\"']\\)\\([-_/.[:alnum:]]+?\\)\\2.+?>" nil t)
+        (push (match-string 3) urlList)))
+    (setq urlList (reverse urlList))
+
+    (when φconvert-relative-URL-p
       (setq urlList
             (mapcar
              (lambda (ξx)
                (if (string-match "http" ξx )
                    (progn ξx)
-                 (progn (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name) )))
-                 ) )
-             urlList) ) )
+                 (progn
+                   ;; (xahsite-filepath-to-url (xahsite-href-value-to-filepath ξx (buffer-file-name)))
+                   (expand-file-name ξx (file-name-directory (buffer-file-name))))))
+             urlList)))
 
     (when (called-interactively-p 'any)
-      (with-output-to-temp-buffer "*extract URL output*"
-        (let ((printedResult (mapconcat 'identity urlList "\n")))
-          (princ printedResult)
-          (kill-new (mapconcat 'identity urlList "\n"))
-          (message "URLs placed in kill-ring.")
-          ) ) )
+      (let ((printedResult (mapconcat 'identity urlList "\n")))
+        (kill-new printedResult)
+        (message "%s" printedResult)))
     urlList ))
 
 (defun xhm-update-title ( φnewTitle)
