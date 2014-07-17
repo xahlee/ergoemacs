@@ -67,6 +67,7 @@
 ;;(require 'cl)
 (require 'easymenu)
 (require 'undo-tree nil t)
+(provide 'ergoemacs-mode)
 
 (defvar ergoemacs-debug ""
   "Debugging for `ergoemacs-mode'.")
@@ -537,7 +538,6 @@ These hooks are deferred to make sure `this-command' is set appropriately.")
 (if ergoemacs-ignore-prev-global
     (ergoemacs-ignore-prev-global)
   (ergoemacs-reset-global-where-is))
-
 
 
 ;;; Frequently used commands as aliases

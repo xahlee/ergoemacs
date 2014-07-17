@@ -2126,6 +2126,80 @@ Guillemet -> quote, degree -> @, s-zed -> ss, upside-down ?! -> ?!."
       (insert (cdr sans-accent))
       (backward-char))))
 
+;; Shell handling
+
+(declare-function w32-long-file-name "w32proc.c")
+(defun ergoemacs-shell-here-directory-change-hook ()
+  "Renames buffer to reflect directory name."
+  (rename-buffer
+   (generate-new-buffer-name
+    (concat (replace-regexp-in-string "\\`\\([*].*[@]\\).*\\'" "\\1" (buffer-name) t)
+            (if (eq system-type 'windows-nt)
+                (w32-long-file-name (abbreviate-file-name default-directory)) ;; Fix case issues
+              (abbreviate-file-name default-directory)) "*"))))
+
+(add-hook 'dirtrack-directory-change-hook 'ergoemacs-shell-here-directory-change-hook)
+
+(defvar dirtrack-list)
+(declare-function shell-dirtrack-mode "shell.el")
+(declare-function dirtrack-mode "dirtrack.el")
+(defun ergoemacs-shell-here-hook ()
+  "Hook for `ergoemacs-shell-here'.
+Sends shell prompt string to process, then turns on
+`dirtrack-mode' as well as add rename buffer filter when the directory has been changed."
+  (when (string-match "\\`[*].*[@].*[*]" (buffer-name))
+    (let ((shell (or (and (boundp 'explicit-shell-file-name) explicit-shell-file-name)
+                     (getenv "ESHELL") shell-file-name)))
+      (require 'dirtrack)
+      (cond
+       ((string-match "cmd\\(proxy\\)?.exe" shell)
+        (set (make-local-variable 'dirtrack-list) (list "^\\([a-zA-Z]:.*\\)>" 1))
+        (shell-dirtrack-mode -1)
+        (dirtrack-mode 1))
+       ((string-match "powershell.exe" shell)
+        (set (make-local-variable 'dirtrack-list) (list "^PS \\([a-zA-Z]:.*\\)>" 1))
+        (shell-dirtrack-mode -1)
+        (dirtrack-mode 1))
+       (t ;; Assume basic abc@host:dir structure
+        (set (make-local-variable 'dirtrack-list) (list "^\\(?:.*?@\\)?\\(?:.*?:\\)?\\(?:[^ ]* \\)? *\\(.*\\) *\\([$#]\\|\\]\\)" 1))
+        (shell-dirtrack-mode -1)
+        (dirtrack-mode 1))))))
+
+(add-hook 'shell-mode-hook 'ergoemacs-shell-here-hook)
+
+(defun ergoemacs-shell-here (&optional shell-program buffer-prefix)
+  "Runs/switches to a shell process in the current directory."
+  (interactive)
+  (let* ((shell (or shell-program 'shell))
+         (buf-prefix (or buffer-prefix (symbol-name shell)))
+         (name (concat "*" buf-prefix "@" (if (eq system-type 'windows-nt)
+                                              (w32-long-file-name (abbreviate-file-name default-directory)) ;; Fix case issues
+                                            (abbreviate-file-name default-directory)) "*")))
+    (set-buffer (get-buffer-create name))
+    (funcall shell name)))
+
+(add-hook 'eshell-post-command-hook 'ergoemacs-shell-here-directory-change-hook)
+
+(defvar eshell-buffer-name)
+(defun ergoemacs-eshell-here ()
+  "Run/switch to an `eshell' process in the current directory"
+  (interactive)
+  (let* ((eshell-buffer-name
+          (concat "*eshell@" (if (eq system-type 'windows-nt)
+                                 (w32-long-file-name (abbreviate-file-name default-directory)) ;; Fix case issues
+                               (abbreviate-file-name default-directory)) "*"))
+         (eshell-exists-p (get-buffer eshell-buffer-name)))
+    (call-interactively 'eshell)
+    (unless eshell-exists-p
+      (ergoemacs-shell-here-directory-change-hook))))
+
+(defun ergoemacs-powershell-here ()
+  "Runs PowerShell Here"
+  (interactive)
+  (if (not (fboundp 'powershell))
+      (error "Requires powershell package to run PowerShell.")
+    (ergoemacs-shell-here 'powershell "PowerShell")))
+
 
 ;;; Ergoemacs lookup words. from lookup-word-on-internet.el
 
