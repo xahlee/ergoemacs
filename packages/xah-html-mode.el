@@ -765,22 +765,17 @@ See also:
       (replace-pairs-region φp1 φp2 '( ["&" "&amp;"] ["<" "&lt;"] [">" "&gt;"] )))))
 
 (defun xhm-replace-html-chars-to-unicode ()
-  "Replace HTML < > & to similar Unicode char.
+  "Replace HTML < > & to Unicode chars 〈 〉 ＆.
 This works on the current text selection or block of text.
-The characters replaced are:
- & ⇒ ＆
- < ⇒ ‹
- > ⇒ ›
 
 See also:
 `xhm-replace-html-named-entities'
-`xhm-replace-html-&<>-to-entities'
-"
+`xhm-replace-html-&<>-to-entities'"
   (interactive)
   (let (bds p1 p2 myText)
     (setq bds (get-selection-or-unit 'block))
     (setq myText (elt bds 0) p1 (elt bds 1) p2 (elt bds 2)  )
-    (replace-pairs-region p1 p2 '( ["&" "＆"] ["<" "‹"] [">" "›"] ) ) ) )
+    (replace-pairs-region p1 p2 '( ["&" "＆"] ["<" "〈"] [">" "〉"] ) ) ) )
 
 (defun xhm-replace-html-named-entities (φstring &optional φfrom φto)
   "Replace HTML entities to Unicode character.
@@ -1186,7 +1181,7 @@ When called in lisp program, φhtml-text is the input string.
 This command extracts all text of the form
  <‹letter› … href/src=\"…\" …>
 on a single line, by regex. The quote may be single quote."
-  (interactive (list 
+  (interactive (list
                 (if (use-region-p)
                     (progn (buffer-substring-no-properties (region-beginning) (region-end)))
                   (progn (thing-at-point 'paragraph)))
@@ -1196,7 +1191,7 @@ on a single line, by regex. The quote may be single quote."
       (insert φhtml-text)
       (goto-char 1)
       (while (re-search-forward
-              "<[[:alpha:]]+.+?\\(href\\|src\\)[[:blank:]]*=[[:blank:]]*\\([\"']\\)\\([-_/.[:alnum:]]+?\\)\\2.+?>" nil t)
+              "<[[:alpha:]]+.+?\\(href\\|src\\)[[:blank:]]*=[[:blank:]]*\\([\"']\\)\\([^\2]+?\\)\\2.+?>" nil t)
         (push (match-string 3) urlList)))
     (setq urlList (reverse urlList))
 
