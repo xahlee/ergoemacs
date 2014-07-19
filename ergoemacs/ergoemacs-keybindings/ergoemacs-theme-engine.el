@@ -7,7 +7,7 @@
 ;; Author: Matthew L. Fidler
 ;; Maintainer: 
 ;; Created: Thu Mar 20 10:41:30 2014 (-0500)
-;; Version: 
+;; Version:
 ;; Package-Requires: ()
 ;; Last-Updated: 
 ;;           By: 
@@ -247,6 +247,13 @@
    (always :initarg :always
            :initform nil
            :type boolean)
+   (first :initarg :first
+          :initform nil
+          :type boolean)
+   (run-hook :initarg :run-hook
+             :type symbol)
+   (copy-keymap :initarg :copy-keymap
+                :type symbol)
    (deferred-keys :initarg :deferred-keys
      :initform '()
      :type list))
@@ -312,6 +319,9 @@ The elements of LIST are not copied, just the list structure itself."
                  read-map
                  unbind-map
                  always
+                 first
+                 run-hook
+                 copy-keymap
                  modify-map
                  deferred-keys
                  full-map) obj
@@ -322,6 +332,7 @@ The elements of LIST are not copied, just the list structure itself."
        ((ergoemacs-keymap-empty-p read-map)
         (ergoemacs-debug "Modify Keymap: %s" modify-map)
         (ergoemacs-debug "Always Modify Keymap: %s" always)
+        (ergoemacs-debug "Run this hook first? %s" first)
         (ergoemacs-debug "Add all ergoemacs-mode keys (override): %s" full-map)
         (ergoemacs-debug "%s\n" map)
         (ergoemacs-debug-keymap map))
@@ -589,6 +600,13 @@ DEF is anything that can be a key's definition:
    (full-map :initarg :full-map
              :initform nil
              :type boolean)
+   (first :initarg :first
+           :initform nil
+           :type boolean)
+   (run-hook :initarg :run-hook
+             :type symbol)
+   (copy-keymap :initarg :copy-keymap
+             :type symbol)
    (always :initarg :always
            :initform nil
            :type boolean))
@@ -679,6 +697,7 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
                modify-map
                full-map
                always
+               first
                global-map-p
                keymap-hash) obj
     (let* ((lay (or layout ergoemacs-keyboard-layout))
@@ -695,7 +714,8 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
                    :global-map-p global-map-p
                    :modify-map modify-map
                    :full-map full-map
-                   :always always))
+                   :always always
+                   :first first))
         (ergoemacs-setup-translation lay "us")
         (dolist (cmd (reverse cmd-list))
           (ergoemacs-define-map ret (ergoemacs-kbd (nth 0 cmd) nil (nth 3 cmd))
@@ -728,6 +748,13 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
    (always :initarg :always
            :initform nil
            :type boolean)
+   (first :initarg :first
+           :initform nil
+           :type boolean)
+   (run-hook :initarg :run-hook
+             :type symbol)
+   (copy-keymap :initarg :copy-keymap
+                :type symbol)
    (fixed :initarg :fixed
           :type ergoemacs-fixed-map)
    (keymap-hash :initarg :keymap-hash
@@ -751,9 +778,14 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
                                       :global-map-p (oref obj global-map-p)
                                       :modify-map (oref obj modify-map)
                                       :full-map (oref obj full-map)
-                                      :always (oref obj always))))
+                                      :always (oref obj always)
+                                      :first (oref obj first))))
       (when (slot-boundp obj 'hook)
         (oset fixed hook (oref obj hook)))
+      (when (slot-boundp obj 'run-hook)
+        (oset fixed run-hook (oref obj run-hook)))
+      (when (slot-boundp obj 'copy-keymap)
+        (oset fixed copy-keymap (oref obj copy-keymap)))
       (oset obj fixed fixed)))
   (unless (slot-boundp obj 'variable)
     (let ((var (ergoemacs-variable-map
@@ -763,9 +795,14 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
                 :layout (oref obj layout)
                 :modify-map (oref obj modify-map)
                 :full-map (oref obj full-map)
-                :always (oref obj always))))
+                :always (oref obj always)
+                :first (oref obj first))))
       (when (slot-boundp obj 'hook)
         (oset var hook (oref obj hook)))
+      (when (slot-boundp obj 'run-hook)
+        (oset var run-hook (oref obj run-hook)))
+      (when (slot-boundp obj 'copy-keymap)
+        (oset var copy-keymap (oref obj copy-keymap)))
       (oset obj variable var))))
 
 (defmethod ergoemacs-define-map ((obj ergoemacs-composite-map) key def &optional no-unbind)
@@ -823,7 +860,7 @@ Assumes maps are orthogonal."
 
 (defmethod ergoemacs-get-fixed-map ((obj ergoemacs-composite-map) &optional layout)
   (ergoemacs-composite-map--ini obj)
-  (with-slots (variable object-name fixed modify-map full-map always
+  (with-slots (variable object-name fixed modify-map full-map always first
                         global-map-p keymap-hash) obj
     (let* ((lay (or layout ergoemacs-keyboard-layout))
            read
@@ -846,6 +883,7 @@ Assumes maps are orthogonal."
                    :modify-map modify-map
                    :full-map full-map
                    :always always
+                   :first first
                    :read-map read
                    :read-list (append (oref var read-list) (oref fix read-list))
                    :shortcut-map (ergoemacs-get-fixed-map--combine-maps (oref var shortcut-map) (oref fix shortcut-map))
@@ -860,6 +898,10 @@ Assumes maps are orthogonal."
                    :deferred-keys (append (oref var deferred-keys) (oref fix deferred-keys))))
         (when (slot-boundp obj 'hook)
           (oset ret hook (oref obj hook)))
+        (when (slot-boundp obj 'run-hook)
+          (oset ret run-hook (oref obj run-hook)))
+        (when (slot-boundp obj 'copy-keymap)
+          (oset ret copy-keymap (oref obj copy-keymap)))
         (puthash ilay ret keymap-hash)
         (oset obj keymap-hash keymap-hash))
       (setq ret (clone ret (ergoemacs-object-name-string obj))) ;; Reset name
@@ -947,6 +989,9 @@ Assumes maps are orthogonal."
       (ergoemacs-theme-component-maps--save-hash obj))))
 
 (defvar ergoemacs-theme-component-maps--always nil)
+(defvar ergoemacs-theme-component-maps--first nil)
+(defvar ergoemacs-theme-component-maps--run-hook nil)
+(defvar ergoemacs-theme-component-maps--copy-keymap nil)
 (defvar ergoemacs-theme-component-maps--full-map nil)
 (defvar ergoemacs-theme-component-maps--modify-map nil)
 (defvar ergoemacs-theme-component-maps--global-map nil)
@@ -969,8 +1014,13 @@ Assumes maps are orthogonal."
                  :just-first just-first
                  :layout layout
                  :always ergoemacs-theme-component-maps--always
+                 :first ergoemacs-theme-component-maps--first
                  :full-map ergoemacs-theme-component-maps--full-map
                  :modify-map ergoemacs-theme-component-maps--modify-map))
+          (when ergoemacs-theme-component-maps--run-hook
+            (oset ret run-hook ergoemacs-theme-component-maps--run-hook))
+          (when ergoemacs-theme-component-maps--copy-keymap
+            (oset ret copy-keymap ergoemacs-theme-component-maps--copy-keymap))
           (if ergoemacs-theme-component-maps--hook
               (oset ret hook ergoemacs-theme-component-maps--hook)
             (oset ret hook (intern (save-match-data (replace-regexp-in-string "-map.*\\'" "-hook" (symbol-name keymap))))))
@@ -1009,6 +1059,68 @@ Assumes maps are orthogonal."
                      (ergoemacs-theme-component-maps--keymap obj keymap) layout))))
         (puthash ilay ret fixed-maps))
       (ergoemacs-theme-component-maps--save-hash obj)
+      ret)))
+
+(defmethod ergoemacs-is-first-p ((obj ergoemacs-theme-component-maps)
+                                 hook map-name)
+  "See if the HOOK and MAP-NAME combination should be the first run."
+  (ergoemacs-theme-component-maps--ini obj)
+  (let (ret)
+    (with-slots (maps) obj
+      (catch 'found-hook
+        (maphash
+         (lambda (map-n map-obj)
+           (setq ret
+                 (or ret
+                     (and (eq map-name map-n)
+                          (slot-boundp map-obj 'hook)
+                          (eq (oref map-obj hook) hook)
+                          (oref map-obj first))))
+           (when  ret
+             (throw 'found-hook t)))
+         maps))
+      ret)))
+
+(defmethod ergoemacs-run-hook-fn ((obj ergoemacs-theme-component-maps)
+                                  hook map-name)
+  "Get the hook that should be run before the HOOK and MAP-NAME combination."
+  (ergoemacs-theme-component-maps--ini obj)
+  (let (ret)
+    (with-slots (maps) obj
+      (catch 'found-hook
+        (maphash
+         (lambda (map-n map-obj)
+           (setq ret
+                 (or ret
+                     (and (eq map-name map-n)
+                          (slot-boundp map-obj 'hook)
+                          (eq (oref map-obj hook) hook)
+                          (slot-boundp map-obj 'run-hook)
+                          (oref map-obj run-hook))))
+           (when  ret
+             (throw 'found-hook t)))
+         maps))
+      ret)))
+
+(defmethod ergoemacs-copy-keymap-symbol ((obj ergoemacs-theme-component-maps)
+                                  hook map-name)
+  "Get the map that should be copied into the MAP-NAME before the HOOK and MAP-NAME combination."
+  (ergoemacs-theme-component-maps--ini obj)
+  (let (ret)
+    (with-slots (maps) obj
+      (catch 'found-hook
+        (maphash
+         (lambda (map-n map-obj)
+           (setq ret
+                 (or ret
+                     (and (eq map-name map-n)
+                          (slot-boundp map-obj 'hook)
+                          (eq (oref map-obj hook) hook)
+                          (slot-boundp map-obj 'copy-keymap)
+                          (oref map-obj copy-keymap))))
+           (when  ret
+             (throw 'found-hook t)))
+         maps))
       ret)))
 
 (defmethod ergoemacs-get-hooks ((obj ergoemacs-theme-component-maps) &optional match ret keymaps)
@@ -1077,6 +1189,64 @@ Assumes maps are orthogonal."
             (dolist (ver versions)
               (pushnew ver ret :test 'equal)))))
       (sort ret 'string<))))
+
+(defmethod ergoemacs-is-first-p ((obj ergoemacs-theme-component-map-list)
+                                 hook map-name)
+  "See if the HOOK and MAP-NAME combination should be the first run."
+  (with-slots (map-list hooks) obj
+    (let* ((final (gethash (list hook map-name 'first-p) hooks)))
+      (unless final
+        (catch 'is-first-p
+          (dolist (map map-list)
+            (when (ergoemacs-theme-component-maps-p map)
+              (setq final (ergoemacs-is-first-p map hook map-name))
+              (when final
+                (throw 'is-first-p t)))))
+        (puthash (list hook map-name 'first-p) final hooks))
+      final)))
+
+(defmethod ergoemacs-run-hook-fn ((obj ergoemacs-theme-component-map-list)
+                                  hook map-name)
+  "See if the HOOK and MAP-NAME combination should be the first run."
+  (with-slots (map-list hooks) obj
+    (let* ((final (gethash (list hook map-name 'run-hook-fn) hooks)))
+      (unless final
+        (catch 'run-hook-p
+          (dolist (map map-list)
+            (when (ergoemacs-theme-component-maps-p map)
+              (setq final (ergoemacs-run-hook-fn map hook map-name))
+              (when final
+                (throw 'run-hook-p t)))))
+        (puthash (list hook map-name 'run-hook-fn) final hooks))
+      final)))
+
+(defmethod ergoemacs-copy-keymap-symbol ((obj ergoemacs-theme-component-map-list)
+                                         hook map-name)
+  "Get the map that should be copied into the MAP-NAME before the HOOK and MAP-NAME combination."
+  (with-slots (map-list hooks) obj
+    (let* ((final (gethash (list hook map-name 'copy-keymap-symbol) hooks)))
+      (unless final
+        (catch 'copy-keymap-p
+          (dolist (map map-list)
+            (when (ergoemacs-theme-component-maps-p map)
+              (setq final (ergoemacs-copy-keymap-symbol map hook map-name))
+              (when final
+                (throw 'copy-keymap-p t)))))
+        (puthash (list hook map-name 'copy-keymap-symbol) final hooks))
+      final)))
+
+(defmethod ergoemacs-get-hooks ((obj ergoemacs-theme-component-map-list) &optional match keymaps)
+  (with-slots (map-list hooks) obj
+    (let* ((final (gethash (list match keymaps) hooks))
+           ret)
+      (unless final
+        (dolist (map map-list)
+          (when (ergoemacs-theme-component-maps-p map)
+            (setq ret (ergoemacs-get-hooks map match ret keymaps))))
+        (dolist (item ret)
+          (pushnew item final :test 'equal))
+        (puthash (list match keymaps) final hooks))
+      final)))
 
 (defmethod ergoemacs-get-hooks ((obj ergoemacs-theme-component-map-list) &optional match keymaps)
   (with-slots (map-list hooks) obj
@@ -1206,6 +1376,8 @@ FULL-SHORTCUT-MAP-P "
 
 (defvar ergoemacs-deferred-keys '()
   "List of keys that have deferred bindings.")
+(defvar ergoemacs-first-keymaps '()
+  "list of hooks that should be first.")
 
 (defvar ergoemacs-original-keys-to-shortcut-keys-regexp ""
   "Regular expression of original keys that have shortcuts.")
@@ -1235,6 +1407,8 @@ FULL-SHORTCUT-MAP-P "
 (defvar ergoemacs-shortcut-emulation-mode-map-alist)
 (defvar ergoemacs-no-shortcut-emulation-mode-map-alist)
 (defvar ergoemacs-mode)
+(defvar ergoemacs-theme--hook-running nil)
+(declare-function ergoemacs-flatten-composed-keymap "ergoemacs-mode.el")
 (defmethod ergoemacs-theme-obj-install ((obj ergoemacs-theme-component-map-list) &optional remove-p)
   (with-slots (read-map
                map
@@ -1264,22 +1438,78 @@ FULL-SHORTCUT-MAP-P "
                          modify-map
                          full-map
                          always
+                         first
                          deferred-keys) (ergoemacs-get-fixed-map obj map-name)
               (cond
                ((and modify-map always)
                 ;; Maps that are always modified.
-                (let ((fn-name (intern (concat (symbol-name emulation-var) "-and-" (symbol-name map-name)))))
+                (let ((fn-name
+                       (intern
+                        (concat
+                         (symbol-name emulation-var) "-and-"
+                         (symbol-name map-name)))))
                   (fset fn-name
                         `(lambda() ,(format "Turn on `ergoemacs-mode' for `%s' during the hook `%s'."
                                        (symbol-name map-name) (symbol-name hook))
-                           (let ((new-map ',map))
-                             (ergoemacs-theme--install-shortcuts-list 
-                              ',(reverse shortcut-list) new-map ,map-name ,full-map)
-                             (set ',map-name
-                                  (copy-keymap
-                                   (make-composed-keymap new-map ,map-name))))))
+                           (unless (eq ergoemacs-theme--hook-running ',fn-name)
+                             (dolist (map ergoemacs-first-keymaps)
+                               (when (eq (car map) ',map-name)
+                                 (dolist (fn (cdr map))
+                                   (unless (eq fn ',fn-name)
+                                     (setq ergoemacs-theme--hook-running ',fn-name)
+                                     (funcall fn)
+                                     (setq ergoemacs-theme--hook-running nil)))))
+                             ,(when (ergoemacs-run-hook-fn obj hook map-name)
+                                `(progn
+                                   (setq ergoemacs-theme--hook-running ',fn-name)
+                                   (run-hooks ',(ergoemacs-run-hook-fn obj hook map-name))
+                                   (setq ergoemacs-theme--hook-running nil)))
+                             ,(when (ergoemacs-copy-keymap-symbol obj hook map-name)
+                                `(progn
+                                   ;; (message ,(concat "Copy " (symbol-name (ergoemacs-copy-keymap-symbol obj hook map-name))))
+                                   (setq map-name (copy-keymap ,(ergoemacs-copy-keymap-symbol obj hook map-name)))))
+                             ;; (message ,(format "Run %s" (symbol-name fn-name)))
+                             (let ((new-map ',map))
+                               (ergoemacs-theme--install-shortcuts-list 
+                                ',(reverse shortcut-list) new-map ,map-name ,full-map)
+                               (dolist (item ',deferred-keys) ; Install deferred keys now.
+                                 (catch 'found-bound-command
+                                   (dolist (fn (nth 1 item))
+                                     (when (commandp fn t)
+                                       (define-key new-map (nth 0 item) fn)
+                                       (throw 'found-bound-command t)))))
+                               (setq new-map (ergoemacs-flatten-composed-keymap (make-composed-keymap new-map ,map-name)))
+                               ;; Try to modify in place, without any
+                               ;; copying of keymaps.
+                               (ergoemacs-flatten-composed-keymap--define-key new-map ,map-name)
+                               ,(when (and first (ergoemacs-is-first-p obj hook map-name))
+                                  `(progn
+                                     (define-key ,map-name [,map-name] 'ignore)
+                                     (remove-hook ',hook ',fn-name)))))))
                   (funcall (if remove-p #'remove-hook #'add-hook) hook
-                           fn-name)))
+                           fn-name)
+                  (when (and first (not remove-p)
+                             (ergoemacs-is-first-p obj hook map-name))
+                    (let (found)
+                      (setq ergoemacs-first-keymaps
+                            (mapcar
+                             (lambda(x)
+                               (if (not (eq (car x) hook)) x
+                                 (setq found t)
+                                 (append (list hook fn-name) (cdr x))))
+                             ergoemacs-first-keymaps))
+                      (unless found
+                        (push (list hook fn-name) ergoemacs-first-keymaps))
+                      (setq found nil)
+                      (setq ergoemacs-first-keymaps
+                            (mapcar
+                             (lambda(x)
+                               (if (not (eq (car x) map-name)) x
+                                 (setq found t)
+                                 (append (list map-name fn-name) (cdr x))))
+                             ergoemacs-first-keymaps))
+                      (unless found
+                        (push (list map-name fn-name) ergoemacs-first-keymaps))))))
                ((and modify-map (not (boundp map-name)))
                 (pushnew (list map-name full-map map deferred-keys) ergoemacs-deferred-maps))
                ((and modify-map (boundp map-name))
@@ -1306,13 +1536,11 @@ FULL-SHORTCUT-MAP-P "
                     ;; (push (make-sparse-keymap "ergoemacs-modified") n-map)
                     )
                    (t
+                    (setq n-map (list n-map))
                     ;; (setq n-map (list (make-sparse-keymap "ergoemacs-modified") n-map))
                     ))
-                  (setq n-map (copy-keymap
-                               (make-composed-keymap
-                                n-map
-                                o-map)))
-                  (define-key n-map [ergoemacs] 'ignore)
+                  (push map n-map)
+                  (setq n-map (copy-keymap (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map o-map))))
                   (set map-name n-map)))
                (t ;; Maps that are not modified.
                 (unless remove-p
@@ -1326,12 +1554,25 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                   (set-default emulation-var nil)
                   (push map tmp))
                 (funcall (if remove-p #'remove-hook #'add-hook) hook
-                         emulation-var)))))
+                         emulation-var)
+                (when (and first (not remove-p))
+                  (let (found)
+                    (setq ergoemacs-first-keymaps
+                          (mapcar
+                           (lambda(x)
+                             (if (not (eq (car x) hook)) x
+                               (setq found t)
+                               (append (list hook emulation-var) (cdr x))))
+                           ergoemacs-first-keymaps))
+                    (unless found
+                      (push (list hook emulation-var)
+                            ergoemacs-first-keymaps))
+                    (setq found nil)))))))
           (unless (equal tmp '())
             (unless (eq defer '())
               (push (cons i defer) ergoemacs-deferred-keys))
             (setq i (+ i 1))
-            (push (cons emulation-var (ergoemacs-get-fixed-map--composite tmp))
+            (push (cons emulation-var (ergoemacs-flatten-composed-keymap (ergoemacs-get-fixed-map--composite tmp)))
                   hook-map-list))))
       
       ;; Reset shortcut hash
@@ -1375,7 +1616,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             (setq final-map (cdr final-map))
           (setq final-map (list final-map)))
         (push menu-keymap final-map)
-        (setq final-map (make-composed-keymap final-map))
+        (setq final-map (ergoemacs-flatten-composed-keymap (make-composed-keymap final-map)))
         ;; Rebuild Shortcut hash
         (let (tmp)
           (dolist (c (reverse shortcut-list))
@@ -1405,11 +1646,12 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             ergoemacs-no-shortcut-keys nil
             ergoemacs-read-input-keys (not remove-p)
             ergoemacs-unbind-keys (not remove-p)
-            ergoemacs-read-input-keymap final-read-map
+            ergoemacs-read-input-keymap (ergoemacs-flatten-composed-keymap final-read-map)
             ergoemacs-read-emulation-mode-map-alist `((ergoemacs-read-input-keys ,@final-read-map))
-            ergoemacs-shortcut-keymap final-shortcut-map
-            ergoemacs-no-shortcut-keymap final-no-shortcut-map
-            ergoemacs-unbind-keymap final-unbind-map
+            ergoemacs-read-emulation-mode-map-alist nil
+            ergoemacs-shortcut-keymap (ergoemacs-flatten-composed-keymap final-shortcut-map)
+            ergoemacs-no-shortcut-keymap (ergoemacs-flatten-composed-keymap final-no-shortcut-map)
+            ergoemacs-unbind-keymap (ergoemacs-flatten-composed-keymap final-unbind-map)
             ergoemacs-emulation-mode-map-alist
             (reverse
              (append
@@ -1421,7 +1663,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                    (when deferred-keys
                      (push (cons i (cons remap deferred-keys)) ergoemacs-deferred-keys))
                    (setq i (+ i 1))
-                   (cons remap map)))
+                   (cons remap (ergoemacs-flatten-composed-keymap map))))
                (ergoemacs-get-hooks obj "-mode\\'"))))
             ergoemacs-shortcut-emulation-mode-map-alist
             `((ergoemacs-shortcut-keys ,@final-shortcut-map))
@@ -1510,10 +1752,13 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
               new-cmd-list
               new-modify-map
               new-hook
+              new-copy-keymap
+              new-run-hook
               new-full-map
               new-always
+              new-first
               new-deferred-keys
-              (first t))
+              (curr-first t))
           (dolist (map-obj fixed-maps)
             (when (ergoemacs-fixed-map-p map-obj)
               (with-slots (global-map-p
@@ -1531,6 +1776,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                            modify-map
                            full-map
                            always
+                           first
                            deferred-keys) map-obj
                 (unless (equal read-map '(keymap))
                   (push read-map new-read-map))
@@ -1544,7 +1790,11 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                   (push unbind-map new-unbind-map))
                 (when (slot-boundp map-obj 'hook)
                   (setq new-hook (oref map-obj hook)))
-                (if first
+                (when (slot-boundp map-obj 'run-hook)
+                  (setq new-run-hook (oref map-obj run-hook)))
+                (when (slot-boundp map-obj 'copy-keymap)
+                  (setq new-copy-keymap (oref map-obj copy-keymap)))
+                (if curr-first
                     (setq new-shortcut-list shortcut-list
                           new-shortcut-movement shortcut-movement
                           new-shortcut-shifted-movement shortcut-shifted-movement
@@ -1556,10 +1806,11 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                           new-modify-map modify-map
                           new-full-map full-map
                           new-always always
-                          first nil)
+                          curr-first nil)
                   (setq new-global-map-p (or new-global-map-p global-map-p)
                         new-modify-map (or new-modify-map modify-map)
                         new-full-map (or new-full-map full-map)
+                        new-first (or new-first first)
                         new-always (or new-always always)
                         new-read-list (append new-read-list read-list)
                         new-shortcut-list (append new-shortcut-list shortcut-list)
@@ -1588,9 +1839,14 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
                  :modify-map new-modify-map
                  :full-map new-full-map
                  :always new-always
+                 :first new-first
                  :deferred-keys new-deferred-keys))
           (when new-hook
             (oset ret hook new-hook))
+          (when new-run-hook
+            (oset ret run-hook new-run-hook))
+          (when new-copy-keymap
+            (oset ret copy-keymap new-copy-keymap))
           (puthash key ret ergoemacs-theme-component-map-list-fixed-hash)))
       ret)))
 
@@ -1664,7 +1920,13 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
              (plist-get plist ':full-map)
              (plist-get plist ':full-keymap)))
         (ergoemacs-theme-component-maps--always
-         (plist-get plist ':always)))
+         (plist-get plist ':always))
+        (ergoemacs-theme-component-maps--first
+         (plist-get plist ':first))
+        (ergoemacs-theme-component-maps--run-hook
+         (plist-get plist ':run-hook))
+        (ergoemacs-theme-component-maps--copy-keymap
+         (plist-get plist ':copy-keymap)))
     (funcall body)))
 
 ;;;###autoload
@@ -1672,6 +1934,9 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
   ;; Reset variables.
   (let* ((ergoemacs-theme-component-maps--versions '())
          (ergoemacs-theme-component-maps--always nil)
+         (ergoemacs-theme-component-maps--first nil)
+         (ergoemacs-theme-component-maps--run-hook nil)
+         (ergoemacs-theme-component-maps--copy-keymap nil)
          (ergoemacs-theme-component-maps--full-map nil)
          (ergoemacs-theme-component-maps--modify-map nil)
          (ergoemacs-theme-component-maps--global-map nil)
@@ -2278,7 +2543,7 @@ Returns new keymap."
       (if (listp key)
           (dolist (rm-key key)
             (ergoemacs-rm-key keymap rm-key))
-        (let ((new-keymap (copy-keymap keymap)) _ignore)
+        (let ((new-keymap (copy-keymap keymap)))
           (cond
            ((keymapp (nth 1 new-keymap))
             (setq new-keymap (cdr new-keymap))
@@ -2300,7 +2565,15 @@ Returns new keymap."
             (push 'keymap new-keymap)
             new-keymap)
            (t
-            (define-key new-keymap key nil)
+            (let ((lk (lookup-key new-keymap key)) lk2 lk3)
+              (cond
+               ((integerp lk)
+                (setq lk2 (lookup-key (current-global-map) key))
+                (setq lk3 (lookup-key new-keymap (substring key 0 lk)))
+                (when (and (or (commandp lk2) (keymapp lk2)) (not lk3))
+                  (define-key new-keymap key lk2)))
+               (lk
+                (define-key new-keymap key nil))))
             new-keymap))))))
 
 (defvar ergoemacs-M-x "M-x ")

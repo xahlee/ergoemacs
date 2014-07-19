@@ -63,31 +63,31 @@
     nil))
 
 (defun ergoemacs-preprocess-menu-keybindings (menu)
-  (unless (keymapp menu)
-    (error "Invalid menu in ergoemacs-preprocess-menu-keybindings %s" menu))
-
-  (when (symbolp menu)
-    (setq menu (symbol-value menu)))
-
-  ;; For each element in the menu
-  (setcdr menu
-          (mapcar (lambda (item)
-                    (let ((key (ergoemacs-shortcut-for-menu-item item)))
-                      (if key
-                          (append item (cons :keys (cons key nil)))
-                        item)))
-                  (cdr menu)))
-
-  ;; Recurse sub menu items
-  (dolist (x (cdr menu))
-    (when (and (consp x)
-               (consp (cdr x))
-               (consp (cdr (cdr x)))
-               (consp (cdr (cdr (cdr x))))
-               (eq (car (cdr x)) 'menu-item)
-               (keymapp (car (cdr (cdr (cdr x))))))
+  "Put `ergoemacs-mode' key bindings on menus."
+  (if (not (ignore-errors (keymapp menu)))
+      (progn
+        (message "Invalid menu in ergoemacs-preprocess-menu-keybindings %s" menu)
+        menu)
+    (when (symbolp menu)
+      (setq menu (symbol-value menu)))
+    ;; For each element in the menu
+    (setcdr menu
+            (mapcar (lambda (item)
+                      (let ((key (ergoemacs-shortcut-for-menu-item item)))
+                        (if key
+                            (append item (cons :keys (cons key nil)))
+                          item)))
+                    (cdr menu)))
+    ;; Recurse sub menu items
+    (dolist (x (cdr menu))
+      (when (and (consp x)
+                 (consp (cdr x))
+                 (consp (cdr (cdr x)))
+                 (consp (cdr (cdr (cdr x))))
+                 (eq (car (cdr x)) 'menu-item)
+                 (keymapp (car (cdr (cdr (cdr x))))))
                                         ;(message "Submenu: %s" (car (cdr (cdr x))))
-      (ergoemacs-preprocess-menu-keybindings (car (cdr (cdr (cdr x))))))))
+        (ergoemacs-preprocess-menu-keybindings (car (cdr (cdr (cdr x)))))))))
 
 (defvar ergoemacs-handle-ctl-c-or-ctl-x)
 (defvar ergoemacs-no-shortcut-keys)
@@ -661,10 +661,12 @@ All other modes are assumed to be minor modes or unimportant.
 (defvar tabbar-mode)
 (declare-function tabbar-install-faces "tabbar-ruler.el")
 (declare-function tabbar-mode "tabbar-mode.el")
+(declare-function package-refresh-contents "package.el")
+(declare-function package-initialize "package.el")
 (defun ergoemacs-menu-tabbar-toggle ()
   "Enables/Disables (and installs if not present) a tab-bar for emacs."
   (interactive)
-  (require 'package)
+  (require 'package nil t)
   (if (not (fboundp 'tabbar-mode))
       (let ((package-archives '(("melpa" . "http://melpa.milkbox.net/packages/"))))
         (require 'tabbar-ruler nil t)

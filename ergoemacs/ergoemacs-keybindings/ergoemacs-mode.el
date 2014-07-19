@@ -69,6 +69,58 @@
 (require 'undo-tree nil t)
 (provide 'ergoemacs-mode)
 
+(defun ergoemacs-flatten-composed-keymap--define-key (keymap parent &optional pre-vector)
+  "Define keys in KEYMAP in PARENT keymap recursively.
+PRE-VECTOR is to help define the full key-vector sequence."
+  (dolist (item keymap)
+    (let ((key (ignore-errors (or (and pre-vector (vconcat pre-vector (vector (car item)))) (vector (car item)))))
+          i)
+      (cond
+       ((eq item 'keymap))
+       ((and key (ignore-errors (commandp (cdr item) t)))
+        (setq i (lookup-key parent key))
+        (when (integerp i)
+          (define-key parent (substring key 0 i) nil))
+        (define-key parent key (cdr item)))
+       ((and key (ignore-errors (eq 'keymap (nth 1 item))))
+        (ergoemacs-flatten-composed-keymap--define-key (cdr item) parent key))))))
+
+(defun ergoemacs-flatten-composed-keymap (keymap)
+  "Flattens a composed KEYMAP.
+If it is not a composed KEYMAP, return the keymap as is."
+  (if (not (ignore-errors (and (keymapp keymap) (eq (nth 0 (nth 1 keymap)) 'keymap)))) keymap
+    (let* ((parent (keymap-parent keymap))
+           (new-keymap (or (and parent (copy-keymap parent)) (make-sparse-keymap)))
+           (remaining (cdr (copy-keymap keymap)))
+           (keymap-list '()))
+      (while (keymapp (car remaining))
+        (push (pop remaining) keymap-list)) ;; Should be reversed
+      (dolist (sub-keymap keymap-list)
+        (ergoemacs-flatten-composed-keymap--define-key sub-keymap new-keymap))
+      new-keymap)))
+
+(when (not (fboundp 'make-composed-keymap))
+  (defun make-composed-keymap (maps &optional parent)
+    "Construct a new keymap composed of MAPS and inheriting from PARENT.
+
+This dose not work in emacs 23 or below, but ergoemacs-mode uses
+it to create the same structure and flatten them later.
+
+In emacs 24, this is how the function behaves:
+
+When looking up a key in the returned map, the key is looked in each
+keymap of MAPS in turn until a binding is found.
+If no binding is found in MAPS, the lookup continues in PARENT, if non-nil.
+As always with keymap inheritance, a nil binding in MAPS overrides
+any corresponding binding in PARENT, but it does not override corresponding
+bindings in other keymaps of MAPS.
+MAPS can be a list of keymaps or a single keymap.
+PARENT if non-nil should be a keymap."
+    `(keymap
+      ,@(if (keymapp maps) (list maps) maps)
+      ,@parent)))
+
+
 (defvar ergoemacs-debug ""
   "Debugging for `ergoemacs-mode'.")
 
@@ -281,28 +333,37 @@ Valid values are:
   (load "ergoemacs-shortcuts"))
 
 (defvar ergoemacs-theme)
+(defcustom ergoemacs-mode-line t
+  "Determines when the ergoemacs-mode modeline indicator is shown."
+  :type '(choice
+	  (const :tag "Always Show Mode Line" t)
+	  (const :tag "Do not show layout" no-layout)
+	  (const :tag "Never Show Mode Line" nil))
+  :group 'ergoemacs-mode)
 (defun ergoemacs-mode-line (&optional text)
   "Set ergoemacs-mode-line"
   ;; (ergoemacs-debug-heading "Set Mode Line to %s" (or text "Default"))
-  (if text
+  (let ((new-text (and text (or (and (not ergoemacs-mode-line) "") text))))
+    (if new-text
+        (setq minor-mode-alist
+              (mapcar (lambda(x)
+                        (if (not (eq 'ergoemacs-mode (nth 0 x)))
+                            x
+                          `(ergoemacs-mode ,new-text)))
+                      minor-mode-alist))
       (setq minor-mode-alist
             (mapcar (lambda(x)
                       (if (not (eq 'ergoemacs-mode (nth 0 x)))
                           x
-                        `(ergoemacs-mode ,text)))
-                    minor-mode-alist))
-    (setq minor-mode-alist
-          (mapcar (lambda(x)
-                    (if (not (eq 'ergoemacs-mode (nth 0 x)))
-                        x
-                      `(ergoemacs-mode ,(concat
-                                         (if (string= "standard" (or ergoemacs-theme "standard"))
-                                             " ErgoEmacs"
-                                           (concat " Ergo"
-                                                   (upcase (substring ergoemacs-theme 0 1))
-                                                   (substring ergoemacs-theme 1)))
-                                         "[" ergoemacs-keyboard-layout "]"))))
-                  minor-mode-alist)))
+                        `(ergoemacs-mode ,(if (or (not ergoemacs-mode-line) (eq ergoemacs-mode-line 'no-layout)) ""
+                                            (concat
+                                             (if (string= "standard" (or ergoemacs-theme "standard"))
+                                                 " ErgoEmacs"
+                                               (concat " Ergo"
+                                                       (upcase (substring ergoemacs-theme 0 1))
+                                                       (substring ergoemacs-theme 1)))
+                                             "[" ergoemacs-keyboard-layout "]")))))
+                    minor-mode-alist))))
   (ergoemacs-debug-flush))
 
 (require 'lookup-word-on-internet nil "NOERROR")
@@ -364,6 +425,12 @@ Valid values are:
 (defvar ergoemacs-read-emulation-mode-map-alist nil
   "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
 
+(defvar ergoemacs-read-local-emulation-mode-map-alist nil
+  "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
+
+(defvar ergoemacs-local-emulation-mode-map-alist nil
+  "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
+
 (defvar ergoemacs-emulation-mode-map-alist nil
   "Override keys in `ergoemacs-mode' for `emulation-mode-map-alist'")
 
@@ -378,6 +445,8 @@ Valid values are:
 When REMOVE is true, remove the emulations."
   (dolist (hook (reverse '(ergoemacs-modal-emulation-mode-map-alist
                            ergoemacs-read-emulation-mode-map-alist
+                           ergoemacs-read-local-emulation-mode-map-alist
+                           ergoemacs-local-emulation-mode-map-alist
                            ergoemacs-repeat-emulation-mode-map-alist
                            ergoemacs-emulation-mode-map-alist
                            ergoemacs-shortcut-emulation-mode-map-alist
@@ -674,6 +743,7 @@ This is done by checking if this is a command that supports shift selection or c
 (defvar ergoemacs-repeat-keymap)
 (defvar ergoemacs-read-key-overriding-overlay-save)
 (defvar ergoemacs-read-key-overriding-terminal-local-save)
+(defvar ergoemacs-first-keymaps)
 (declare-function ergoemacs-restore-post-command-hook "ergoemacs-shortcuts.el")
 (declare-function ergoemacs-install-shortcuts-up "ergoemacs-shortcuts.el")
 (defun ergoemacs-pre-command-hook ()
@@ -744,6 +814,12 @@ This is done by checking if this is a command that supports shift selection or c
     (condition-case err
         (progn
           (when ergoemacs-mode
+            (dolist (item ergoemacs-first-keymaps)
+              (let ((hook (car item)))
+                (unless (ignore-errors (keymapp (symbol-value hook)))
+                  (dolist (fn (cdr item))
+                    (remove-hook hook fn)
+                    (add-hook hook fn)))))
             (setq ergoemacs-shortcut-keys t)
             (setq ergoemacs-no-shortcut-keys nil)
             (ergoemacs-shuffle-keys)

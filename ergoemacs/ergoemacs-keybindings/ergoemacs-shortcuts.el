@@ -214,6 +214,7 @@ Used to help with translation keymaps like `input-decode-map'"
 (defvar ergoemacs-modal)
 (defvar ergoemacs-universal-fns)
 (defvar ergoemacs-read-input-keys)
+(defvar ergoemacs-read-local-emulation-mode-map-alist)
 (declare-function ergoemacs-unicode-char "ergoemacs-translate.el")
 (declare-function ergoemacs-translate "ergoemacs-translate.el")
 (declare-function ergoemacs-local-map "ergoemacs-translate.el")
@@ -546,6 +547,8 @@ It will replace anything defined by `ergoemacs-translation'"
 - `cua-mode' rectangle is active, clear the selected rectangle.
 - If the 【q】 key is bound to a non self-insert function, exit
   by this function. (By convention, the 【q】 key is often quit)
+- If the 【Ctrl+G】 key is bound to something other than
+  `keyboard-quit' use that. 
 - If `ergoemacs-mode' knows of the quit function, use that
 - If an `ergoemacs-mode' modal translation is active, deactivate it.
 - Otherwise issue `keyboard-quit'
@@ -559,11 +562,17 @@ It will replace anything defined by `ergoemacs-translation'"
            (fboundp 'cua-clear-rectangle-mark))
       (cua-clear-rectangle-mark))
      ((and (not (region-active-p))
-           (or (progn
-                 (setq tmp (key-binding "q"))
-                 (and (not (symbolp tmp)) (commandp tmp t)))
+           (and (progn
+                  (setq tmp (key-binding "q"))
+                  (commandp tmp t))
                (not (string-match "self-insert" (symbol-name tmp)))))
-      (call-interactively (key-binding "q")))
+      (call-interactively tmp))
+     ((and (not (region-active-p))
+           (and (progn
+                  (setq tmp (key-binding "C-g"))
+                  (commandp tmp t))
+                (not (eq 'keyboard-quit tmp))))
+      (call-interactively tmp))
      (t
       (let (defined-fn
              ergoemacs-shortcut-keys
@@ -1779,7 +1788,8 @@ Setup C-c and C-x keys to be described properly.")
     tmp-overlay))
 
 (defvar ergoemacs-read-input-keymap)
-(declare-function ergoemacs-modal-keymap "ergoemacs-modal.el")
+(defvar ergoemacs-modal-keymap)
+(declare-function ergoemacs-flatten-composed-keymap "ergoemacs-mode.el")
 (defun ergoemacs-install-shortcut-up--internal (text keymap &optional dont-complete)
   (let* ((keymap keymap)
          read-map
@@ -1799,14 +1809,15 @@ Setup C-c and C-x keys to be described properly.")
       (if ergoemacs-modal
           (setq keymap
                 (let ((map (make-sparse-keymap)))
-                  (setq map (ergoemacs-modal-keymap map))
+                  (setq map ergoemacs-modal-keymap)
                   (setq map
-                        (make-composed-keymap
-                         (list
-                          (ergoemacs-local-map
-                           (nth 0 ergoemacs-modal-list)
-                           t)
-                          map)))
+                        (ergoemacs-flatten-composed-keymap
+                         (make-composed-keymap
+                          (list
+                           (ergoemacs-local-map
+                            (nth 0 ergoemacs-modal-list)
+                            t)
+                           map))))
                   map))
         (setq keymap
               (copy-keymap
@@ -1853,7 +1864,7 @@ Setup C-c and C-x keys to be described properly.")
 The keymaps are:
 - `overriding-terminal-local-map'
 - `overriding-local-map'
-- overlays with :keymap property
+- Overlays with :keymap property
 - text property with :keymap property."
   (let ((inhibit-read-only t)
         deactivate-mark
@@ -1908,6 +1919,47 @@ The keymaps are:
             'keymap override-text-map)))
         ;; (ergoemacs-debug-keymap 'override-text-map)
         )))))
+
+(defvar ergoemacs-debug-keymap--temp-map)
+(declare-function ergoemacs-real-substitute-command-keys "ergoemacs-advice.el")
+(defun ergoemacs-extract-prefixes (keymap)
+  "Extract prefix commands for KEYMAP.
+Ignores command sequences starting with `ergoemacs-ignored-prefixes'."
+  (save-match-data
+    (let ((string (or (ignore-errors
+                        (ergoemacs-real-substitute-command-keys (format "\\{%s}" (symbol-name keymap))))
+                      (progn
+                        (setq ergoemacs-debug-keymap--temp-map keymap)
+                        (ergoemacs-real-substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}"))))
+          (pt 0)
+          (ret '()))
+      (while (string-match "^\\([^ \n][^ \n\t]*?\\) [^.].+*" string pt)
+        (unless (or (string-match-p "\\(--\\|key\\)" (match-string 1 string))
+                    (member (match-string 1 string) ergoemacs-ignored-prefixes)
+                    (member (match-string 1 string) ret))
+          (push (match-string 1 string) ret))
+        (setq pt (match-end 0)))
+      ret)))
+
+(defvar ergoemacs-ignore-advice)
+(defun ergoemacs-setup-local-prefixes ()
+  "Setup local prefixes to use `ergoemacs-read-key'.
+Do not do anything if you are:
+- In the minibuffer (determined by `minibufferp')
+- If overriding text maps are active, like `overriding-terminal-local-map' and `overriding-local-map'"
+  (unless (or (minibufferp) overriding-terminal-local-map overriding-local-map)
+    (let* ((map (current-local-map))
+           (ergoemacs-ignore-advice t)
+           key-vector
+           (prefixes (ergoemacs-extract-prefixes map))
+           (read-map (make-sparse-keymap)))
+      (when prefixes
+        (dolist (prefix prefixes)
+          (setq key-vector (read-kbd-macro prefix prefix))
+          (ignore-errors 
+            (define-key read-map key-vector 'ergoemacs-read-key-default)))
+        (set (make-local-variable 'ergoemacs-read-local-emulation-mode-map-alist)
+             (list (cons 'ergoemacs-read-input-keys read-map)))))))
 
 (provide 'ergoemacs-shortcuts)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

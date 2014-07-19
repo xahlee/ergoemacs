@@ -34,6 +34,9 @@
 (autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
 (autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
 (autoload 'wdired-exit "wdired" "ergoemacs-autoload." t)
+(autoload 'isearch-ring-advance "isearch" nil t)
+(autoload 'isearch-ring-retreat "isearch" nil t)
+(autoload 'isearch-ring-toggle-regexp "isearch" nil t)
 
 
 (require 'advice)
@@ -145,9 +148,13 @@
                  ;;           (browse-url "http://www.gnu.org/software/emacs/tour/"))
                  ;;        "Browse http://www.gnu.org/software/emacs/tour/")
                  ;; "\tSee an overview of Emacs features at gnu.org"
-		 ))
-        )
+		 )))
+  (add-hook 'dirtrack-directory-change-hook 'ergoemacs-shell-here-directory-change-hook)
   (add-hook 'kill-buffer-hook 'ergoemacs-save-buffer-to-recently-closed)
+  (add-hook 'shell-mode-hook 'ergoemacs-shell-here-hook)
+  (add-hook 'eshell-post-command-hook 'ergoemacs-shell-here-directory-change-hook)
+  (dolist (hook '(dired-after-readin-hook after-change-major-mode-hook))
+    (add-hook hook 'ergoemacs-setup-local-prefixes))
   (undo-tree-mode 1)
   (shift-select-mode t)
   (delete-selection-mode 1)
@@ -369,7 +376,7 @@
   "Fixed keys for bold and italic"
   (define-key org-mode-map (kbd "C-b") 'ergoemacs-org-bold)
   ;; C-i is TAB... This seems to cause issues?
-  (define-key org-mode-map (kbd "C-i") 'ergoemacs-org-italic)
+  ;; (define-key org-mode-map (kbd "C-i") 'ergoemacs-org-italic)
   (define-key org-mode-map (kbd "<tab>") 'org-cycle)
   (define-key org-mode-map (kbd "<kp-tab>") 'org-cycle)
   )
@@ -411,9 +418,9 @@
   (global-set-key (kbd "<f12>") 'next-line)
   (global-set-key (kbd "<f3>") 'ergoemacs-copy-line-or-region)
   (global-set-key (kbd "<f6>") 'ergoemacs-unchorded-alt-modal)
+  (global-set-key (kbd "<f8>") 'search-map)
   (global-set-key (kbd "<f8> <f8>") 'highlight-symbol-at-point)
   (global-set-key (kbd "<f8> <f9>") 'highlight-symbol-query-replace)
-  (global-set-key (kbd "<f8>") 'search-map)
   (global-set-key (kbd "<f2>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "<f4>") 'ergoemacs-paste)
   ;; Mode Specific Changes
@@ -447,12 +454,14 @@
   (define-key eshell-mode-map (kbd "<M-f12>") 'eshell-next-matching-input-from-input)
   
   (when minibuffer-setup-hook
+    :first t
     (define-key minibuffer-local-map (kbd "<f11>") 'previous-history-element)
     (define-key minibuffer-local-map (kbd "<f12>") 'next-history-element)
     (define-key minibuffer-local-map (kbd "<M-f11>") 'previous-matching-history-element)
     (define-key minibuffer-local-map (kbd "S-<f11>") 'previous-matching-history-element)
     (define-key minibuffer-local-map (kbd "<M-f12>") 'next-matching-history-element)
     (define-key minibuffer-local-map (kbd "S-<f12>") 'next-matching-history-element))
+  
   (when isearch-mode-hook
     :modify-map t
     :full-shortcut-map t
@@ -461,13 +470,12 @@
     (define-key isearch-mode-map (kbd "<f12>") 'isearch-ring-advance)
     (define-key isearch-mode-map (kbd "S-<f11>") 'isearch-ring-advance)
     (define-key isearch-mode-map (kbd "S-<f12>") 'isearch-ring-retreat))
-  (when iswitchb-minibuffer-setup-hook
+  
+  (when iswitchb-define-mode-map-hook
     :always t
     :modify-map t
-    (define-key iswitchb-mode-map (kbd "<f11>") 'iswitchb-prev-match)
-    (define-key iswitchb-mode-map (kbd "<f12>") 'iswitchb-next-match)
-    (define-key iswitchb-mode-map (kbd "S-<f11>") 'iswitchb-prev-match)
-    (define-key iswitchb-mode-map (kbd "S-<f12>") 'iswitchb-next-match)))
+    (define-key iswitchb-mode-map [remap previous-history-element] 'iswitchb-prev-match)
+    (define-key iswitchb-mode-map [remap next-history-element] 'iswitchb-next-match)))
 
 (ergoemacs-theme-component f2-edit ()
   "Have <f2> edit"
@@ -570,11 +578,11 @@
   (define-key browse-kill-ring-mode-map (kbd "M-k") 'browse-kill-ring-forward)
   (define-key browse-kill-ring-mode-map (kbd "M-f") 'browse-kill-ring-delete)
   
-  (when iswitchb-minibuffer-setup-hook
+  (when iswitchb-define-mode-map-hook 
     :always t
     :modify-keymap t
-    (define-key iswitchb-mode-map (kbd "M-j") 'iswitchb-prev-match)
-    (define-key iswitchb-mode-map (kbd "M-l") 'iswitchb-next-match)))
+    (define-key iswitchb-mode-map [remap backward-char] 'iswitchb-prev-match)
+    (define-key iswitchb-mode-map [remap forward-char] 'iswitchb-next-match)))
 
 (ergoemacs-theme-component move-word ()
   "Moving around and deleting words"
@@ -605,8 +613,8 @@
   (global-set-key (kbd "M-h") 'ergoemacs-beginning-of-line-or-what)
   (global-set-key (kbd "M-H") 'ergoemacs-end-of-line-or-what)
   ;; Mode specific movement
-  (define-key eshell-mode-map (kbd "M-h") 'eshell-bol)
-  (define-key comint-mode-map (kbd "M-h") 'comint-bol))
+  (define-key eshell-mode-map [remap move-beginning-of-line] 'eshell-bol)
+  (define-key comint-mode-map [remap move-beginning-of-line] 'comint-bol))
 
 (ergoemacs-theme-component move-and-transpose-lines ()
   "Move Current line/selection down or up with Alt+up or Alt+down"
@@ -683,9 +691,9 @@
     :full-shortcut-keymap t
     (define-key isearch-mode-map (kbd "M-v") 'isearch-yank-kill)
     (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill))
-  (define-key org-mode-map (kbd "M-v") 'ergoemacs-org-yank)
-  (define-key org-mode-map (kbd "M-v") 'ergoemacs-org-yank)
-  (define-key browse-kill-ring-mode-map (kbd "M-z") 'browse-kill-ring-undo-other-window))
+  (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
+  (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
+  (define-key browse-kill-ring-mode-map [remap undo] 'browse-kill-ring-undo-other-window))
 
 (ergoemacs-theme-component search ()
   "Search and Replace"
@@ -702,8 +710,8 @@
   (global-set-key (kbd "M-%") '(vr/query-replace query-replace-regexp))
 
   ;; Mode specific changes
-  (define-key browse-kill-ring-mode-map (kbd "M-y") 'browse-kill-ring-search-forward)
-  (define-key browse-kill-ring-mode-map (kbd "M-Y") 'browse-kill-ring-search-backward)
+  (define-key browse-kill-ring-mode-map [remap isearch-forward] 'browse-kill-ring-search-forward)
+  (define-key browse-kill-ring-mode-map [remap isearch-backward] 'browse-kill-ring-search-backward)
   :version 5.7.5
   (global-set-key (kbd "M-;") 'isearch-forward)
   (global-set-key (kbd "M-:") 'isearch-backward))
@@ -781,11 +789,12 @@
     :full-shortcut-keymap t
     (define-key isearch-mode-map (kbd "M-?") 'isearch-toggle-regexp)
     (define-key isearch-mode-map (kbd "M-/") 'isearch-toggle-case-fold))
-  (when iswitchb-minibuffer-setup-hook
+  
+  (when iswitchb-define-mode-map-hook
     :modify-map t
     :always t
-    (define-key iswitchb-mode-map (kbd "M-?") 'iswitchb-toggle-case)
-    (define-key iswitchb-mode-map (kbd "M-/") 'iswitchb-toggle-regexp)))
+    (define-key iswitchb-mode-map [remap ergoemacs-toggle-camel-case] 'iswitchb-toggle-case)
+    (define-key iswitchb-mode-map [remap ergoemacs-toggle-letter-case] 'iswitchb-toggle-regexp)))
 
 (ergoemacs-theme-component select-items ()
   "Select Items"
@@ -807,6 +816,7 @@
     :modify-map t
     (define-key minibuffer-local-map (kbd "<escape>") 'minibuffer-keyboard-quit))
   (when minibuffer-setup-hook
+    :first t
     (define-key minibuffer-local-map (kbd "<escape>") 'minibuffer-keyboard-quit))
   :version 5.3.7
   (global-set-key (kbd "M-n") 'keyboard-quit))
@@ -854,6 +864,18 @@
   (global-set-key (kbd "<apps> t") 'switch-to-buffer)
   (global-set-key (kbd "<apps> z") 'undo)
   (global-set-key (kbd "<apps> r") goto-map))
+
+(ergoemacs-theme-component apps-toggle ()
+  "Toggle States and applications"
+  :first-is-variable-reg "<\\(apps\\|menu\\)> i"
+  (global-set-key [apps i c] 'column-number-mode)
+  (global-set-key [apps i d] 'toggle-debug-on-error)
+  (global-set-key [apps i e] 'toggle-debug-on-error)
+  (global-set-key [apps i f] 'auto-fill-mode)
+  (global-set-key [apps i l] 'toggle-truncate-lines)
+  (global-set-key [apps i q] 'toggle-debug-on-quit)
+  (global-set-key [apps i r] 'read-only-mode)
+  (global-set-key [apps i t] 'endless/toggle-theme))
 
 (ergoemacs-theme-component apps-apps ()
   "Applications"
@@ -1127,6 +1149,7 @@
                 standard-vars)
   :optional-on '(apps-punctuation
                  apps-apps
+                 apps-toggle
                  apps
                  backspace-del-seq
                  backspace-is-back
@@ -1142,7 +1165,7 @@
                  save-options-on-exit)
   :optional-off '(guru no-backspace search-reg
                        ergoemacs-banish-shift)
-  :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
+  :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation apps-toggle))
                   ("Function Keys" (fn-keys f2-edit))
                   ("Remaps" (ido-remaps helm-remaps multiple-cursors-remaps))
                   ("Extreme ErgoEmacs" (guru no-backspace ergoemacs-banish-shift))
@@ -1172,6 +1195,7 @@
                 ergoemacs-remaps
                 standard-vars)
   :optional-on '(apps-punctuation
+                 apps-toggle
                  apps-apps
                  apps
                  backspace-del-seq
@@ -1188,7 +1212,7 @@
                  save-options-on-exit)
   :optional-off '(guru no-backspace search-reg
                        ergoemacs-banish-shift move-and-transpose-lines)
-  :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation))
+  :options-menu '(("Menu/Apps Key" (apps apps-apps apps-punctuation apps-toggle))
                   ("Function Keys" (fn-keys f2-edit))
                   ("Remaps" (ido-remaps helm-remaps multiple-cursors-remaps))
                   ("Extreme ErgoEmacs" (guru no-backspace ergoemacs-banish-shift))
