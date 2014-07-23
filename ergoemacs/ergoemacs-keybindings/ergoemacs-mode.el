@@ -77,24 +77,36 @@ PRE-VECTOR is to help define the full key-vector sequence."
           i)
       (cond
        ((eq item 'keymap))
-       ((and key (ignore-errors (commandp (cdr item) t)))
+       ((and key (cdr item)
+             (ignore-errors (or (symbolp (cdr item)) (commandp (cdr item) t))))
         (setq i (lookup-key parent key))
         (when (integerp i)
           (define-key parent (substring key 0 i) nil))
         (define-key parent key (cdr item)))
+       ((and key (equal key [menu-bar]))
+        (define-key parent key nil)
+        (define-key parent key (cdr item)))
        ((and key (ignore-errors (eq 'keymap (nth 1 item))))
-        (ergoemacs-flatten-composed-keymap--define-key (cdr item) parent key))))))
+        (ergoemacs-flatten-composed-keymap--define-key (cdr item) parent key))
+       ((and key (equal key [keymap]) (keymapp item))
+        (ergoemacs-flatten-composed-keymap--define-key item parent pre-vector))
+       (t
+        ;; (message "This: %s %s %s" pre-vector key item)
+        )))))
 
 (defun ergoemacs-flatten-composed-keymap (keymap)
   "Flattens a composed KEYMAP.
 If it is not a composed KEYMAP, return the keymap as is."
   (if (not (ignore-errors (and (keymapp keymap) (eq (nth 0 (nth 1 keymap)) 'keymap)))) keymap
-    (let* ((parent (keymap-parent keymap))
-           (new-keymap (or (and parent (copy-keymap parent)) (make-sparse-keymap)))
-           (remaining (cdr (copy-keymap keymap)))
+    (let* (new-keymap
+           (remaining (cdr keymap))
            (keymap-list '()))
       (while (keymapp (car remaining))
         (push (pop remaining) keymap-list)) ;; Should be reversed
+      ;; Parent keymap
+      (if (keymapp remaining)
+          (setq new-keymap (copy-keymap remaining))
+        (setq new-keymap (make-sparse-keymap)))
       (dolist (sub-keymap keymap-list)
         (ergoemacs-flatten-composed-keymap--define-key sub-keymap new-keymap))
       new-keymap)))
@@ -548,6 +560,8 @@ bindings the keymap is:
           ergoemacs-modal-save             nil)
     (set-default 'ergoemacs-modal nil)
     (ergoemacs-theme-remove)
+    ;; (customize-save-variable 'ergoemacs-mode nil)
+    ;; (customize-save-variable 'ergoemacs-ini-mode nil)
     (when (featurep 'ergoemacs-menus)
       (ergoemacs-menus-off))
     (when (and ergoemacs-use-mac-command-as-meta (eq system-type 'darwin))
@@ -585,6 +599,27 @@ bindings the keymap is:
                     (lambda(x) (nth 0 x))
                     minor-mode-map-alist))
   (ergoemacs-debug-flush))
+
+;;;###autoload
+(defun ergoemacs-mode-start ()
+  "Start `ergoemacs-mode' if not already started."
+  (ignore-errors ;; In case it didn't work correctly.
+    (unless ergoemacs-mode
+      (ergoemacs-mode 1))))
+
+(define-minor-mode ergoemacs-ini-mode
+  "Dummy mode to call `ergoemacs-mode' at the very last second if not already loaded."
+  nil
+  :global t
+  :group 'ergoemacs-mode
+  (cond
+   (ergoemacs-mode)
+   (ergoemacs-ini-mode
+    (add-hook 'emacs-startup-hook 'ergoemacs-mode-start))
+   ((not ergoemacs-ini-mode)
+    (remove-hook 'emacs-startup-hook 'ergoemacs-mode-start))))
+
+
 
 
 

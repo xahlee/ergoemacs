@@ -12,7 +12,7 @@
 ;; Last-Updated: 
 ;;           By: 
 ;;     Update #: 0
-;; URL: 
+;; URL:
 ;; Doc URL: 
 ;; Keywords:
 ;; Compatibility: 
@@ -1344,6 +1344,7 @@ FULL-SHORTCUT-MAP-P "
        full-shortcut-map-p))))
 
 (declare-function ergoemacs-shortcut-remap-list "ergoemacs-shortcuts.el")
+(defvar ergoemacs-read-local-emulation-mode-map-alist)
 (defun ergoemacs-theme--install-shortcut-item (key args keymap lookup-keymap
                                                    full-shortcut-map-p)
   (let (fn-lst)
@@ -1540,7 +1541,8 @@ FULL-SHORTCUT-MAP-P "
                     ;; (setq n-map (list (make-sparse-keymap "ergoemacs-modified") n-map))
                     ))
                   (push map n-map)
-                  (setq n-map (copy-keymap (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map o-map))))
+                  (setq n-map (copy-keymap ;; (make-composed-keymap n-map o-map)
+                                           (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map o-map))))
                   (set map-name n-map)))
                (t ;; Maps that are not modified.
                 (unless remove-p
@@ -1572,7 +1574,8 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             (unless (eq defer '())
               (push (cons i defer) ergoemacs-deferred-keys))
             (setq i (+ i 1))
-            (push (cons emulation-var (ergoemacs-flatten-composed-keymap (ergoemacs-get-fixed-map--composite tmp)))
+            (push (cons emulation-var ;; (ergoemacs-get-fixed-map--composite tmp)
+                        (ergoemacs-flatten-composed-keymap (ergoemacs-get-fixed-map--composite tmp)))
                   hook-map-list))))
       
       ;; Reset shortcut hash
@@ -1616,7 +1619,8 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             (setq final-map (cdr final-map))
           (setq final-map (list final-map)))
         (push menu-keymap final-map)
-        (setq final-map (ergoemacs-flatten-composed-keymap (make-composed-keymap final-map)))
+        (setq final-map (make-composed-keymap final-map))
+        (setq final-map (ergoemacs-flatten-composed-keymap final-map))
         ;; Rebuild Shortcut hash
         (let (tmp)
           (dolist (c (reverse shortcut-list))
@@ -1646,9 +1650,9 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
             ergoemacs-no-shortcut-keys nil
             ergoemacs-read-input-keys (not remove-p)
             ergoemacs-unbind-keys (not remove-p)
-            ergoemacs-read-input-keymap (ergoemacs-flatten-composed-keymap final-read-map)
+            ergoemacs-read-input-keymap (ergoemacs-flatten-composed-keymap  final-read-map)
             ergoemacs-read-emulation-mode-map-alist `((ergoemacs-read-input-keys ,@final-read-map))
-            ergoemacs-read-emulation-mode-map-alist nil
+            ergoemacs-read-local-emulation-mode-map-alist nil
             ergoemacs-shortcut-keymap (ergoemacs-flatten-composed-keymap final-shortcut-map)
             ergoemacs-no-shortcut-keymap (ergoemacs-flatten-composed-keymap final-no-shortcut-map)
             ergoemacs-unbind-keymap (ergoemacs-flatten-composed-keymap final-unbind-map)
@@ -2501,15 +2505,7 @@ If OFF is non-nil, turn off the options instead."
      menu-item "Save Settings for Future Sessions"
      (lambda ()
        (interactive)
-       (customize-save-variable 'ergoemacs-smart-paste ergoemacs-smart-paste)
-       (customize-save-variable 'ergoemacs-use-menus ergoemacs-use-menus)
-       (customize-save-variable 'ergoemacs-theme (or ergoemacs-theme "standard"))
-       (customize-save-variable 'ergoemacs-keyboard-layout ergoemacs-keyboard-layout)
-       (customize-save-variable 'ergoemacs-ctl-c-or-ctl-x-delay ergoemacs-ctl-c-or-ctl-x-delay)
-       (customize-save-variable 'ergoemacs-handle-ctl-c-or-ctl-x ergoemacs-handle-ctl-c-or-ctl-x)
-       (customize-save-variable 'ergoemacs-use-menus ergoemacs-use-menus)
-       (customize-save-variable 'ergoemacs-theme-options ergoemacs-theme-options)
-       (customize-save-customized)))
+       (ergoemacs-save-options-to-customized)))
     (ergoemacs-customize
      menu-item "Customize ErgoEmacs"
      (lambda ()
