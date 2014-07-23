@@ -313,6 +313,8 @@
 (defvar xjs-dom-words nil "a list of keywords from DOM or browser.")
 (setq xjs-dom-words '(
 
+"location"
+
 "window"    
 "children"
 "nodeName"

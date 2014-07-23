@@ -774,8 +774,15 @@ This is called by emacs abbrev system."
 (progn
   (setq xcm-keymap (make-sparse-keymap))
   (define-key xcm-keymap (kbd "<tab>") 'xcm-complete-or-indent)
-;  (define-key xcm-keymap [remap comment-dwim] 'xcm-comment-dwim)
-)
+
+  (define-key xcm-keymap (kbd "<menu> e r") 'xcm-insert-random-color-hsl)
+  (define-key xcm-keymap (kbd "<menu> e c") 'xcm-hex-color-to-hsl)
+  (define-key xcm-keymap (kbd "<menu> e p") 'xcm-compact-css-region)
+  (define-key xcm-keymap (kbd "<menu> e u") 'xcm-complete-symbol)
+  (define-key xcm-keymap (kbd "<menu> e i") 'xcm-indent-line)
+
+  ;  (define-key xcm-keymap [remap comment-dwim] 'xcm-comment-dwim)
+  )
 
 
 
