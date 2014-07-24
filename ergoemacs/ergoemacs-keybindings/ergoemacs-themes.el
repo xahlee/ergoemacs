@@ -31,12 +31,7 @@
   (require 'cl)
   (require 'ergoemacs-macros))
 
-(autoload 'dired-jump "dired-x" "ergoemacs-autoload." t)
-(autoload 'wdired-change-to-wdired-mode "wdired" "ergoemacs-autoload." t)
-(autoload 'wdired-exit "wdired" "ergoemacs-autoload." t)
-(autoload 'isearch-ring-advance "isearch" nil t)
-(autoload 'isearch-ring-retreat "isearch" nil t)
-(autoload 'isearch-ring-toggle-regexp "isearch" nil t)
+(autoload 'dired-jump "dired-x" nil t)
 
 
 (require 'advice)
@@ -710,6 +705,11 @@
   (global-set-key (kbd "M-%") '(vr/query-replace query-replace-regexp))
 
   ;; Mode specific changes
+  (when dired-mode-hook 
+    :modify-map t
+    (define-key dired-mode-map (kbd "M-5") 'dired-do-query-replace-regexp)
+    (define-key dired-mode-map (kbd "M-%") 'dired-do-query-replace-regexp))
+
   (define-key browse-kill-ring-mode-map [remap isearch-forward] 'browse-kill-ring-search-forward)
   (define-key browse-kill-ring-mode-map [remap isearch-backward] 'browse-kill-ring-search-backward)
   :version 5.7.5
@@ -718,9 +718,8 @@
 
 (ergoemacs-theme-component search-reg ()
   "Regular Expression Search/Replace"
-  (when ergoemacs-mode ;; FIXME should work without when statement
-    (global-set-key [remap isearch-forward] 'isearch-forward-regexp)
-    (global-set-key [remap isearch-backward] 'isearch-backward-regexp))
+  (global-set-key [remap isearch-forward] 'isearch-forward-regexp)
+  (global-set-key [remap isearch-backward] 'isearch-backward-regexp)
 
   (global-set-key (kbd "M-%") nil)
   (global-set-key (kbd "M-5") '(vr/query-replace query-replace-regexp))
@@ -987,9 +986,6 @@
 
 (ergoemacs-theme-component dired-to-wdired ()
   "C-c C-c enters wdired, <escape> exits."
-  (when wdired-mode-hook
-    :modify-map t
-    (define-key wdired-mode-map (kbd "<escape>") 'wdired-exit))
   (when dired-mode-hook
     :modify-map t
     (define-key dired-mode-map (kbd "C-c C-c") 'wdired-change-to-wdired-mode)))
