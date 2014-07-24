@@ -1965,14 +1965,16 @@ This is called by emacs abbrev system."
 
 ")
 
-    ("8c" "class=\"\"" nil :system t)
+    ("cdata" "<![CDATA[▮]]>" nil :system t)
+
+    ("cl" "class=\"\"" nil :system t)
 
     ("8w" "width" nil :system t)
     ("8h" "height" nil :system t)
     ("bgc" "background-color" nil :system t)
 
     ("css" "<link rel=\"stylesheet\" href=\"../lbasic.css\" />")
-    ("style" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
+    ("css2" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
     ("refresh" "<meta http-equiv=\"refresh\" content=\"0; url=http://example.com/\">")
 
     ;; todo

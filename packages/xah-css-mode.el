@@ -367,8 +367,8 @@ WARNING: not robust."
 
 ) )
 
-(defvar xcm-media-xxx nil "a list of CSS xxxxx todo.")
-(setq xcm-media-xxx '(
+(defvar xcm-media-keywords nil "a list of CSS xxxxx todo.")
+(setq xcm-media-keywords '(
 "@charset"
 "@document"
 "@font-face"
@@ -381,6 +381,8 @@ WARNING: not robust."
 "@viewport"
 "print"
 "screen"
+"all"
+"speech"
 ) ) ; todo
 
 (defvar xcm-unit-names nil "a list of CSS unite names.")
@@ -609,7 +611,7 @@ WARNING: not robust."
                                      xcm-color-names
                                      xcm-property-names
                                      xcm-pseudo-selector-names
-                                     xcm-media-xxx
+                                     xcm-media-keywords
                                      xcm-unit-names
                                      xcm-value-kwds
                                      ))
@@ -674,7 +676,7 @@ This uses `ido-mode' user interface for completion."
           (cssColorNames (regexp-opt xcm-color-names 'symbols) )
           (cssUnitNames (regexp-opt xcm-unit-names 'symbols ) )
           (cssPseudoSelectorNames (regexp-opt xcm-pseudo-selector-names ) )
-          (cssxxxtodo (regexp-opt xcm-media-xxx 'symbols) )
+          (cssMedia (regexp-opt xcm-media-keywords ) )
           )
         `(
           (,cssPropertieNames . font-lock-type-face)
@@ -682,7 +684,7 @@ This uses `ido-mode' user interface for completion."
           (,cssColorNames . font-lock-constant-face)
           (,cssUnitNames . font-lock-builtin-face)
           (,cssPseudoSelectorNames . font-lock-preprocessor-face)
-          (,cssxxxtodo . font-lock-reference-face)
+          (,cssMedia . font-lock-reference-face)
           (,htmlTagNames . font-lock-function-name-face)
 
 ("#[abcdef[:digit:]]\\{6\\}" .
