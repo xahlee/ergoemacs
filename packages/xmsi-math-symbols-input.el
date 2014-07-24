@@ -856,12 +856,6 @@
     (puthash "9," "🄊" xmsi-abrvs)
     (puthash "0," "🄁" xmsi-abrvs))
 
-  (progn 
-    (puthash "tack" "⊢" xmsi-abrvs)
-    (puthash "turnstile" "⊢" xmsi-abrvs)
-    (puthash "|-" "⊢" xmsi-abrvs)
-    (puthash "-|" "⊣" xmsi-abrvs))
-
   (progn
     (puthash  "1:00" "🕐" xmsi-abrvs)
     (puthash  "1:30" "🕜" xmsi-abrvs)
@@ -971,26 +965,30 @@
     (puthash "R3" "ℝ³" xmsi-abrvs)
     (puthash "fun" "ƒ" xmsi-abrvs))
 
-  ;; relations
+  (progn 
+    ;; relations
+    (puthash "<" "≺" xmsi-abrvs)
+    (puthash ">" "≻" xmsi-abrvs)
 
-  (puthash "<" "≺" xmsi-abrvs)
-  (puthash ">" "≻" xmsi-abrvs)
+    (puthash "<=" "≤" xmsi-abrvs)
+    (puthash ">=" "≥" xmsi-abrvs)
+    (puthash "!el" "∉" xmsi-abrvs)
+    (puthash "el" "∈" xmsi-abrvs)
+    (puthash "&&" "∧" xmsi-abrvs)
+    (puthash "||" "∨" xmsi-abrvs)
+    (puthash "not" "¬" xmsi-abrvs) ; not
+    (puthash "===" "≡" xmsi-abrvs) ; equivalent
 
-  (puthash "<=" "≤" xmsi-abrvs)
-  (puthash ">=" "≥" xmsi-abrvs)
-  (puthash "!el" "∉" xmsi-abrvs)
-  (puthash "el" "∈" xmsi-abrvs)
-  (puthash "&&" "∧" xmsi-abrvs)
-  (puthash "||" "∨" xmsi-abrvs)
-  (puthash "not" "¬" xmsi-abrvs) ; not
-  (puthash "===" "≡" xmsi-abrvs) ; equivalent
-
-  (puthash "~" "≈" xmsi-abrvs)  ; ALMOST EQUAL TO
-  (puthash ":=" "≔" xmsi-abrvs) ; define
-  (puthash "=:" "≕" xmsi-abrvs) ; define
-  (puthash "!=" "≠" xmsi-abrvs) (puthash "notequal" "≠" xmsi-abrvs) ; not equal
-  (puthash "fa" "∀" xmsi-abrvs) (puthash "forall" "∀" xmsi-abrvs) ; FOR ALL
-  (puthash "ex" "∃" xmsi-abrvs) ; THERE EXISTS
+    (puthash "~" "≈" xmsi-abrvs) ; ALMOST EQUAL TO
+    (puthash ":=" "≔" xmsi-abrvs) ; define
+    (puthash "=:" "≕" xmsi-abrvs) ; define
+    (puthash "!=" "≠" xmsi-abrvs) (puthash "notequal" "≠" xmsi-abrvs) ; not equal
+    (puthash "fa" "∀" xmsi-abrvs) (puthash "forall" "∀" xmsi-abrvs) ; FOR ALL
+    (puthash "ex" "∃" xmsi-abrvs) ; THERE EXISTS
+    (puthash "tack" "⊢" xmsi-abrvs)
+    (puthash "tee" "⊢" xmsi-abrvs)
+    (puthash "|-" "⊢" xmsi-abrvs)
+    (puthash "-|" "⊣" xmsi-abrvs))
 
   (progn
     ;; operators
