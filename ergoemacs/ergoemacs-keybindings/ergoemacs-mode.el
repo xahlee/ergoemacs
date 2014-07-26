@@ -8,7 +8,7 @@
 ;; Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 ;; Created: August 01 2007
 ;; Keywords: convenience
-;; Version: 5.14.7.2
+;; Version: 5.14.7.3
 ;; Package-Requires: ((emacs "24.1") (undo-tree "0.6.5"))
 ;; URL: https://github.com/ergoemacs/ergoemacs-mode
 
@@ -213,7 +213,7 @@ PARENT if non-nil should be a keymap."
   (load "ergoemacs-layouts"))
 
 ;; Ergoemacs-keybindings version
-(defconst ergoemacs-mode-version "5.14.7.2"
+(defconst ergoemacs-mode-version "5.14.7.3"
   "Ergoemacs-keybindings minor mode version number.")
 
 (defconst ergoemacs-mode-changes "Delete window Alt+0 changed to Alt+2.
@@ -479,6 +479,7 @@ When REMOVE is true, remove the emulations."
 (declare-function ergoemacs-theme-remove "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-enable-c-advices "ergoemacs-advices.el")
 (declare-function ergoemacs-real-key-binding "ergoemacs-advices.el" (key &optional accept-default no-remap position) t)
+
 ;; ErgoEmacs minor mode
 ;;;###autoload
 (define-minor-mode ergoemacs-mode
@@ -768,7 +769,9 @@ This is done by checking if this is a command that supports shift selection or c
     ergoemacs-modal-default
     ergoemacs-modal-movement
     ergoemacs-modal-movement-no-shift-select
-    ergoemacs-read-key-default))
+    ergoemacs-read-key-default
+    ergoemacs-ctl-x
+    ergoemacs-ctl-c))
 
 (defun ergoemacs-smart-function-p (var)
   "Is VAR an `ergoemacs-mode' smart function?"

@@ -1,4 +1,4 @@
-;; ergoemacs-theme-engine.el --- Engine for ergoemacs-themes -*- lexical-binding: t -*-
+;; ergoemacs-theme-engine.el --- Engine for ergoemacs-themes -*- lexical-binding: t -*- 
 
 ;; Copyright © 2014  Free Software Foundation, Inc.
 
@@ -432,7 +432,7 @@ Key sequences starting with `ergoemacs-ignored-prefixes' are not added."
           (oset obj read-list read-list)
           (define-key read-map new-key #'ergoemacs-read-key-default)
           (oset obj read-map read-map))))))
-
+(defvar ergoemacs-define-map--deferred nil)
 (defgeneric ergoemacs-define-map (obj key def &optional no-unbind)
   "Method to define a key in an `ergoemacs-mode' key class.
 
@@ -572,6 +572,8 @@ This will return if the map object was modified.
                      (dolist (command def)
                        (if (not (commandp command t))
                            (push command tmp)
+                         ;; (when ergoemacs-define-map--deferred
+                         ;;   (message "Found deferred %s, applying to ergoemacs-mode" command))
                          (define-key map key-vect command)
                          (ergoemacs-define-map--cmd-list obj key-desc def)
                          (oset obj map map)
@@ -587,13 +589,14 @@ This will return if the map object was modified.
 (defmethod ergoemacs-apply-deferred ((obj ergoemacs-fixed-map))
   "Apply deferred keys.
 Return if the map object has been modified."
-  (let (ret)
+  (let (ret
+        (ergoemacs-define-map--deferred t))
     (with-slots (deferred-keys) obj
       (dolist (key-list deferred-keys)
         (setq ret (or (ergoemacs-define-map obj (nth 0 key-list) (nth 1 key-list)) ret))))
     ret))
 
-
+(defvar ergoemacs-translation-assoc)
 (defclass ergoemacs-variable-map (eieio-named)
   ((global-map-p :initarg :global-map-p
                  :initform nil
@@ -713,7 +716,6 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
     (oset obj cmd-list (ergoemacs-copy-list cmd-list))))
 
 (defvar ergoemacs-keyboard-layout)
-(defvar ergoemacs-translation-assoc)
 (defvar ergoemacs-translation-regexp)
 (defmethod ergoemacs-get-fixed-map ((obj ergoemacs-variable-map) &optional layout)
   (with-slots (keymap-list
@@ -752,9 +754,15 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
   (let (ret)
     (with-slots (keymap-hash) obj
       (maphash
-       (lambda(_key fixed-obj)
-         (setq ret (or (ergoemacs-apply-deferred fixed-obj) ret)))
-       keymap-hash))
+       (lambda(key fixed-obj)
+         (if (not fixed-obj)
+	     (remhash key keymap-hash)
+	   (let ((fix (ergoemacs-apply-deferred fixed-obj)))
+	     (when fix
+               (puthash key fixed-obj keymap-hash))
+	     (setq ret (or fix ret)))))
+       keymap-hash)
+      (oset obj keymap-hash keymap-hash))
     ret))
 
 (defclass ergoemacs-composite-map (eieio-named)
@@ -854,10 +862,17 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
 
 (defmethod ergoemacs-apply-deferred ((obj ergoemacs-composite-map))
   (ergoemacs-composite-map--ini obj)
-  (with-slots (fixed variable) obj
-    (let ((fixed-changed (ergoemacs-apply-deferred fixed))
-          (var-changed (ergoemacs-apply-deferred variable)))
-      (or fixed-changed var-changed))))
+  (when (with-slots (fixed variable) obj
+          (let ((fixed-changed (and fixed (ergoemacs-apply-deferred fixed)))
+                (var-changed (and variable (ergoemacs-apply-deferred variable))))
+            (or fixed-changed var-changed)))
+    (oset obj keymap-hash (make-hash-table))
+    ;; (with-slots (map object-name deferred-keys) (ergoemacs-get-fixed-map obj)
+    ;;   (setq ergoemacs-debug-keymap--temp-map map)
+    ;;   (message "Composite Map: %s\n%s\nDeferred: %s"
+    ;;            object-name (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")
+    ;;            deferred-keys))
+    t))
 
 (defmethod ergoemacs-copy-obj ((obj ergoemacs-composite-map))
   (with-slots (fixed variable keymap-hash) obj
@@ -985,13 +1000,32 @@ Assumes maps are orthogonal."
 (defmethod ergoemacs-apply-deferred ((obj ergoemacs-theme-component-maps))
   (let (ret)
     (with-slots (global maps) obj
-      (setq ret (ergoemacs-apply-deferred global))
+      (setq ret (and global (ergoemacs-apply-deferred global)))
+      ;; (when ret
+      ;;   (with-slots (map object-name deferred-keys) (ergoemacs-get-fixed-map global)
+      ;;     (setq ergoemacs-debug-keymap--temp-map map)
+      ;;     (message "Global Map: %s\n%s\nDeferred: %s"
+      ;;              object-name (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")
+      ;;              deferred-keys)))
       (maphash
-       (lambda(_key composite-map)
-         (setq ret (or (ergoemacs-apply-deferred composite-map) ret)))
+       (lambda(key composite-map)
+         (let ((changed (and composite-map (ergoemacs-apply-deferred composite-map))))
+           (when changed
+             (puthash key composite-map maps)
+             ;; (with-slots (map object-name deferred-keys) (ergoemacs-get-fixed-map composite-map)
+             ;;   (setq ergoemacs-debug-keymap--temp-map map)
+             ;;   (message "Local : %s\n%s\nDeferred: %s"
+             ;;            object-name (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")
+             ;;            deferred-keys))
+             )
+           (setq ret (or changed ret))))
        maps)
       (when ret ;; Reset fixed-maps hash
-        (oset obj fixed-maps (make-hash-table)))
+        (oset obj global global)
+        (oset obj maps maps)
+        ;; (oset obj hooks (make-hash-table))
+        (oset obj fixed-maps (make-hash-table)) ;; Reset cache
+        (ergoemacs-theme-component-maps--save-hash obj))
       ret)))
 
 (defmethod ergoemacs-variable-layout-list ((obj ergoemacs-theme-component-maps))
@@ -1213,8 +1247,27 @@ Assumes maps are orthogonal."
 (defmethod ergoemacs-apply-deferred ((obj ergoemacs-theme-component-map-list))
   (let (ret)
     (with-slots (map-list) obj
-      (dolist (map map-list)
-        (setq ret (or (ergoemacs-apply-deferred map) ret))))
+      (setq map-list
+            (mapcar
+             (lambda(new-map)
+               (let ((changed (and new-map (ergoemacs-apply-deferred new-map))))
+                 ;; (when changed
+                 ;;     (with-slots (map object-name deferred-keys) (ergoemacs-get-fixed-map new-map 'log-edit-mode-map)
+                 ;;       (setq ergoemacs-debug-keymap--temp-map map)
+                 ;;       (message "Composite Map: %s\n%s\nDeferred: %s"
+                 ;;                object-name (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")
+                 ;;                deferred-keys)))
+                 (setq ret (or changed ret))
+                 new-map))
+             map-list))
+      (when ret
+        (oset obj map-list map-list)
+        (oset obj hooks (make-hash-table :test 'equal))
+        (setq ergoemacs-theme-component-map-list-fixed-hash (make-hash-table :test 'equal))
+        ;; (with-slots (map) (ergoemacs-get-fixed-map obj 'log-edit-mode-map)
+        ;;   (setq ergoemacs-debug-keymap--temp-map map)
+        ;;   (message "%s" (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")))
+        ))
     ret))
 
 (defmethod ergoemacs-theme-component-map-list-md5 ((obj ergoemacs-theme-component-map-list))
@@ -1367,7 +1420,9 @@ ergoemacs-get-keymaps-for-hook OBJ HOOK")
       ;; (Nth 0 Init)iable state change
       (push (list (nth 0 init) (symbol-value (nth 0 init)))
             ergoemacs-applied-inits)
-      (set (nth 0 init) (funcall (nth 1 init)))))))
+      (if (custom-variable-p (nth 0 init))
+          (customize-set-variable (nth 0 init) (funcall (nth 1 init)))
+        (set (nth 0 init) (funcall (nth 1 init))))))))
 
 (defun ergoemacs-remove-inits ()
   "Remove the applied initilizations of modes and variables.
@@ -1387,6 +1442,8 @@ This assumes the variables are stored in `ergoemacs-applied-inits'"
        ((and (string-match-p "-mode$" (symbol-name var))
              (ignore-errors (commandp var t)))
         (funcall var val))
+       ((custom-variable-p var)
+        (customize-set-variable var val))
        (t
         (set var val)))))
   (setq ergoemacs-applied-inits '()))
@@ -1403,6 +1460,7 @@ FULL-SHORTCUT-MAP-P "
        full-shortcut-map-p))))
 
 (declare-function ergoemacs-shortcut-remap-list "ergoemacs-shortcuts.el")
+(defvar ergoemacs-theme--install-shortcut-item--global nil)
 (defun ergoemacs-theme--install-shortcut-item (key args keymap lookup-keymap
                                                    full-shortcut-map-p)
   (let (fn-lst)
@@ -1411,17 +1469,20 @@ FULL-SHORTCUT-MAP-P "
       (setq fn-lst (ergoemacs-shortcut-remap-list (nth 0 args) lookup-keymap))
       (if fn-lst
           (ignore-errors
-            (ergoemacs-theme-component--ignore-globally-defined-key key)
+            (when ergoemacs-theme--install-shortcut-item--global
+              (ergoemacs-theme-component--ignore-globally-defined-key key))
             (define-key keymap key (nth 0 (nth 0 fn-lst))))
         (when full-shortcut-map-p
           (ignore-errors
-            (ergoemacs-theme-component--ignore-globally-defined-key key)
+            (when ergoemacs-theme--install-shortcut-item--global
+              (ergoemacs-theme-component--ignore-globally-defined-key key))
             (when (or (commandp (nth 0 args) t)
                       (keymapp (nth 0 args)))
               (define-key keymap key (nth 0 args)))))))
      (full-shortcut-map-p
       (ignore-errors
-        (ergoemacs-theme-component--ignore-globally-defined-key key)
+        (when ergoemacs-theme--install-shortcut-item--global
+          (ergoemacs-theme-component--ignore-globally-defined-key key))
         (define-key keymap key
           `(lambda(&optional arg)
              (interactive "P")
@@ -1477,6 +1538,7 @@ FULL-SHORTCUT-MAP-P "
                shortcut-list
                rm-keys) (ergoemacs-get-fixed-map obj)
     (let ((hook-map-list '())
+          (ergoemacs-theme--install-shortcut-item--global t)
           ;; (read-map (or read-map (make-spase-keymap)))
           ;; (shortcut-map (or shortcut-map (make-sparse-keymap)))
           ;; (map (or map (make-sparse-keymap)))
@@ -1606,6 +1668,9 @@ FULL-SHORTCUT-MAP-P "
                   (set map-name n-map)))
                (t ;; Maps that are not modified.
                 (unless remove-p
+                  (dolist (d deferred-keys)
+                    (dolist (f (nth 1 d))
+                      (pushnew f defer)))
                   ;; (message "Setup %s"  hook)
                   (fset emulation-var
                         `(lambda() ,(format "Turn on `ergoemacs-mode' keymaps for `%s'.
@@ -2241,8 +2306,11 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
                          (keymapp lk))
                      (not (member key '([remap] ))))
             (when (not (member key ergoemacs-global-override-rm-keys))
-              (message "Removing %s because of globally bound %s"
-                       (ergoemacs-pretty-key (key-description key)) lk))
+              (message "Removing %s (%s; %s) because of globally bound %s"
+                       (ergoemacs-pretty-key (key-description key))
+                       (key-description key)
+                       key
+                       lk))
             (pushnew key ergoemacs-global-override-rm-keys
                      :test 'equal)
             (throw 'found-global-command t)))

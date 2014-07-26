@@ -227,7 +227,7 @@
   
   ;; (global-set-key (kbd "C-u") 'ergoemacs-universal-argument)
   (global-set-key (kbd "<M-backspace>") '(undo-tree-undo undo))
-  (global-set-key (kbd "C-z") 'undo)
+  (global-set-key (kbd "C-z") '(undo-tree-undo undo))
 
   ;; Take out undo-tree's redo bindings
   (when ergoemacs-theme-hook
@@ -318,7 +318,6 @@
   (global-set-key (kbd "C-n") 'ergoemacs-new-empty-buffer)
   (global-set-key (kbd "C-o") 'find-file)
   (global-set-key (kbd "C-p") 'ergoemacs-print-buffer-confirm)
-  (global-set-key (kbd "C-s") 'save-buffer)
   
   (global-set-key (kbd "C-w") 'ergoemacs-close-current-buffer)
   (global-set-key (kbd "C-x <timeout>") 'ergoemacs-cut-line-or-region)
@@ -340,6 +339,8 @@
 
   (define-key browse-kill-ring-mode-map (kbd "C-f") 'browse-kill-ring-search-forward)
   (define-key browse-kill-ring-mode-map (kbd "<deletechar>") 'browse-kill-ring-delete)
+
+  (define-key log-edit-mode-map [remap save-buffer] 'log-edit-done)
 
   (define-key eshell-mode-map (kbd "<home>") 'eshell-bol)
   (define-key comint-mode-map (kbd "<home>") 'comint-bol)
@@ -365,7 +366,8 @@
     (define-key isearch-mode-map (kbd "C-M-f") 'isearch-occur)
     (define-key isearch-mode-map (kbd "<S-insert>") 'isearch-yank-kill)
     (define-key isearch-mode-map (kbd "M-v") 'isearch-yank-kill)
-    (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill)))
+    (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill))
+  )
 
 (ergoemacs-theme-component fixed-bold-italic ()
   "Fixed keys for bold and italic"
@@ -669,14 +671,14 @@
   (global-set-key (kbd "C-_") nil)
   (global-set-key (kbd "C-/") nil)
   (global-set-key (kbd "C-x u") nil)
-  (global-set-key (kbd "M-z") 'undo)
+  (global-set-key (kbd "M-z") '(undo-tree-undo undo))
   
   ;; Fixed Component; Note that <timeout> is the actual function.
   (global-set-key (kbd "C-c <timeout>") 'ergoemacs-copy-line-or-region)
   (global-set-key (kbd "C-c") 'ergoemacs-ctl-c)
   (global-set-key (kbd "C-x <timeout>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "C-x") 'ergoemacs-ctl-x)
-  (global-set-key (kbd "C-z") 'undo)
+  (global-set-key (kbd "C-z") '(undo-tree-undo undo))
   (global-set-key (kbd "C-S-z") '(redo undo-tree-redo ergoemacs-redo))
   (global-set-key (kbd "C-y") '(redo undo-tree-redo ergoemacs-redo))
 
@@ -688,7 +690,8 @@
     (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill))
   (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
   (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
-  (define-key browse-kill-ring-mode-map [remap undo] 'browse-kill-ring-undo-other-window))
+  (define-key browse-kill-ring-mode-map [remap undo] 'browse-kill-ring-undo-other-window)
+  (define-key browse-kill-ring-mode-map [remap undo-tree-undo] 'browse-kill-ring-undo-other-window))
 
 (ergoemacs-theme-component search ()
   "Search and Replace"
@@ -862,7 +865,7 @@
   (global-set-key (kbd "<apps> v") 'ergoemacs-paste)
   (global-set-key (kbd "<apps> b") '(redo undo-tree-redo ergoemacs-redo))
   (global-set-key (kbd "<apps> t") 'switch-to-buffer)
-  (global-set-key (kbd "<apps> z") 'undo)
+  (global-set-key (kbd "<apps> z") '(undo-tree-undo undo))
   (global-set-key (kbd "<apps> r") goto-map))
 
 (ergoemacs-theme-component apps-toggle ()
@@ -990,6 +993,12 @@
     :modify-map t
     (define-key dired-mode-map (kbd "C-c C-c") 'wdired-change-to-wdired-mode)))
 
+(ergoemacs-theme-component dired-tab ()
+  "TAB expands a directory."
+  (when dired-mode-hook
+    :modify-map t
+    (define-key dired-mode-map (kbd "TAB") 'dired-maybe-insert-subdir)))
+
 (ergoemacs-theme-component guru ()
   "Unbind some commonly used keys such as <left> and <right> to get in the habit of using ergoemacs keybindings."
   (global-unset-key (kbd "<left>"))
@@ -1043,10 +1052,14 @@
     (global-set-key [remap execute-extended-command] 'smex))
   (setq smex-prompt-string (substitute-command-keys "\\[execute-extended-command] ")))
 
+
+
 (ergoemacs-theme-component ergoemacs-remaps ()
   "Remaps for ergoemacs-mode"
   (when undo-tree-mode
     (global-set-key [remap ergoemacs-redo] 'undo-tree-redo))
+  (when mark-active
+    (global-set-key (kbd "TAB") 'indent-region))
   (when ergoemacs-mode
     (global-set-key [remap eshell] 'ergoemacs-eshell-here)
     (global-set-key [remap powershell] 'ergoemacs-powershell-here)
@@ -1125,6 +1138,7 @@
 (ergoemacs-theme standard ()
   "Standard Ergoemacs Theme"
   :components '(copy
+                dired-tab
                 dired-to-wdired
                 execute
                 fixed-newline
@@ -1172,6 +1186,7 @@
 (ergoemacs-theme reduction ()
   "Reduce Ergoemacs keys"
   :components '(copy
+                dired-tab
                 dired-to-wdired
                 execute
                 fixed-newline
