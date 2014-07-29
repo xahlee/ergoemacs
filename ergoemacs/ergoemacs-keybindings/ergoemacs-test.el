@@ -32,7 +32,7 @@
   (require 'cl)
   (require 'ergoemacs-macros))
 
-(declare-function ergoemacs-set "ergoemacs-theme-engine.el")
+(declare-function ergoemacs-theme--set "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-define-key "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-theme-get-version "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-theme-set-version "ergoemacs-theme-engine.el")
@@ -187,7 +187,7 @@ sunt in culpa qui officia deserunt mollit anim id est laborum.")
     (message
      "%s"
      (shell-command-to-string
-      (format "%s --batch -Q -l %s" emacs-exe temp-file)))
+      (format "%s %s -Q -l %s" emacs-exe (if (boundp 'wait-for-me) "" "--batch") temp-file)))
     (delete-file temp-file)
     (when (file-exists-p w-file)
       (setq ret 't)

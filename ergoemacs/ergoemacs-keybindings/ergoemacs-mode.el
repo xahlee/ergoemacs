@@ -563,11 +563,11 @@ bindings the keymap is:
           ergoemacs-modal-list             '()
           ergoemacs-modal-save             nil)
     (set-default 'ergoemacs-modal nil)
-    (ergoemacs-theme-remove)
     ;; (customize-save-variable 'ergoemacs-mode nil)
     ;; (customize-save-variable 'ergoemacs-ini-mode nil)
     (when (featurep 'ergoemacs-menus)
       (ergoemacs-menus-off))
+    (ergoemacs-theme-remove)
     (when (and ergoemacs-use-mac-command-as-meta (eq system-type 'darwin))
       (let ((cm (or (and (boundp 'ns-command-modifier) 'ns-command-modifier)
                     (and (boundp 'mac-command-modifier) 'mac-command-modifier)))
@@ -775,9 +775,7 @@ This is done by checking if this is a command that supports shift selection or c
 
 (defun ergoemacs-smart-function-p (var)
   "Is VAR an `ergoemacs-mode' smart function?"
-  (or (not (symbolp var))
-      (and (boundp var)
-           (memq (symbol-value var) ergoemacs-smart-functions))))
+  (and (symbolp var) (fboundp var) (memq var ergoemacs-smart-functions)))
 
 (defvar ergoemacs-last-command nil)
 (defvar ergoemacs-mark-active)
