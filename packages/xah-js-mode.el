@@ -341,7 +341,18 @@
 "firstChild"
 "lastChild"
 "removeChild"
+"replaceChild"
 "document"
+
+"documentElement"
+"clientWidth"
+"clientHeight"
+
+".pageXOffset"
+".pageYOffset"
+
+".innerWidth"
+".innerHeight"
 
 "parentNode"
 "appendChild"
@@ -391,7 +402,7 @@
 (setq xjs-font-lock-keywords
       (let (
           (jsMathMethods (regexp-opt xjs-js-math-methods 'symbols) )
-          (domWords (regexp-opt xjs-dom-words 'symbols) )
+          (domWords (regexp-opt xjs-dom-words) )
           (jsBuildins (regexp-opt xjs-keyword-builtin 'symbols) )
           (jsLangWords (regexp-opt xjs-js-lang-words 'symbols) )
           (jsVars1 (regexp-opt xjs-js-vars-1 'symbols) )
