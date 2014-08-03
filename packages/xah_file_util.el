@@ -182,7 +182,7 @@ Path Regex 「%s」
       (highlight-phrase φsearch-regex (quote hi-yellow))
       (highlight-lines-matching-regexp "^• " (quote hi-pink)))))
 
-(defun xah-find-replace-text (φsearch-str φreplace-str φinput-dir φpath-regex φfixed-case-search-p φfixed-case-replace-p)
+(defun xah-find-replace-text (φsearch-str φreplace-str φinput-dir φpath-regex φfixed-case-search-p φfixed-case-replace-p &optional φbackup-p)
   "Find/Replace string in all files of a directory.
 SearchStr can span multiple lines.
 No regex."
@@ -217,11 +217,11 @@ Directory 〔%s〕
                (replace-match φreplace-str φfixed-case-replace-p "literalreplace")
                (setq ξcount (1+ ξcount))
                (xah-print-text-block (buffer-substring-no-properties
-                                    (max 1 (- (match-beginning 0) xah-context-char-number ))
-                                    (min (point-max) (+ (point) xah-context-char-number )))))
+                                      (max 1 (- (match-beginning 0) xah-context-char-number ))
+                                      (min (point-max) (+ (point) xah-context-char-number )))))
 
              (when (> ξcount 0)
-               (copy-file ξf (concat ξf ξbackupSuffix) t)
+               (when φbackup-p (copy-file ξf (concat ξf ξbackupSuffix) t))
                (write-region 1 (point-max) ξf)
                (xah-print-file-count ξf ξcount )))))
 
