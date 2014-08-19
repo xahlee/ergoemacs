@@ -67,6 +67,7 @@
 (defvar ergoemacs-mode)
 (defvar ergoemacs-ignore-advice)
 (defvar ergoemacs-read-local-emulation-mode-map-alist)
+(defvar ergoemacs-single-command-keys)
 
 (defvar ergoemacs-display-char-list nil
   "List of characters and fonts and if they display or not.")
@@ -162,7 +163,8 @@ This assumes `ergoemacs-use-unicode-char' is non-nil.  When
             (while (string-match "<\\(\\(?:C-\\|S-\\|M-\\)?[A-Za-z0-9]+\\)>" ret pt)
               (setq pt (- (match-end 0) 2)
                     ret (replace-match (match-string 1 ret) t t ret)))
-            (dolist (args `(("\\<M-" ,(if (eq system-type 'darwin)
+            (dolist (args `(("\\_<backtab\\_>" "S-TAB")
+                            ("\\<M-" ,(if (eq system-type 'darwin)
                                           (cond
                                            ((or (and (boundp 'mac-command-modifier)
                                                      (eq mac-command-modifier 'meta))
@@ -517,18 +519,39 @@ Translates C-A into C-S-a."
           case-fold-search)
       (unless (string-match "\\(^<.+>$\\|\\<SPC\\>\\|\\<DEL\\>\\|\\<ESC\\>\\|\\<RET\\>\\|\\<TAB\\>\\)" ret)
         (if (string-match "C-" ret)
-            (when (and (string-match "\\(.\\)$" ret)
-                       (string= (upcase (match-string 1 ret))
-                                (match-string 1 ret))
-                       (not (string= (downcase (match-string 1 ret))
-                                     (match-string 1 ret))))
-              (setq ret
-                    (replace-match
-                     (concat "S-" (downcase (match-string 1 ret))) t t ret)))
+            (progn
+              (when (and (string-match "\\(.\\)$" ret)
+                         (string= (upcase (match-string 1 ret))
+                                  (match-string 1 ret))
+                         (not (string= (downcase (match-string 1 ret))
+                                       (match-string 1 ret))))
+                (setq ret
+                      (replace-match
+                       (concat "S-" (downcase (match-string 1 ret))) t t ret)))
+              (when (and
+                     (string-match-p "\\<S-" ret)
+                     (string-match "\\(.\\)$" ret)
+                     (string= (downcase (match-string 1 ret)) (upcase (match-string 1 ret)))
+                     (or (not (string= (match-string 1 ret) ">"))
+                         (not (string-match-p "<.+?>" ret)))
+                     (assoc (match-string 1 ret) ergoemacs-shifted-assoc))
+                (setq ret (replace-match
+                           (cdr (assoc (match-string 1 ret) ergoemacs-shifted-assoc)) t t ret))
+                (when (string-match "\\<S-" ret)
+                  (setq ret (replace-match "" nil nil ret)))))
           (when (string-match "^\\(.*\\)S-\\(.*\\)\\(.\\)$" ret)
-            (setq ret (concat (match-string 1 ret)
-                              (match-string 2 ret)
-                              (upcase (match-string 3 ret)))))))
+            (cond
+             ((and (or (not (string= (match-string 3 ret) ">"))
+                       (not (string-match-p "<.+?>" ret)))
+                   (assoc (match-string 3 ret) ergoemacs-shifted-assoc)
+                   (string= (upcase (match-string 3 ret)) (downcase (match-string 3 ret))))
+              (setq ret (concat (match-string 1 ret)
+                                (match-string 2 ret)
+                                (cdr (assoc (match-string 3 ret) ergoemacs-shifted-assoc)))))
+             (t
+              (setq ret (concat (match-string 1 ret)
+                                (match-string 2 ret)
+                                (upcase (match-string 3 ret)))))))))
       ret)))
 
 (defun ergoemacs-shift-translate-install (trans-plist ret-plist)
@@ -549,7 +572,9 @@ Translates C-A into C-S-a."
       (setq shift-translated
             (replace-match
              (concat "-"
-                     (downcase (match-string 1 key))) t t key))))
+                     (downcase (match-string 1 key))) t t key)))
+     ((string-match (format "\\(-\\|^\\)\\(%s\\)$" ergoemacs-shifted-regexp) key)
+      (setq shift-translated (replace-match (format "\\1%s" (cdr (assoc (match-string 2 key) ergoemacs-shifted-assoc))) t nil key))))
     (unless (string= shift-translated key)
       (setq ret (plist-put ret name shift-translated))
       (setq ret (plist-put ret k (read-kbd-macro shift-translated t)))

@@ -108,21 +108,7 @@ Also temporarily remove any changes ergoemacs-mode made to:
 Will override any ergoemacs changes to the text properties by temporarily
 installing the original keymap above the ergoemacs-mode installed keymap.
 "
-  `(let ((overriding-terminal-local-map overriding-terminal-local-map)
-         (overriding-local-map overriding-local-map)
-         tmp-overlay)
-     ;; Remove most of ergoemacs-mode's key bindings
-     (ergoemacs-emulations 'remove)
-     (unwind-protect
-         (progn
-           ;; Install override-text-map changes above anything already
-           ;; installed.
-           (setq tmp-overlay (ergoemacs-remove-shortcuts t))
-           ,@body)
-       (when tmp-overlay
-         (delete-overlay tmp-overlay))
-       (when ergoemacs-mode
-         (ergoemacs-emulations)))))
+  `(ergoemacs-without-emulation--internal (lambda() ,@body)))
 
 ;; This shouldn't be called at run-time; This fixes the byte-compile warning.
 (fset 'ergoemacs-theme-component--parse
@@ -214,6 +200,13 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
     remaining))
 
 ;;;###autoload
+(defmacro ergoemacs-component (&rest body-and-plist)
+  "A component of an ergoemacs-theme."
+  (declare (doc-string 2)
+           (indent 2))
+  (macroexpand-all `(ergoemacs-theme-component ,@body-and-plist)))
+
+;;;###autoload
 (defmacro ergoemacs-theme-component (&rest body-and-plist)
   "A component of an ergoemacs-theme."
   (declare (doc-string 2)
@@ -228,7 +221,31 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
                 (lambda() ,(plist-get (nth 0 kb) ':description)
                   (ergoemacs-theme-component--create-component
                    ',(nth 0 kb)
-                   '(lambda () ,@(nth 1 kb)))) ergoemacs-theme-comp-hash))))
+                   '(lambda () ,@(nth 1 kb)))) ergoemacs-theme-comp-hash)
+       ,(when (plist-get (nth 0 kb) ':require)
+          `(ergoemacs-require ',(intern (plist-get (nth 0 kb) ':name)))))))
+
+(defmacro ergoemacs-package (name &rest keys-and-body)
+  "Defines a required package named NAME.
+Maybe be similar to use-package"
+  (declare (doc-string 2)
+           (indent 2))
+  (let ((kb (make-symbol "body-and-plist"))
+        (plist (make-symbol "plist"))
+        (body (make-symbol "body"))
+        (doc (make-symbol "doc")))
+    (setq kb (ergoemacs-theme-component--parse-keys-and-body keys-and-body  nil t)
+          plist (nth 0 kb)
+          body (nth 1 kb))
+    (when (equal (car body) '())
+      (setq body (cdr body)))
+    (setq doc (if (stringp (car body)) (pop body) (symbol-name name)))
+    (unless (plist-get plist ':require) ;; Its a required theme component.
+      (setq plist (plist-put plist ':require name)))
+    (macroexpand-all
+     `(ergoemacs-theme-component ,name ()
+        ,doc
+        ,@plist ,@body))))
 
 (declare-function ergoemacs-theme-get-version "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-theme-set-version "ergoemacs-theme-engine.el")
@@ -320,26 +337,56 @@ additional parsing routines defined by PARSE-FUNCTION."
 :options-menu -- Menu options list
 :silent -- If this theme is \"silent\", i.e. doesn't show up in the Themes menu.
 
+:based-on
+
 The rest of the body is an `ergoemacs-theme-component' named THEME-NAME-theme
 "
   (declare (doc-string 2)
            (indent 2))
   (let ((kb (make-symbol "body-and-plist"))
-        (tmp (make-symbol "tmp")))
+        (tmp (make-symbol "tmp"))
+        (based-on (make-symbol "based-on")))
     (setq kb (ergoemacs-theme-component--parse-keys-and-body body-and-plist))
     (setq tmp (eval (plist-get (nth 0 kb) ':components)))
     (push (intern (concat (plist-get (nth 0 kb) ':name) "-theme")) tmp)
     (setq tmp (plist-put (nth 0 kb) ':components tmp))
+    (setq based-on (plist-get (nth 0 kb) ':based-on))
+    ;; (message "First Based-On: %s" based-on)
+    (setq based-on (or (and (stringp based-on) based-on)
+                       (and (symbolp based-on) (symbol-name based-on))
+                       (and (eq (car based-on) 'quote) (symbol-name (car (cdr based-on))))
+                       nil))
+    ;; (message "Last Based-On: %s" based-on)
     (dolist (comp '(:optional-on :optional-off :options-menu))
       (setq tmp (plist-put (nth 0 kb) comp
                            (eval (plist-get (nth 0 kb) comp)))))
     
-    `(let (themes silent)
-       (setq themes (gethash "defined-themes" ergoemacs-theme-hash)
-             silent (gethash "silent-themes" ergoemacs-theme-hash))
+    `(let* ((based-on (gethash ,based-on ergoemacs-theme-hash))
+            (curr-plist ',tmp)
+            (opt-on (plist-get curr-plist ':optional-on))
+            (opt-off (plist-get curr-plist ':optional-off))
+            (comp (plist-get curr-plist ':components))
+            (themes (gethash "defined-themes" ergoemacs-theme-hash))
+            (silent (gethash "silent-themes" ergoemacs-theme-hash))
+            (included (append opt-on opt-off comp)))
        (push ,(plist-get (nth 0 kb) ':name) themes)
        (push ,(plist-get (nth 0 kb) ':name) silent)
-       (puthash ,(plist-get (nth 0 kb) ':name) ',tmp ergoemacs-theme-hash)
+       (if (not based-on)
+           (puthash ,(plist-get (nth 0 kb) ':name) curr-plist ergoemacs-theme-hash)
+         (dolist (type '(:optional-on :optional-off :components))
+           (dolist (comp (plist-get based-on type))
+             (unless (memq comp included)
+               (setq curr-plist
+                     (plist-put curr-plist type
+                                (append (plist-get curr-plist type)
+                                        (list comp)))))))
+         (when (and (not (plist-get curr-plist ':options-menu))
+                    (plist-get based-on ':options-menu))
+           (setq curr-plist
+                 (plist-put curr-plist ':options-menu
+                            (plist-get based-on ':options-menu))))
+         (puthash ,(plist-get (nth 0 kb) ':name) curr-plist
+                  ergoemacs-theme-hash))
        (if ,(plist-get (nth 0 kb) ':silent)
            (puthash "silent-themes" silent ergoemacs-theme-hash)
          (puthash "defined-themes" themes ergoemacs-theme-hash))

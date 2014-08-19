@@ -136,7 +136,8 @@ FORCE-SHIFTED is non-nil.
             (setq trans (plist-get (ergoemacs-translate move-key) ':caps-translated-key))
             (when (and trans (not (lookup-key new-keymap trans)))
               (define-key new-keymap trans 'ergoemacs-shortcut-movement-force-shift-select)))))
-      new-keymap)))
+      (setcdr keymap (cdr new-keymap))
+      keymap)))
 
 (when (not (fboundp 'make-composed-keymap))
   (defun make-composed-keymap (maps &optional parent)
@@ -322,7 +323,14 @@ Valid values are:
 (defvar ergoemacs-read-input-keys nil)
 
 (unless (featurep 'ergoemacs-theme-engine)
-  (load "ergoemacs-theme-engine"))
+  (cond
+   ((and (file-exists-p (expand-file-name "ergoemacs-theme-engine.elc" ergoemacs-dir))
+         (file-newer-than-file-p
+          (expand-file-name "ergoemacs-theme-engine.elc" ergoemacs-dir)
+          (expand-file-name "ergoemacs-theme-engine.el" ergoemacs-dir)))
+    (load "ergoemacs-theme-engine"))
+   (t
+    (byte-compile-file (expand-file-name "ergoemacs-theme-engine.el" ergoemacs-dir) t))))
 
 (defvar ergoemacs-theme-comp-hash (make-hash-table :test 'equal)
   "Hash of ergoemacs theme components")
@@ -531,13 +539,8 @@ bindings the keymap is:
         (when cua-mode
           (cua-mode -1)
           (cua-selection-mode 1))
-        ;; (if (boundp 'org-CUA-compatible)
-        ;;     (setq ergoemacs-org-CUA-compatible nil)
-        ;;   (setq ergoemacs-org-CUA-compatible org-CUA-compatible))
         (ergoemacs-emulations)
         ;; Setup keys
-        (setq ergoemacs-shortcut-keymap (make-sparse-keymap)
-              ergoemacs-no-shortcut-keymap (make-sparse-keymap))
         (ergoemacs-debug-heading "Ergoemacs Keys have loaded.")
         (when (and ergoemacs-use-mac-command-as-meta
                    (eq system-type 'darwin))
@@ -551,14 +554,13 @@ bindings the keymap is:
             (when am
               (setq ergoemacs-old-ns-alternate-modifier (symbol-value am))
               (set am nil))))
-        (when (ergoemacs-real-key-binding [ergoemacs-single-command-keys])
-          (if (not ergoemacs-read-key-overriding-overlay-save)
-              (setq overriding-terminal-local-map ergoemacs-read-key-overriding-terminal-local-save)
-            (delete-overlay ergoemacs-read-key-overriding-overlay-save)
-            (setq ergoemacs-read-key-overriding-overlay-save nil)))
+        ;; (when (ergoemacs-real-key-binding [ergoemacs-single-command-keys])
+        ;;   (if (not ergoemacs-read-key-overriding-overlay-save)
+        ;;       (setq overriding-terminal-local-map ergoemacs-read-key-overriding-terminal-local-save)
+        ;;     (delete-overlay ergoemacs-read-key-overriding-overlay-save)
+        ;;     (setq ergoemacs-read-key-overriding-overlay-save nil)))
         ;; Fix `substitute-command-keys'
         (ergoemacs-enable-c-advices)
-        (setq ergoemacs-unbind-keys t)
         (ergoemacs-setup-keys t)
         ;; Turn on menu
         (if ergoemacs-use-menus
@@ -898,6 +900,9 @@ This is done by checking if this is a command that supports shift selection or c
     (setq ergoemacs-single-command-keys nil))
   t)
 
+(autoload 'ergoemacs-component "ergoemacs-macros")
+(autoload 'ergoemacs-theme-component "ergoemacs-macros")
+(autoload 'ergoemacs-theme "ergoemacs-macros")
 (provide 'ergoemacs-mode)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; ergoemacs-mode.el ends here

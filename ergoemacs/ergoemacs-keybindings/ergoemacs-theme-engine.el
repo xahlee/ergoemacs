@@ -5,7 +5,7 @@
 ;; Filename: ergoemacs-theme-engine.el
 ;; Description: 
 ;; Author: Matthew L. Fidler
-;; Maintainer: 
+;; Maintainer:
 ;; Created: Thu Mar 20 10:41:30 2014 (-0500)
 ;; Version:
 ;; Package-Requires: ()
@@ -419,6 +419,7 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
 
 (defvar ergoemacs-ignored-prefixes)
 (declare-function ergoemacs-read-key-default "ergoemacs-shortcuts.el")
+(defvar ergoemacs-ignore-advice)
 (defmethod ergoemacs-define-map--read-map ((obj ergoemacs-fixed-map) key)
   "Defines KEY in the OBJ read-key slot if it is a vector over 2.
 Key sequences starting with `ergoemacs-ignored-prefixes' are not added."
@@ -426,6 +427,7 @@ Key sequences starting with `ergoemacs-ignored-prefixes' are not added."
                read-list) obj
     (when (< 1 (length key))
       (let* ((new-key (substring key 0 1))
+             (ergoemacs-ignore-advice t)
              (kd (key-description new-key)))
         (unless (member kd ergoemacs-ignored-prefixes)
           (push new-key read-list)
@@ -493,6 +495,7 @@ This will return if the map object was modified.
     (when (ergoemacs-is-movement-command-p def) ;; Add to known movement keys
       (pushnew def ergoemacs-movement-functions))
     (let* ((key-desc (key-description key))
+           (ergoemacs-ignore-advice t)
            (key-vect (read-kbd-macro key-desc t))
            swapped
            (shift-list shortcut-shifted-movement)
@@ -600,6 +603,11 @@ Return if the map object has been modified."
     ret))
 
 (defvar ergoemacs-translation-assoc)
+(defvar ergoemacs-translation-from)
+(defvar ergoemacs-translation-to)
+(defvar ergoemacs-needs-translation)
+(defvar ergoemacs-translation-regexp)
+(defvar ergoemacs-translation-assoc)
 (defclass ergoemacs-variable-map (eieio-named)
   ((global-map-p :initarg :global-map-p
                  :initform nil
@@ -669,20 +677,33 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
                              (ignore-errors (string-match-p just-first key-desc)))))
            (us-key
             (or (and (string= layout "us") key-desc) 
-                (let ((ergoemacs-translation-from layout)
-                      (ergoemacs-translation-to "us")
-                      (ergoemacs-needs-translation t)
-                      (ergoemacs-translation-regexp translation-regexp)
-                      (ergoemacs-translation-assoc translation-assoc))
-                  (when (string= "" translation-regexp)
-                    (setq ergoemacs-translation-from nil
-                          ergoemacs-translation-to nil
-                          ergoemacs-translation-regexp nil
-                          ergoemacs-translation-assoc nil)
-                    (ergoemacs-setup-translation "us" layout)
-                    (oset obj translation-regexp ergoemacs-translation-regexp)
-                    (oset obj translation-assoc ergoemacs-translation-assoc))
-                  (ergoemacs-kbd key-desc t only-first)))))
+                (let ((translation-from ergoemacs-translation-from)
+                      (translation-to ergoemacs-translation-to)
+                      (needs-translation ergoemacs-needs-translation)
+                      (old-translation-regexp ergoemacs-translation-regexp )
+                      (old-translation-assoc ergoemacs-translation-assoc))
+                  (unwind-protect
+                      (progn
+                        (setq ergoemacs-translation-from layout
+                              ergoemacs-translation-to "us"
+                              ergoemacs-needs-translation t
+                              ergoemacs-translation-regexp translation-regexp
+                              ergoemacs-translation-assoc translation-assoc)
+                        (when (string= "" translation-regexp)
+                          (setq ergoemacs-translation-from nil
+                                ergoemacs-translation-to nil
+                                ergoemacs-translation-regexp nil
+                                ergoemacs-translation-assoc nil)
+                          (ergoemacs-setup-translation "us" layout)
+                          (unless ergoemacs-translation-regexp
+                            (oset obj translation-regexp ergoemacs-translation-regexp)
+                            (oset obj translation-assoc ergoemacs-translation-assoc)))
+                        (ergoemacs-kbd key-desc t only-first))
+                    (setq ergoemacs-translation-from translation-from
+                          ergoemacs-translation-to translation-to
+                          ergoemacs-needs-translation needs-translation
+                          ergoemacs-translation-regexp old-translation-regexp
+                          ergoemacs-translation-assoc old-translation-assoc))))))
       (if final-desc
           (setq final-desc (nth 1 final-desc))
         (cond
@@ -703,6 +724,8 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
       (when final-desc
         (push final-desc cmd-list))
       (oset obj cmd-list cmd-list))))
+
+
 
 (defmethod ergoemacs-define-map ((obj ergoemacs-variable-map) key def &optional no-unbind)
   (let* ((key-desc (key-description key)))
@@ -732,25 +755,31 @@ Optionally use DESC when another description isn't found in `ergoemacs-function-
     (let* ((lay (or layout ergoemacs-keyboard-layout))
            (ilay (intern lay))
            (ret (gethash ilay keymap-hash))
-           ergoemacs-translation-from
-           ergoemacs-translation-to
-           ergoemacs-needs-translation
-           ergoemacs-translation-regexp
-           ergoemacs-translation-assoc)
-      (unless ret
-        (setq ret (ergoemacs-fixed-map
-                   lay
-                   :global-map-p global-map-p
-                   :modify-map modify-map
-                   :full-map full-map
-                   :always always
-                   :first first))
-        (ergoemacs-setup-translation lay "us")
-        (dolist (cmd (reverse cmd-list))
-          (ergoemacs-define-map ret (ergoemacs-kbd (nth 0 cmd) nil (nth 3 cmd))
-                                (nth 1 cmd) (nth 4 cmd)))
-        (puthash ilay ret keymap-hash)
-        (oset obj keymap-hash keymap-hash))
+           (translation-from ergoemacs-translation-from)
+           (translation-to ergoemacs-translation-to)
+           (needs-translation ergoemacs-needs-translation)
+           (old-translation-regexp ergoemacs-translation-regexp)
+           (old-translation-assoc ergoemacs-translation-assoc))
+      (unwind-protect
+          (unless ret
+            (setq ret (ergoemacs-fixed-map
+                       lay
+                       :global-map-p global-map-p
+                       :modify-map modify-map
+                       :full-map full-map
+                       :always always
+                       :first first))
+            (ergoemacs-setup-translation lay "us")
+            (dolist (cmd (reverse cmd-list))
+              (ergoemacs-define-map ret (ergoemacs-kbd (nth 0 cmd) nil (nth 3 cmd))
+                                    (nth 1 cmd) (nth 4 cmd)))
+            (puthash ilay ret keymap-hash)
+            (oset obj keymap-hash keymap-hash))
+        (setq ergoemacs-translation-from translation-from
+              ergoemacs-translation-to translation-to
+              ergoemacs-needs-translation needs-translation
+              ergoemacs-translation-regexp old-translation-regexp
+              ergoemacs-translation-assoc old-translation-assoc))
       ret)))
 
 (defmethod ergoemacs-apply-deferred ((obj ergoemacs-variable-map))
@@ -922,6 +951,7 @@ Assumes maps are orthogonal."
                         global-map-p keymap-hash) obj
     (let* ((lay (or layout ergoemacs-keyboard-layout))
            read
+           (ergoemacs-ignore-advice t)
            (ilay (intern lay))
            (ret (gethash ilay keymap-hash))
            (fix fixed) var)
@@ -1534,7 +1564,6 @@ FULL-SHORTCUT-MAP-P "
 
 (declare-function ergoemacs-shortcut-remap-list "ergoemacs-shortcuts.el")
 (defvar ergoemacs-theme--install-shortcut-item--global nil)
-(defvar ergoemacs-ignore-advice)
 (defun ergoemacs-theme--install-shortcut-item (key args keymap lookup-keymap
                                                    full-shortcut-map-p)
   (let (fn-lst
@@ -1605,8 +1634,10 @@ FULL-SHORTCUT-MAP-P "
 (defvar ergoemacs-mode)
 (defvar ergoemacs-theme--hook-running nil)
 (declare-function ergoemacs-flatten-composed-keymap "ergoemacs-mode.el")
+(defvar ergoemacs-is-user-defined-map-change-p)
 (defun ergoemacs-get-child-maps (keymap &optional ob)
   "Get the child maps for KEYMAP"
+  ;; Not sure this is useful any longer
   (let (ret)
     (mapatoms
      (lambda(map)
@@ -1616,15 +1647,8 @@ FULL-SHORTCUT-MAP-P "
      ob)
     ret))
 
-(defun ergoemacs-set-keymap-and-children (keymap-name new-keymap)
-  "Sets NEW-KEYMAP to the symbol KEYMAP-NAME.
-This makes sure any children are updated with the new map."
-  (let ((childern (ergoemacs-get-child-maps (symbol-value keymap-name))))
-    (set keymap-name new-keymap)
-    ;; Update children
-    (dolist (map childern)
-      (set-keymap-parent (symbol-value map) (symbol-value keymap-name)))))
 
+(declare-function ergoemacs-extract-prefixes "ergoemacs-shortcuts.el")
 (defmethod ergoemacs-theme-obj-install ((obj ergoemacs-theme-component-map-list) &optional remove-p)
   (with-slots (read-map
                map
@@ -1634,6 +1658,7 @@ This makes sure any children are updated with the new map."
                shortcut-list
                rm-keys) (ergoemacs-get-fixed-map obj)
     (let ((hook-map-list '())
+          (ergoemacs-is-user-defined-map-change-p 'no)
           (ergoemacs-theme--install-shortcut-item--global t)
           ;; (read-map (or read-map (make-spase-keymap)))
           ;; (shortcut-map (or shortcut-map (make-sparse-keymap)))
@@ -1660,7 +1685,8 @@ This makes sure any children are updated with the new map."
               (cond
                ((and modify-map always)
                 ;; Maps that are always modified.
-                (let ((fn-name
+                (let ((ergoemacs-is-user-defined-map-change-p nil)
+                      (fn-name
                        (intern
                         (concat
                          (symbol-name emulation-var) "-and-"
@@ -1739,8 +1765,8 @@ This makes sure any children are updated with the new map."
                 (if remove-p
                     (when o-map
                       ;; (message "Restore %s"  map-name)
-                      (ergoemacs-set-keymap-and-children
-                       map-name (copy-keymap o-map)))
+                      ;; Update map in place
+                      (setcdr (symbol-value map-name) (cdr (copy-keymap o-map))))
                   ;; (message "Modify %s"  map-name)
                   (unless o-map
                     (setq o-map (copy-keymap (symbol-value map-name)))
@@ -1760,10 +1786,16 @@ This makes sure any children are updated with the new map."
                     ;; (setq n-map (list (make-sparse-keymap "ergoemacs-modified") n-map))
                     ))
                   (push map n-map)
-                  (ergoemacs-set-keymap-and-children
-                   map-name
-                   (copy-keymap
-                    (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map o-map))))))
+                  ;; Update map in place
+                  (puthash (intern (concat (symbol-name map-name) "-e-map")) map ergoemacs-original-map-hash)
+                  (puthash (intern (concat (symbol-name map-name) "-full-map")) full-map ergoemacs-original-map-hash)
+                  (puthash (intern (concat (symbol-name map-name) "-deferred")) deferred-keys ergoemacs-original-map-hash)
+                  (setq n-map (cdr (copy-keymap
+                                    (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map o-map)))))
+                  ;; (keymap "ergoemacs-modfied" (map-name) ...)
+                  (push (list map-name) n-map)
+                  (push "ergoemacs-modified" n-map)
+                  (setcdr (symbol-value map-name) n-map)))
                (t ;; Maps that are not modified.
                 (unless remove-p
                   (dolist (d deferred-keys)
@@ -1868,7 +1900,10 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
       ;; Add M-O M-[ to read-keys for terminal compatibility
       (when (ignore-errors (keymapp final-read-map))
 	(define-key final-read-map (read-kbd-macro "M-O" t) 'ergoemacs-read-key-default)
-	(define-key final-read-map (read-kbd-macro "M-[" t) 'ergoemacs-read-key-default))
+	(define-key final-read-map (read-kbd-macro "M-[" t) 'ergoemacs-read-key-default)
+        (dolist (prefix (ergoemacs-extract-prefixes (current-global-map)))
+          (define-key final-read-map (read-kbd-macro prefix t)
+            'ergoemacs-read-key-default)))
       (setq ergoemacs-mode (not remove-p)
             ergoemacs-keymap final-map
             ergoemacs-shortcut-keys (not remove-p)
@@ -2787,7 +2822,8 @@ Returns new keymap."
       (if (listp key)
           (dolist (rm-key key)
             (ergoemacs-rm-key keymap rm-key))
-        (let ((new-keymap (copy-keymap keymap)))
+        (let ((new-keymap (copy-keymap keymap))
+              (ergoemacs-ignore-advice t))
           (cond
            ((keymapp (nth 1 new-keymap))
             (setq new-keymap (cdr new-keymap))
@@ -2910,6 +2946,13 @@ Ignores _DESC."
     (warn "ergoemacs-fixed-key is depreciated, use global-set-key instead.")
     (global-set-key (if (vectorp key) key
                       (read-kbd-macro key)) function)))
+
+(defconst ergoemacs-font-lock-keywords
+  '(("(\\(ergoemacs\\(?:-theme-component\\|-theme\\|-component\\|-require\\)\\)\\_>[ \t']*\\(\\(?:\\sw\\|\\s_\\)+\\)?"
+     (1 font-lock-keyword-face)
+     (2 font-lock-constant-face nil t))))
+
+(font-lock-add-keywords 'emacs-lisp-mode ergoemacs-font-lock-keywords)
 
 (provide 'ergoemacs-theme-engine)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

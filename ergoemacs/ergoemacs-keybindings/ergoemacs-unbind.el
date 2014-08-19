@@ -77,6 +77,7 @@
     ("<end>" (end-of-buffer move-end-of-line))
     ("<execute>" (execute-extended-command))
     ("<f10>" (menu-bar-open))
+    ("<f11>" (toggle-frame-fullscreen))
     ("<f1> ." (display-local-help))
     ("<f1> 4 i" (info-other-window))
     ("<f1> 4" (prefix))
@@ -648,7 +649,7 @@
 (defun ergoemacs-undefined ()
   "Ergoemacs Undefined key, echo new key for old action."
   (interactive)
-  (let* ((key-kbd (or ergoemacs-single-command-keys (this-single-command-keys)))
+  (let* ((key-kbd (this-single-command-keys))
          tmp
          (local-fn nil))
     ;; Lookup local key, if present and then issue that
