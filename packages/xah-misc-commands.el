@@ -583,21 +583,22 @@ Examples of changes:
 ))))
 
 (defun xah-twitterfy ()
-  "shorten words for twitter."
+  "Shorten words for Twitter 140 char limit."
   (interactive)
   (let* ((bds (get-selection-or-unit 'block))
          (p1 (elt bds 1))
          (p2 (elt bds 2)))
-    (replace-pairs-region p1 p2 '(
-                                  [" are " " r "]
-                                  [" you " " u "]
-                                  [" and " " ＆ "]
+    (replace-regexp-pairs-region p1 p2 '(
+                                  ["\\bare\\b" "r"]
+                                  ["\\byou\\b" "u"]
+                                  ["\\byour\\b" "ur"]
+                                  ["\\band\\b" "＆"]
                                   [" at " " @ "]
                                   [", " "，"]
-                                  ["..." "…"]
-                                  [". " "。"]
+                                  ["\\b\\.\\.\\.\\b" "…"]
+                                  ["\\. " "。"]
                                   ["。 " "。"]
-                                  ["? " "？"]
+                                  ["\\? " "？"]
                                   [": " "："]
                                   ["! " "！"]
                                   ))))

@@ -1836,38 +1836,33 @@ When there's no text selection, the tag will be wrapped around current {word, li
 
 If current line or word is empty, then insert open/end tags and place cursor between them.
 If `universal-argument' is called first, then also prompt for a “class” attribute. Empty value means don't add the attribute."
-
   (interactive
    (list
     (ido-completing-read "HTML tag:" xhm-html5-tag-list "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "div")
     (if current-prefix-arg
         (read-string "class:" nil xhm-class-input-history "")
-      nil ) ) )
+      nil )))
   (let (bds p1 p2
             lineWordBlock
             )
     (progn
-      (setq lineWordBlock (xhm-get-tag-type φtag-name) )
+      (setq lineWordBlock (xhm-get-tag-type φtag-name))
       (setq bds
             (cond
              ((equal lineWordBlock "w") (get-selection-or-unit 'word))
              ((equal lineWordBlock "l") (get-selection-or-unit 'line))
              ((equal lineWordBlock "b") (get-selection-or-unit 'block))
-             (t (get-selection-or-unit 'word))
-             ))
-      (setq p1 (elt bds 1) )
-      (setq p2 (elt bds 2) )
+             (t (get-selection-or-unit 'word))))
+      (setq p1 (elt bds 1))
+      (setq p2 (elt bds 2))
       (xhm-add-open/close-tag φtag-name className p1 p2)
 
       (when ; put cursor between when input text is empty
           (and (equal p1 p2) (not (xhm-tag-self-closing? φtag-name)))
-          (progn (search-backward "</" ) )
-         )
- ) ) )
+        (progn (search-backward "</" ))))))
 
 (defun xhm-pre-source-code (&optional φlang-code)
-  "Insert/wrap a <pre class=\"‹φlang-code›\"> tags to text selection or current text block.
-"
+  "Insert/wrap a <pre class=\"‹φlang-code›\"> tags to text selection or current text block."
   (interactive
    (list
     (ido-completing-read "lang code:" (mapcar (lambda (x) (car x)) xhm-lang-name-map) "PREDICATE" "REQUIRE-MATCH" nil xhm-html-tag-input-history "code")))
