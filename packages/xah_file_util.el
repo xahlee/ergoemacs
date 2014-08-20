@@ -193,7 +193,8 @@ No regex."
     (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
     (y-or-n-p "Fixed case in search?")
-    (y-or-n-p "Fixed case in replacement?")))
+    (y-or-n-p "Fixed case in replacement?")
+    (y-or-n-p "Make backup?")))
 
   (let (
         (ξoutputBuffer "*xah-find-replace-text output*")
