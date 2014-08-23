@@ -1940,10 +1940,12 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
 (defun xhm-abbrev-enable-function ()
   "Determine whether to expand abbrev.
 This is called by emacs abbrev system."
-  (let ((ξsyntax-state (syntax-ppss)))
-    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
-        (progn nil)
-      t)))
+;; (let ((ξsyntax-state (syntax-ppss)))
+;;     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+;;         (progn nil)
+;;       t))
+t
+)
 
 (setq xhm-abbrev-table nil)
 
