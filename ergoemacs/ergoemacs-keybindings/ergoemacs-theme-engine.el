@@ -1576,22 +1576,25 @@ FULL-SHORTCUT-MAP-P "
             (ignore-errors
               (when ergoemacs-theme--install-shortcut-item--global
                 (ergoemacs-theme-component--ignore-globally-defined-key key))) 
-            (define-key keymap key (nth 0 (nth 0 fn-lst))))
+            (ignore-errors
+              (define-key keymap key (nth 0 (nth 0 fn-lst)))))
         (when full-shortcut-map-p
           (ignore-errors
             (when ergoemacs-theme--install-shortcut-item--global
               (ergoemacs-theme-component--ignore-globally-defined-key key)))
             (when (or (commandp (nth 0 args) t)
                       (keymapp (nth 0 args)))
-              (define-key keymap key (nth 0 args))))))
+              (ignore-errors
+                (define-key keymap key (nth 0 args)))))))
      (full-shortcut-map-p
       (ignore-errors
         (when ergoemacs-theme--install-shortcut-item--global
           (ergoemacs-theme-component--ignore-globally-defined-key key)))
+      (ignore-errors 
         (define-key keymap key
           `(lambda(&optional arg)
              (interactive "P")
-             (ergoemacs-read-key ,(nth 0 args) ',(nth 1 args))))))))
+             (ergoemacs-read-key ,(nth 0 args) ',(nth 1 args)))))))))
 
 (defvar ergoemacs-original-map-hash (make-hash-table)
   "Hash table of the original maps that `ergoemacs-mode' saves.")
@@ -1635,6 +1638,7 @@ FULL-SHORTCUT-MAP-P "
 (defvar ergoemacs-theme--hook-running nil)
 (declare-function ergoemacs-flatten-composed-keymap "ergoemacs-mode.el")
 (defvar ergoemacs-is-user-defined-map-change-p)
+(declare-function ergoemacs-setcdr "ergoemacs-mode.el")
 (defun ergoemacs-get-child-maps (keymap &optional ob)
   "Get the child maps for KEYMAP"
   ;; Not sure this is useful any longer
@@ -1647,7 +1651,7 @@ FULL-SHORTCUT-MAP-P "
      ob)
     ret))
 
-
+(defvar ergoemacs-modified-map-hash)
 (declare-function ergoemacs-extract-prefixes "ergoemacs-shortcuts.el")
 (defmethod ergoemacs-theme-obj-install ((obj ergoemacs-theme-component-map-list) &optional remove-p)
   (with-slots (read-map
@@ -1766,7 +1770,7 @@ FULL-SHORTCUT-MAP-P "
                     (when o-map
                       ;; (message "Restore %s"  map-name)
                       ;; Update map in place
-                      (setcdr (symbol-value map-name) (cdr (copy-keymap o-map))))
+                      (ergoemacs-setcdr map-name (cdr (copy-keymap o-map))))
                   ;; (message "Modify %s"  map-name)
                   (unless o-map
                     (setq o-map (copy-keymap (symbol-value map-name)))
@@ -1795,7 +1799,7 @@ FULL-SHORTCUT-MAP-P "
                   ;; (keymap "ergoemacs-modfied" (map-name) ...)
                   (push (list map-name) n-map)
                   (push "ergoemacs-modified" n-map)
-                  (setcdr (symbol-value map-name) n-map)))
+                  (ergoemacs-setcdr map-name n-map)))
                (t ;; Maps that are not modified.
                 (unless remove-p
                   (dolist (d deferred-keys)
@@ -1833,6 +1837,7 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
       
       ;; Reset shortcut hash
       (setq ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal)
+            ergoemacs-modified-map-hash (make-hash-table :test 'equal)
             ergoemacs-shortcut-prefix-keys '()
             ergoemacs-original-keys-to-shortcut-keys-regexp ""
             ergoemacs-original-keys-to-shortcut-keys (make-hash-table :test 'equal))
@@ -2409,14 +2414,14 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
               ;; Reset keymaps.
               (dolist (map '(ergoemacs-no-shortcut-keymap ergoemacs-shortcut-keymap ergoemacs-read-input-keymap ergoemacs-keymap ergoemacs-unbind-keymap))
                 (when (symbol-value map)
-                  (set map (ergoemacs-rm-key (symbol-value map) key))
+                  (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (symbol-value map) key)))
                   (setq lk (lookup-key (symbol-value map) key))
                   (if (not (integerp lk))
                       (setq test-key key)
                     (setq test-key (substring key 0 lk))
                     (setq lk (lookup-key (symbol-value map) test-key)))
-                  (when (commandp lk t)
-                    (set map (ergoemacs-rm-key (symbol-value map) test-key)))))
+                  (when (or (not lk) (commandp lk t))
+                    (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (symbol-value map) test-key))))))
               ;; Remove from shortcuts, if present
               ;; (remhash key ergoemacs-command-shortcuts-hash)
               ;; Reset `ergoemacs-shortcut-prefix-keys'
@@ -2437,17 +2442,23 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
                     (list (cons 'ergoemacs-no-shortcut-keys ergoemacs-no-shortcut-keymap)))
               ;;Put maps in `minor-mode-map-alist'
               (ergoemacs-shuffle-keys t))
+            ;;(message "%s->%s" (key-description key) lk)
             (when (and (or (commandp lk t)
-                           (keymapp lk))
+                           (keymapp lk)
+                           (not lk))
                        (not (member key '([remap] ))))
               (when (not (member key ergoemacs-global-override-rm-keys))
-                (message "Removing %s (%s; %s) because of globally bound %s"
-                         (ergoemacs-pretty-key (key-description key))
-                         (key-description key)
-                         key
-                         lk))
-              (pushnew key ergoemacs-global-override-rm-keys
-                       :test 'equal)
+                (if lk
+                    (message "Removing %s (%s; %s) because of globally bound %s"
+                             (ergoemacs-pretty-key (key-description key))
+                             (key-description key)
+                             key
+                             lk)
+                  (message "Respecting Key %s (%s; %s)"
+                           (ergoemacs-pretty-key (key-description key))
+                           (key-description key)
+                           key))
+                (push key ergoemacs-global-override-rm-keys))
               (throw 'found-global-command t)))
           (setq key (substring key 0 (- (length key) 1))))))))
 
@@ -2633,6 +2644,7 @@ If OFF is non-nil, turn off the options instead."
                  (lambda()
                    (interactive)
                    (ergoemacs-theme-toggle-option ',option)
+                   (customize-mark-as-set 'ergoemacs-theme-options)
                    (ergoemacs-mode -1)
                    (ergoemacs-mode 1))
                  :button (:toggle . (ergoemacs-theme-option-enabled-p ',option)))
@@ -2661,6 +2673,7 @@ If OFF is non-nil, turn off the options instead."
                   (lambda()
                     (interactive)
                     (ergoemacs-theme-toggle-option ',option)
+                    (customize-mark-as-set 'ergoemacs-theme-options)
                     (ergoemacs-mode -1)
                     (ergoemacs-mode 1))
                   :button (:toggle . (ergoemacs-theme-option-enabled-p ',option)))))
@@ -2678,6 +2691,7 @@ If OFF is non-nil, turn off the options instead."
           (lambda()
             (interactive)
             (ergoemacs-theme-set-version nil)
+            (customize-mark-as-set 'ergoemacs-theme-version)
             (ergoemacs-mode -1)
             (ergoemacs-mode 1))
           :button (:radio . (equal (ergoemacs-theme-get-version) nil)))
@@ -2686,6 +2700,7 @@ If OFF is non-nil, turn off the options instead."
               `(,(intern version) menu-item ,version
                 (lambda() (interactive)
                   (ergoemacs-theme-set-version ,version)
+                  (customize-mark-as-set 'ergoemacs-theme-version)
                   (ergoemacs-mode -1)
                   (ergoemacs-mode 1))
                 :button (:radio . (equal (ergoemacs-theme-get-version) ,version))))

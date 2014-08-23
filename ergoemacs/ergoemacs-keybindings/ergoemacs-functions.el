@@ -372,6 +372,7 @@ If `narrow-to-region' is in effect, then cut that region only."
        (point)))))
   (deactivate-mark))
 
+(declare-function cua-cut-rectangle-as-text "cur-rect.el")
 (declare-function cua-cut-region "cua-base.el")
 (defun ergoemacs-cut-line-or-region (&optional arg)
   "Cut the current line, or current text selection.
@@ -391,7 +392,9 @@ Note that `ergoemacs-shortcut-remap' will remap mode-specific
 changes to `kill-line' to allow it to work as expected in
 major-modes like `org-mode'. "
   (interactive "P")
-  (cond   
+  (cond
+   ((and (boundp 'cua--rectangle) cua--rectangle)
+    (cua-cut-rectangle-as-text arg))
    ((and (region-active-p) (boundp 'cua-mode) cua-mode)
     (cua-cut-region arg)
     (deactivate-mark))
@@ -2123,27 +2126,29 @@ With a prefix, force regeneration. "
          (file (expand-file-name (concat "ergoemacs-layout-" layout md5 ".svg") dir)))
     
     (unless (and (not current-prefix-arg) (file-exists-p file))
-      (if (called-interactively-p 'any)
-          (let ((temp-file (make-temp-file "ergoemacs-gen" nil ".el")))
-            (with-temp-file temp-file
-              (insert (format "(setq ergoemacs-theme %s)\n(setq ergoemacs-keyboard-layout \"%s\")\n(setq ergoemacs-theme-options '"
-                              (if var
-                                  (concat "\"" var "\"")
-                                "nil")
-                              layout))
-              (let ((print-level nil)
-                    (print-length nil))
-                (prin1 ergoemacs-theme-options (current-buffer)))
-              (insert ")\n(ergoemacs-mode 1)\n(ergoemacs-display-current-svg 1)"))
+      (message "Generating SVG file...")
+      (unless (featurep 'ergoemacs-extras)
+        (require 'ergoemacs-extras))
+      (ergoemacs-gen-svg layout "kbd-ergo.svg" extra)
+      (message "Generated!")
+      ;; Sigh this isn't being sent appropriately.  Issue #291
+      ;; (if (called-interactively-p 'any)
+      ;;     (let ((temp-file (make-temp-file "ergoemacs-gen" nil ".el")))
+      ;;       (with-temp-file temp-file
+      ;;         (insert (format "(setq ergoemacs-theme %s)\n(setq ergoemacs-keyboard-layout \"%s\")\n(setq ergoemacs-theme-options '"
+      ;;                         (if var
+      ;;                             (concat "\"" var "\"")
+      ;;                           "nil")
+      ;;                         layout))
+      ;;         (let ((print-level nil)
+      ;;               (print-length nil))
+      ;;           (prin1 ergoemacs-theme-options (current-buffer)))
+      ;;         (insert ")\n(ergoemacs-mode 1)\n(ergoemacs-display-current-svg 1)"))
             
-            (shell-command (format "%s -Q --batch -l %s/ergoemacs-mode -l %s &"
-                                   (ergoemacs-emacs-exe)
-                                   ergoemacs-dir temp-file)))
-        (message "Generating SVG file...")
-        (unless (featurep 'ergoemacs-extras)
-          (require 'ergoemacs-extras))
-        (ergoemacs-gen-svg layout "kbd-ergo.svg" extra)
-        (message "Generated!")))
+      ;;       (shell-command (format "%s -Q --batch -l %s/ergoemacs-mode -l %s &"
+      ;;                              (ergoemacs-emacs-exe)
+      ;;                              ergoemacs-dir temp-file))))
+      )
     
     (when (file-exists-p png)
       (setq file png))
