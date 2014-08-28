@@ -42,10 +42,7 @@
 
 (ergoemacs-component standard-vars ()
   "Enabled/changed variables/modes"
-  (setq ergoemacs-alt-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-q"))
-        ergoemacs-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "C-q"))
-        ergoemacs-alt-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-C-q"))
-        org-CUA-compatible t
+  (setq org-CUA-compatible t
         org-support-shift-select t
         set-mark-command-repeat-pop t
         org-special-ctrl-a/e t
@@ -225,7 +222,6 @@
   (global-set-key (kbd "C-a") 'mark-whole-buffer)
   
   ;; (global-set-key (kbd "C-u") 'ergoemacs-universal-argument)
-  (global-set-key (kbd "<M-backspace>") '(undo-tree-undo undo))
   (global-set-key (kbd "C-z") '(undo-tree-undo undo))
 
   ;; Take out undo-tree's redo bindings
@@ -385,7 +381,10 @@
 (ergoemacs-component backspace-is-back ()
   "Backspace is back, as in browsers..."
   (define-key Info-mode-map (kbd "<backspace>") 'Info-history-back)
-  (define-key Info-mode-map (kbd "<S-backspace>") 'Info-history-forward))
+  (define-key Info-mode-map (kbd "<S-backspace>") 'Info-history-forward)
+  (define-key Info-mode-map (kbd "<M-backspace>") 'Info-history-forward)
+  (define-key help-mode-map (kbd "<backspace>") 'help-go-back)
+  (define-key help-mode-map (kbd "<S-backspace>") 'help-go-forward))
 
 (ergoemacs-component fixed-newline ()
   "Newline and indent"
@@ -641,6 +640,10 @@
   (global-set-key [\M-up] 'ergoemacs-move-text-up)
   (global-set-key [\M-down] 'ergoemacs-move-text-down))
 
+(ergoemacs-component alt-backspace-is-undo ()
+  "Alt+Backspace is Undo"
+  (global-set-key (kbd "<M-backspace>") '(undo-tree-undo undo)))
+
 (ergoemacs-component move-page ()
   "Move by Page"
   (global-unset-key (kbd "M-v"))
@@ -843,6 +846,7 @@
 (ergoemacs-component apps ()
   "General Apps Key Sequence"
   :first-is-variable-reg "<\\(apps\\|menu\\)> h"
+  (global-set-key (kbd "<apps> '") 'ergoemacs-org-edit-src)
   (global-set-key (kbd "<apps> 2") 'delete-window)
   (global-set-key (kbd "<apps> 3") 'delete-other-windows)
   (global-set-key (kbd "<apps> 4") 'split-window-vertically)
@@ -1208,7 +1212,8 @@
                 text-transform
                 ergoemacs-remaps
                 standard-vars)
-  :optional-on '(apps-punctuation tab-indents-region
+  :optional-on '(apps-punctuation
+                 tab-indents-region
                  icy-reclaim
                  apps-apps
                  apps-toggle
@@ -1226,6 +1231,7 @@
                  apps-swap
                  save-options-on-exit)
   :optional-off '(guru
+                  alt-backspace-is-undo
                   search-reg
                   no-backspace
                   ergoemacs-banish-shift
@@ -1234,7 +1240,7 @@
                   ("Function Keys" (fn-keys f2-edit))
                   ("Remaps" (ido-remaps helm-remaps multiple-cursors-remaps icy-reclaim))
                   ("Extreme ErgoEmacs" (guru no-backspace ergoemacs-banish-shift))
-                  ("Standard Keys" (standard-fixed fixed-bold-italic quit move-and-transpose-lines))
+                  ("Standard Keys" (standard-fixed fixed-bold-italic quit move-and-transpose-lines alt-backspace-is-undo))
                   ("Keys during Key Sequence" (f2-edit apps-swap backspace-del-seq))))
 
 (ergoemacs-theme reduction ()

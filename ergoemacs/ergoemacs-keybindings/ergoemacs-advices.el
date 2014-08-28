@@ -32,6 +32,7 @@
   (require 'cl)
   (require 'ergoemacs-macros))
 (declare-function ergoemacs-without-emulation--internal "ergoemacs-shortcuts.el")
+(declare-function ergoemacs-theme-reset "ergoemacs-theme-engine.el")
 
 (defvar ergoemacs-advices '()
   "List of advices to enable and disable when ergoemacs is running.")
@@ -146,7 +147,7 @@ If `pre-command-hook' is used and `ergoemacs-mode' is remove from `ergoemacs-pre
      ((progn
         (setq file (if (ignore-errors (functionp function))
                        (or (gethash function ergoemacs-is-user-defined-hash)
-                           (find-lisp-object-file-name function (symbol-function function)))
+                           (ignore-errors (find-lisp-object-file-name function (symbol-function function))))
                      (or
                       load-file-name
                       (buffer-file-name))))
@@ -214,13 +215,18 @@ If `pre-command-hook' is used and `ergoemacs-mode' is enabled add to `ergoemacs-
       (add-hook 'ergoemacs-pre-command-hook function append local))
      ((and (ignore-errors (not (symbolp function)))
            (not (memq hook ignored-hooks))
-           (ergoemacs-is-user-defined-map-change-p))
+           (string-match-p "-mode-hook\\'" (symbol-name hook))
+           (ergoemacs-is-user-defined-map-change-p)
+           (and (string-match-p "(define-key\\_>" (format "%s" function))
+                (not (string-match-p "\\_<setup-hook\\_>" (format "%s" function)))))
       (let ((fn (intern (concat "ergoemacs-user--" (md5 (format "%s" function))))))
         (unless (memq fn ergoemacs-advise-hooks)
           (fset fn function))
         (add-hook hook fn append local)))
      (t
       (when (and (not ergoemacs-global-changes-are-ignored-p)
+                 (not (memq function ergoemacs-advise-hooks))
+                 (string-match-p "-mode-hook\\'" (symbol-name hook))
                  (ignore-errors (symbolp function))
                  (not (memq hook ignored-hooks))
                  (not (memq function '(global-font-lock-mode-check-buffers)))
@@ -228,10 +234,9 @@ If `pre-command-hook' is used and `ergoemacs-mode' is enabled add to `ergoemacs-
                    (or (string= "ergoemacs-user--" (substring fun-str 0 (min 16 (length fun-str))))
                        (not (string= "ergoemacs-" (substring fun-str 0 (min 10 (length fun-str)))))))
                  (ergoemacs-is-user-defined-map-change-p function))
-        (unless (memq function ergoemacs-advise-hooks)
-          (push function ergoemacs-advise-hooks)
-          (message "Apply user keybindings in %s" function)
-          (ignore-errors (eval `(ergoemacs-advise-hook ,function)))))
+        (push function ergoemacs-advise-hooks)
+        (message "Apply user keybindings in %s" function)
+        (ignore-errors (eval `(ergoemacs-advise-hook ,function))))
       ad-do-it))))
 
 (defun ergoemacs-changes-are-ignored-in-runtime ()
@@ -279,6 +284,7 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
                                       (not ergoemacs-ignore-advice)
                                       (ignore-errors (and (string= "ergoemacs-modified" (nth 1 keymap))
                                                           (car (nth 2 keymap))))))
+        (original-keymap (copy-keymap keymap))
         ergoemacs-local-map)
     (when is-ergoemacs-modified-p
       ;; Restore original map to make changes.
@@ -307,12 +313,21 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
     ad-do-it
     (when is-ergoemacs-modified-p
       ;; Restore ergoemacs-mode changes
-      (let ((map (gethash (intern (concat (symbol-name is-ergoemacs-modified-p) "-e-map")) ergoemacs-original-map-hash))
-            (n-map (copy-keymap keymap))
-            (full-map (gethash (intern (concat (symbol-name is-ergoemacs-modified-p) "-full-map")) ergoemacs-original-map-hash)))
+      (let* ((map (gethash (intern (concat (symbol-name is-ergoemacs-modified-p) "-e-map")) ergoemacs-original-map-hash))
+             (n-map (or (and map (copy-keymap map)) (make-sparse-keymap)))
+            (full-map (gethash (intern (concat (symbol-name is-ergoemacs-modified-p) "-full-map")) ergoemacs-original-map-hash))
+            shortcut-list)
+        (remhash is-ergoemacs-modified-p ergoemacs-modified-map-hash)
         ;; Save original map again.
-        (puthash is-ergoemacs-modified-p (copy-keymap keymap) ergoemacs-original-map-hash)
-        (setq n-map (ergoemacs-install-shortcuts-map n-map (not full-map) nil 'no-brand))
+        (puthash is-ergoemacs-modified-p (copy-keymap keymap)
+                 ergoemacs-original-map-hash)
+        (maphash
+         (lambda (key item)
+           (push (list key item) shortcut-list))
+         ergoemacs-command-shortcuts-hash)
+        (ergoemacs-theme--install-shortcuts-list
+         shortcut-list n-map 
+         keymap full-map)
         (cond
          ((ignore-errors
             (and (eq (nth 0 (nth 1 n-map)) 'keymap)
@@ -321,12 +336,55 @@ Also adds keymap-flag for user-defined keys run with `run-mode-hooks'."
          (t
           (setq n-map (list n-map))))
         (push map n-map)
-        (setq n-map (cdr (copy-keymap
+        (setq n-map
+              (cdr (copy-keymap
                           (ergoemacs-flatten-composed-keymap (make-composed-keymap n-map keymap)))))
         ;; (keymap "ergoemacs-modfied" (is-ergoemacs-modified-p) ...)
         (push (list is-ergoemacs-modified-p) n-map)
         (push "ergoemacs-modified" n-map)
         (ergoemacs-setcdr keymap n-map)))
+    ;; Not sure why, but somehow `ergoemacs-mode' is unlinking the
+    ;; maps from any of the alists of interest, like:
+    ;;
+    ;; - `minor-mode-map-alist'
+    ;; - `minor-mode-overriding-map-alist'
+    ;; - `emulation-mode-map-alists'
+    ;;
+    ;; This updates these variables if the map is updated. This should
+    ;; never be done in a sparse, unidenifying keymap, otherwise the
+    ;; keymaps will be cross-linked causing random an unpredictable
+    ;; behavior.
+
+    ;; To keep from inifinite loops, don't do this when defining
+    ;; `ergoemacs-mode' style keys
+    
+    (when (and (not ergoemacs-ignore-advice)
+               (not (equal original-keymap '(keymap))))
+      ;; Update `minor-mode-map-alist'. Should address Issue #298
+      (dolist (elt minor-mode-map-alist)
+        (if (and (not (ignore-errors (string-match "^ergoemacs" (symbol-name (car elt)))))
+                 (equal (cdr elt) original-keymap))
+            (ergoemacs-setcdr elt keymap)))
+      ;; Update `minor-mode-overriding-map-alist'. 
+      (dolist (elt minor-mode-overriding-map-alist)
+        (if (and (not (ignore-errors (string-match "^ergoemacs" (symbol-name (car elt)))))
+                 (equal (cdr elt) original-keymap))
+            (ergoemacs-setcdr elt keymap)))
+      ;; Now fix any emulation maps... (sigh).
+      (ergoemacs-emulations 'remove)
+      (unwind-protect
+          (dolist (var emulation-mode-map-alists)
+            (cond
+             ((ignore-errors
+                (and (listp var)
+                     (equal (cdr var) original-keymap)))
+              (ergoemacs-setcdr var keymap))
+             ((ignore-errors (listp (ergoemacs-sv var)))
+              (dolist (map-key (ergoemacs-sv var))
+                (when (equal (cdr map-key) original-keymap)
+                  (ergoemacs-setcdr map-key keymap))))))
+        (ergoemacs-emulations)))
+    
     (when (and is-global-p (not ergoemacs-global-changes-are-ignored-p))
       (let ((vk key))
         (ergoemacs-global-set-key-after key)
@@ -418,9 +476,12 @@ The active map from `ergoemacs-active-keymap' is installed temporarily to `overr
   (when ergoemacs-mode
     (goto-char (point-min))
     (while (re-search-forward (format"^%s \\([^ \t]+\\)" (regexp-quote (key-description key-seq))) nil t)
-      (replace-match (concat (key-description key-seq) " " (substring (ergoemacs-pretty-key (match-string 1)) 1 -1)) t t)))
+      (replace-match (concat (key-description key-seq) " "
+                             (cond
+                              (ergoemacs-pretty-key-use-face (ergoemacs-pretty-key (match-string 1)))
+                              (t (substring (ergoemacs-pretty-key (match-string 1)) 1 -1)))) t t)))
   ad-do-it
-  (when (and ergoemacs-mode ergoemacs-use-unicode-brackets)
+  (when (and ergoemacs-mode ergoemacs-use-unicode-brackets (not ergoemacs-pretty-key-use-face))
     (goto-char (point-min))
     (while (re-search-forward "\\(^\\|  \\)\\[" nil t)
       (replace-match (format "\\1%s" (ergoemacs-unicode-char "【" "[")))

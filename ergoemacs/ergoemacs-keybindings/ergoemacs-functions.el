@@ -358,16 +358,20 @@ If `narrow-to-region' is in effect, then cut that region only."
     ;; Hack away to support `org-mode' folded reg
     (kill-ring-save
      (save-excursion
-       (ergoemacs-shortcut-remap
-        'move-beginning-of-line
-        'ergoemacs-is-movement-command-p)
+       (let ((pt (point)))
+         (ergoemacs-shortcut-remap
+          'move-beginning-of-line)
+         (when (= pt (point))
+           (call-interactively 'move-beginning-of-line)))
        (when (not (bolp))
          (beginning-of-line))
        (point))
      (save-excursion
-       (ergoemacs-shortcut-remap
-        'move-end-of-line
-        'ergoemacs-is-movement-command-p)
+       (let ((pt (point)))
+         (ergoemacs-shortcut-remap
+          'move-end-of-line)
+         (when (= pt (point))
+           (call-interactively 'move-end-of-line)))
        (re-search-forward "\\=\n" nil t) ;; Include newline
        (point)))))
   (deactivate-mark))
@@ -403,7 +407,10 @@ major-modes like `org-mode'. "
     (deactivate-mark))
    (t
     (ignore-errors
-      (ergoemacs-shortcut-remap 'move-beginning-of-line 'ergoemacs-is-movement-command-p))
+      (let ((pt (point)))
+        (ergoemacs-shortcut-remap 'move-beginning-of-line)
+        (when (= pt (point))
+          (call-interactively 'move-beginning-of-line))))
     (when (not (bolp))
       (beginning-of-line))
     ;; Keep prefix args.
@@ -563,19 +570,25 @@ This behavior can be turned off with `ergoemacs-repeatable-beginning-or-end-of-b
   (interactive)
   (let ((ma (region-active-p)))
     (if current-prefix-arg
-        (progn
+        (let ((pt (point)))
           ;; (setq prefix-arg current-prefix-arg)
           (ergoemacs-shortcut-remap
-           'end-of-buffer
-           'ergoemacs-is-movement-command-p))
+           'end-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'end-of-buffer)))
       (cond
        ((and ergoemacs-repeatable-beginning-or-end-of-buffer (bobp))
-        (ergoemacs-shortcut-remap
-         'end-of-buffer
-         'ergoemacs-is-movement-command-p))
-       (t (ergoemacs-shortcut-remap
-           'beginning-of-buffer
-           'ergoemacs-is-movement-command-p))))
+        (let ((pt (point)))
+          (ergoemacs-shortcut-remap
+           'end-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'end-of-buffer))))
+       (t
+        (let ((pt (point)))
+          (ergoemacs-shortcut-remap
+           'beginning-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'beginning-of-buffer))))))
     (when (and (not ma) (region-active-p))
       (deactivate-mark))))
 
@@ -594,19 +607,25 @@ This will not honor `shift-select-mode'."
   (interactive)
   (let ((ma (region-active-p)))
     (if current-prefix-arg
-        (progn
+        (let ((pt (point)))
           ;; (setq prefix-arg current-prefix-arg)
           (ergoemacs-shortcut-remap
-           'end-of-buffer
-           'ergoemacs-is-movement-command-p))
+           'end-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'end-of-buffer)))
       (cond
        ((and ergoemacs-repeatable-beginning-or-end-of-buffer (eobp))
-        (ergoemacs-shortcut-remap
-         'beginning-of-buffer
-         'ergoemacs-is-movement-command-p))
-       (t (ergoemacs-shortcut-remap
-           'end-of-buffer
-           'ergoemacs-is-movement-command-p))))
+        (let ((pt (point)))
+          (ergoemacs-shortcut-remap
+           'beginning-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'beginning-of-buffer))))
+       (t
+        (let ((pt (point)))
+          (ergoemacs-shortcut-remap
+           'end-of-buffer)
+          (when (= pt (point))
+            (call-interactively 'end-of-buffer))))))
     (when (and (not ma) (region-active-p))
       (deactivate-mark))))
 
@@ -719,19 +738,21 @@ the prefix arguments of `beginning-of-buffer',
         (progn
           (cond
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
-            (ergoemacs-shortcut-remap
-             'beginning-of-buffer
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'beginning-of-buffer)
+              (when (= pt (point))
+                (call-interactively 'beginning-of-buffer)))
             (setq this-command 'beginning-of-buffer))
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
-            (ergoemacs-shortcut-remap
-             'ergoemacs-backward-block
-             'ergoemacs-is-movement-command-p)
+            (call-interactively 'ergoemacs-backward-block)
             (setq this-command 'ergoemacs-backward-block))
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
-            (ergoemacs-shortcut-remap
-             'scroll-down-command
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'scroll-down-command)
+              (when (= pt (point))
+                (call-interactively 'scroll-down-command)))
             (setq this-command 'scroll-down-command)))
           (beginning-of-line))
       (setq N (or N 1))
@@ -743,15 +764,19 @@ the prefix arguments of `beginning-of-buffer',
         (save-excursion
           ;; (setq prefix-arg nil)
           (setq current-prefix-arg nil)
-          (ergoemacs-shortcut-remap
-           'move-beginning-of-line
-           'ergoemacs-is-movement-command-p)
+          (let ((pt (point)))
+            (ergoemacs-shortcut-remap
+             'move-beginning-of-line)
+            (when (= pt (point))
+              (call-interactively 'move-beginning-of-line)))
           (push (point) pts)
           (when (and (not (bolp)) (not (bobp)))
             (backward-char 1)
-            (ergoemacs-shortcut-remap
-             'move-beginning-of-line
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'move-beginning-of-line)
+              (when (= pt (point))
+                (call-interactively 'move-beginning-of-line)))
             (push (point) pts)))
         (when ergoemacs-back-to-indentation
           (save-excursion
@@ -770,9 +795,11 @@ the prefix arguments of `beginning-of-buffer',
                   (push (point) pts))))))
         (cond
          ((not pts)
-          (ergoemacs-shortcut-remap
-           'move-beginning-of-line
-           'ergoemacs-is-movement-command-p))
+          (let ((pt (point)))
+            (ergoemacs-shortcut-remap
+             'move-beginning-of-line)
+            (when (= pt (point))
+              (call-interactively 'move-beginning-of-line))))
          (t
           (setq pts (sort pts '<))
           (dolist (x pts)
@@ -858,22 +885,24 @@ the prefix arguments of `end-of-buffer',
                   (or
                    (memq last-command '(ergoemacs-forward-block scroll-up-command)))
                   (bolp))))
-        (progn 
+        (progn
           (cond
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'buffer)
-            (ergoemacs-shortcut-remap
-             'end-of-buffer
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'end-of-buffer)
+              (when (= pt (point))
+                (call-interactively 'end-of-buffer)))
             (setq this-command 'end-of-buffer))
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'block)
-            (ergoemacs-shortcut-remap
-             'ergoemacs-forward-block
-             'ergoemacs-is-movement-command-p)
+            (call-interactively 'ergoemacs-forward-block)
             (setq this-command 'ergoemacs-forward-block))
            ((eq ergoemacs-beginning-or-end-of-line-and-what 'page)
-            (ergoemacs-shortcut-remap
-             'scroll-up-command
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'scroll-up-command)
+              (when (= pt (point))
+                (call-interactively 'scroll-up-command)))
             (setq this-command 'scroll-up-command)
             (beginning-of-line))))
       (setq N (or N 1))
@@ -886,17 +915,21 @@ the prefix arguments of `end-of-buffer',
           (call-interactively 'move-end-of-line)
           (push (point) pts))
         (save-excursion
-          (ergoemacs-shortcut-remap
-           'move-end-of-line
-           'ergoemacs-is-movement-command-p)
+          (let ((pt (point)))
+            (ergoemacs-shortcut-remap
+             'move-end-of-line)
+            (when (= pt (point))
+              (call-interactively 'move-end-of-line)))
           (push (point) pts)
           ;; Support visual lines mode and allow going to the next
           ;; end of the visual line...
           (when (and (not (eolp)) (not (eobp)))
             (forward-char 1)
-            (ergoemacs-shortcut-remap
-             'move-end-of-line
-             'ergoemacs-is-movement-command-p)
+            (let ((pt (point)))
+              (ergoemacs-shortcut-remap
+               'move-end-of-line)
+              (when (= pt (point))
+                (call-interactively 'move-end-of-line)))
             (push (point) pts)))
         (when ergoemacs-end-of-comment-line
           (save-excursion
@@ -914,9 +947,11 @@ the prefix arguments of `end-of-buffer',
           (setq pts (reverse tmp)))
         (cond
          ((not pts)
-          (ergoemacs-shortcut-remap
-           'move-end-of-line
-           'ergoemacs-is-movement-command-p)
+          (let ((pt (point)))
+            (ergoemacs-shortcut-remap
+             'move-end-of-line)
+            (when (= pt (point))
+              (call-interactively 'move-end-of-line)))
           (setq this-command 'move-end-of-line))
          (t
           (goto-char (nth 0 pts)))))))
@@ -2481,12 +2516,45 @@ See also `ergoemacs-lookup-word-on-internet'."
 (defun ergoemacs-move-text-up (arg)
   "Move region (transient-mark-mode active) or current line ARG lines up."
   (interactive "*p")
-  (ergoemacs-move-text-internal (- arg)))
+  (cond
+   ((eq major-mode 'org-mode)
+    (call-interactively 'org-metaup))
+   (t (ergoemacs-move-text-internal (- arg)))))
 
 (defun ergoemacs-move-text-down (arg)
   "Move region (transient-mar-mode active) or current line (ARG lines) down."
   (interactive "*p")
-  (ergoemacs-move-text-internal arg))
+  (cond
+   ((eq major-mode 'org-mode)
+    (call-interactively 'org-metadown))
+   (t (ergoemacs-move-text-internal arg))))
+
+(defun ergoemacs-org-edit-src ()
+  "Deal with org source blocks.
+
+In `org-mode' run `org-edit-special'. If `user-error' is raised
+run `org-babel-tangle'.
+
+In org source buffers run `org-edit-src-exit'
+In other functions run `org-babel-detangle'.
+
+With a prefix argument like \\[universial-argument] in an
+`org-mode' buffer, run `org-babel-tangle'."
+  (interactive)
+  (let ((org-p (string-match "^[*]Org Src" (buffer-name))))
+    (cond
+     ((and (eq major-mode 'org-mode)
+           current-prefix-arg)
+      (setq current-prefix-arg nil)
+      (call-interactively 'org-babel-tangle))
+     ((eq major-mode 'org-mode)
+      (condition-case _err
+          (call-interactively 'org-edit-special)
+        (error (call-interactively 'org-babel-tangle))))
+     (org-p
+      (call-interactively 'org-edit-src-exit))
+     (t
+      (call-interactively 'org-babel-detangle)))))
 
 
 (defvar ergoemacs-shortcut-keys)
@@ -2536,7 +2604,7 @@ See also `ergoemacs-lookup-word-on-internet'."
   (dolist (x ergoemacs-emulation-mode-map-alist)
     (setq ergoemacs-debug-keymap--temp-map (cdr x))
     (insert (format "*** %s: %s\n%s\n"
-                    (nth 0 x) (symbol-value (nth 0 x))
+                    (nth 0 x) (ergoemacs-sv (nth 0 x))
                     (substitute-command-keys "\\{ergoemacs-debug-keymap--temp-map}")))))
 
 

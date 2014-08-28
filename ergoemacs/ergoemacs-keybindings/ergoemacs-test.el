@@ -36,6 +36,7 @@
 (declare-function ergoemacs-define-key "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-theme-get-version "ergoemacs-theme-engine.el")
 (declare-function ergoemacs-theme-set-version "ergoemacs-theme-engine.el")
+(declare-function ergoemacs-theme-reset "ergoemacs-theme-engine.el")
 
 (require 'ert)
 (require 'elp)
@@ -1073,7 +1074,83 @@ Grep finished (matches found) at Fri Aug 22 08:30:37
 ;;     (ergoemacs-test-layout
 ;;      :version "5.3.7"
 ;;      (with-timeout (0.2 nil) (ergoemacs-read-key "M-n"))
-;;      (should (eq ergoemacs-test-fn (or (command-remapping 'keyboard-quit (point)) 'keyboard-quit))))))
+;;      (should (eq ergoemacs-test-fn (or (command-remapping
+;;   'keyboard-quit (point)) 'keyboard-quit))))))
+
+(ert-deftest ergoemacs-test-297 ()
+  "Backspace doesn't work in `isearch-mode'."
+  (let ((ret t))
+    (ergoemacs-test-layout
+     :layout "colemak"
+     :macro "C-f ars C-f <backspace> M-n"
+     (save-excursion
+       (define-key isearch-mode-map (kbd "C-w") 'ignore)
+       (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+       (insert "aars1\nars2\nars3\nars4")
+       (goto-char (point-min))
+       (execute-kbd-macro macro)
+       (when (looking-at ".*")
+         (unless (string= "s1" (match-string 0))
+           (setq ret nil)))
+       (kill-buffer (current-buffer))))
+    (should (equal ret t))))
+
+(ert-deftest ergoemacs-test-org-c-a ()
+  "Test beginning of line in standard ergoemacs-mode/org-mode."
+  (ergoemacs-test-layout
+   :layout "colemak"
+   :macro "M-m"
+   (let (ret)
+     (save-excursion
+       (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+       (insert "abc\n* TODO Fix org C-a issue")
+       (org-mode)
+       (goto-char (point-max))
+       (execute-kbd-macro macro)
+       (ignore-errors
+         (should (string= (buffer-substring (point) (point-at-eol))
+                          "Fix org C-a issue")))
+       (kill-buffer (current-buffer))))))
+
+(ert-deftest ergoemacs-test-calc-300 ()
+  "Test Calc undo"
+  (let ((ergoemacs-test-fn t))
+    (ergoemacs-test-layout
+     :theme "reduction"
+     :layout "colemak"
+     (call-interactively 'calc)
+     (with-timeout (0.2 nil) (ergoemacs-read-key "C-z"))
+     (call-interactively 'calc-quit)
+     (should (eq ergoemacs-test-fn (or (command-remapping 'calc-undo (point)) 'calc-undo))))))
+
+(ert-deftest ergoemacs-test-org-respect-keys-issue-304 ()
+  "Tests Issue #304.
+`org-mode' should respect the keys used."
+  (let ((ergoemacs-test-fn t))
+    (ergoemacs-test-layout
+     :layout "us"
+     :theme "standard"
+     (save-excursion
+       (switch-to-buffer (get-buffer-create "*ergoemacs-test*"))
+       (delete-region (point-min) (point-max))
+       (insert ergoemacs-test-lorem-ipsum)
+       (org-mode)
+       (with-timeout (0.2 nil) (ergoemacs-read-key "<M-right>"))
+       (should (eq ergoemacs-test-fn 'ergoemacs-org-metaright))
+       (should (eq (ergoemacs-real-key-binding (kbd "<M-right>"))
+                   'ergoemacs-org-metaright))
+       (with-timeout (0.2 nil) (ergoemacs-read-key "<M-left>"))
+       (should (eq ergoemacs-test-fn 'ergoemacs-org-metaleft))
+       (should (eq (ergoemacs-real-key-binding (kbd "<M-left>"))
+                   'ergoemacs-org-metaleft))
+       (with-timeout (0.2 nil) (ergoemacs-read-key "<M-up>"))
+       (should (eq ergoemacs-test-fn 'ergoemacs-org-metaup))
+       (should (eq (ergoemacs-real-key-binding (kbd "<M-up>"))
+                   'ergoemacs-org-metaup))
+       (with-timeout (0.2 nil) (ergoemacs-read-key "<M-down>"))
+       (should (eq ergoemacs-test-fn 'ergoemacs-org-metadown))
+       (should (eq (ergoemacs-real-key-binding (kbd "<M-down>"))
+                   'ergoemacs-org-metadown))))))
 
 (provide 'ergoemacs-test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

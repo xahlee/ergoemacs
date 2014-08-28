@@ -60,7 +60,7 @@
 
 
 (defgroup ergoemacs-read nil
-  "Options for ergoemacs-read-key."
+  "Options for `ergoemacs-read-key.'"
   :group 'ergoemacs-mode)
 
 (defcustom ergoemacs-translate-keys t
@@ -153,10 +153,10 @@ installing the original keymap above the ergoemacs-mode installed keymap.
        ((listp var)
         (push (cons i (cdr var)) temp-maps)
         (ergoemacs-setcdr var (ergoemacs-original-keymap (cdr var))))
-       ((ignore-errors (listp (symbol-value var)))
-        (push (cons var (ergoemacs-copy-list (symbol-value var)))
+       ((ignore-errors (listp (ergoemacs-sv var)))
+        (push (cons var (ergoemacs-copy-list (ergoemacs-sv var)))
               emulation-maps)
-        (dolist (map-key (symbol-value var))
+        (dolist (map-key (ergoemacs-sv var))
           (ergoemacs-setcdr map-key (ergoemacs-original-keymap (cdr map-key))))))
       (setq i (+ i 1)))
     ;; Restore `minor-mode-overriding-map-alist'
@@ -354,7 +354,7 @@ universal argument can be entered.
     (while (not ret)
       (unless (or (minibufferp) (and ergoemacs-modal (not pretty-key)))
         (let (message-log-max)
-          (message "%s%s%s%s%s%s\t%s"
+          (message "%s%s%s%s%s\t%s"
                    (if ergoemacs-describe-key
                        "Describe key: " "")
                    (if current-prefix-arg
@@ -386,11 +386,14 @@ universal argument can be entered.
                                  (ergoemacs-unicode-char "▸" ">"))
                        ""))
                    (if help-list (nth 5 help-list) "")
-                   (or pretty-key "")
-                   (or extra-txt (if help-list
-                                     (nth
-                                      (if ergoemacs-use-ergoemacs-key-descriptions
-                                          1 0) (nth 4 help-list)) ""))
+                   (ergoemacs--pretty-key-concat
+                    pretty-key
+                    (or extra-txt
+                        (if help-list
+                            (nth
+                             (if ergoemacs-use-ergoemacs-key-descriptions
+                                 1 0) (nth 4 help-list)) "")))
+                   
                    (if universal ""
                      (if blink-on
                          (if ergoemacs-read-blink
@@ -582,7 +585,7 @@ It will replace anything defined by `ergoemacs-translation'"
 (defalias 'ergoemacs-read-key-force-next-key-is-alt-ctl 'ergoemacs-read-key-next-key-is-alt-ctl)
 (defun ergoemacs-read-key-next-key-is-alt-ctl (&optional type pretty-key
                                                          next-key-vector)
-  "The next key read is an Alt+Ctrl+ key. (or C-M- )"
+  "The next key read is an Alt+Ctrl+ key. (or C-M-)"
   (interactive)
   (if (or type pretty-key)
       (when (and type pretty-key)
@@ -1037,8 +1040,10 @@ PRETTY-KEY is the ergoemacs-mode pretty representation of the key.
                ((and hash (commandp (nth 0 hash) t))
                 ;; Shorcut command
                 (ergoemacs-read-key--echo-command
-                 pretty-key (or (and (symbolp (nth 0 hash)) (symbol-name (nth 0 hash)))
-                                (ergoemacs-unicode-char "λ" "lambda")))
+                 pretty-key
+                 (or (and (symbolp (nth 0 hash))
+                          (symbol-name (nth 0 hash)))
+                     (ergoemacs-unicode-char "λ" "lambda")))
                 (ergoemacs-shortcut-remap (nth 0 hash))
                 (setq ergoemacs-single-command-keys nil)
                 (setq ret 'function-remap))
@@ -1088,7 +1093,8 @@ PRETTY-KEY is the ergoemacs-mode pretty representation of the key.
                   (setq ergoemacs-single-command-keys nil)
                   (setq ret 'translate-fn))
                  ((vectorp tmp)
-                  (ergoemacs-read-key--send-unread tmp lookup use-override pretty-key)
+                  (ergoemacs-read-key--send-unread
+                   tmp lookup use-override pretty-key)
                   (setq ret 'translate))))
                ;; Is there an local override function?
                ((progn
@@ -1114,8 +1120,9 @@ PRETTY-KEY is the ergoemacs-mode pretty representation of the key.
                   (unless ret
                     (setq ergoemacs-single-command-keys key)
                     (ergoemacs-read-key--echo-command
-                     pretty-key (or (and (symbolp fn) (symbol-name fn))
-                                    (ergoemacs-unicode-char "λ" "lambda")))
+                     pretty-key
+                     (or (and (symbolp fn) (symbol-name fn))
+                         (ergoemacs-unicode-char "λ" "lambda")))
                     (ergoemacs-read-key-call fn nil key)
                     (setq ergoemacs-single-command-keys nil)
                     (setq ret 'function))))
@@ -1186,6 +1193,15 @@ Otherwise add new translation to key-plist and return it."
 (defvar ergoemacs-command-shortcuts-hash)
 (defvar guide-key/recursive-key-sequence-flag)
 (declare-function ergoemacs-real-key-description "ergoemacs-advices.el")
+(defun ergoemacs--pretty-key-concat (pretty-key next-key)
+  "Concats PRETTY-KEY and NEXT-KEY.
+Will use space between keys if there is a bracket in PRETTY-KEY."
+  (concat
+   (or pretty-key "")
+   (or (and pretty-key (string-match-p "\\(\\]\\|】\\)\\'" pretty-key) "")
+       " " )
+   (or next-key "")))
+
 (defun ergoemacs-read-key (&optional key type initial-key-type universal)
   "Read keyboard input and execute command.
 The KEY is the keyboard input where the reading begins.  If nil,
@@ -1267,10 +1283,10 @@ argument prompt.
                            (if ergoemacs-describe-key
                                "Help for: " "")
                            (if tmp (nth 5 tmp) "")
-                           (or pretty-key "") 
+                           pretty-key
                            (if ergoemacs-use-ergoemacs-key-descriptions
                                (plist-get next-key ':normal-pretty)
-                             (concat (plist-get next-key ':normal) " "))))))
+                             (plist-get next-key ':normal))))))
             (setq ergoemacs-describe-key nil))
         (setq tmp (plist-get next-key ':normal-key))
         ;; See if there is a local equivalent of this...
@@ -1413,18 +1429,12 @@ argument prompt.
                                       (vconcat ergoemacs-read-key (plist-get next-key (intern (concat tmp "-key"))))
                                     (plist-get next-key (intern (concat tmp "-key"))))
                                   pretty-key-trial
-                                  (if pretty-key
-                                      (concat pretty-key
-                                              (concat
-                                               (plist-get next-key
-                                                          (intern (concat tmp (if ergoemacs-use-ergoemacs-key-descriptions
-                                                                                  "-pretty" ""))))
-                                               (if ergoemacs-use-ergoemacs-key-descriptions "" " ")))
-                                    (concat
-                                     (plist-get next-key
-                                                (intern (concat tmp (if ergoemacs-use-ergoemacs-key-descriptions
-                                                                        "-pretty" ""))))
-                                     (if ergoemacs-use-ergoemacs-key-descriptions "" " "))))))
+                                  (ergoemacs--pretty-key-concat
+                                   pretty-key
+                                   (plist-get
+                                    next-key
+                                    (intern (concat tmp (if ergoemacs-use-ergoemacs-key-descriptions
+                                                            "-pretty" ""))))))))
                         (unless pretty-key-undefined
                           (setq pretty-key-undefined pretty-key-trial))
                         (setq ergoemacs-shift-translated (string-match "-shift-translated" tmp))
@@ -1948,8 +1958,8 @@ non-nil, call either the remapped function or FUNCTION
                   (equal keymap (make-keymap)))
         (mapatoms
          (lambda(map)
-           (when (and (ignore-errors (keymapp (symbol-value map)))
-                      (equal (symbol-value map) keymap))
+           (when (and (ignore-errors (keymapp (ergoemacs-sv map)))
+                      (equal (ergoemacs-sv map) keymap))
              (push map ret)))
          ob)))
     (unless ret
@@ -1970,7 +1980,7 @@ The shortcuts are also installed into the map directly.
 "
   (if (symbolp map)
       (ergoemacs-install-shortcuts-map
-       (symbol-value map)
+       (ergoemacs-sv map)
        dont-complete
        install-read no-brand)
     (if (ignore-errors (string= "ergoemacs-modified" (nth 1 map)))
@@ -2023,8 +2033,8 @@ The shortcuts are also installed into the map directly.
                 (setq new-map (cdr (cdr new-map))))
               (push (list map-name) new-map)
               (push "ergoemacs-modified" new-map))
-            (when (ignore-errors (keymapp (symbol-value new-map)))
-              (ergoemacs-setcdr (symbol-value new-map) new-map))
+            (when (ignore-errors (keymapp (ergoemacs-sv new-map)))
+              (ergoemacs-setcdr (ergoemacs-sv new-map) new-map))
             (unless changed-map
               (ergoemacs-setcdr map new-map))))
         map))))
@@ -2107,9 +2117,9 @@ The keymaps are:
                       (not (string= "ergoemacs-modified" (nth 1 (cdr var))))
                       (cdr var)))
                (ergoemacs-setcdr var (ergoemacs-install-shortcuts-map (cdr var) t)))
-              ;; Not needed; add/remove promotes ergoemacs-mode above these.
-              ;; ((ignore-errors (listp (symbol-value var)))
-              ;;  (dolist (map-key (symbol-value var))
+              ;; This should be unnecessary.  
+              ;; ((ignore-errors (listp (ergoemacs-sv var)))
+              ;;  (dolist (map-key (ergoemacs-sv var))
               ;;    (when (not (ignore-errors (string= "ergoemacs-modified" (nth 1 (cdr map-key)))))
               ;;      (ergoemacs-setcdr map-key (ergoemacs-install-shortcuts-map (cdr map-key) t)))))
               ))

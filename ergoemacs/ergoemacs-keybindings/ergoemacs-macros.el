@@ -31,6 +31,12 @@
 ;; These should only be called when byte compiled
 
 ;;;###autoload
+(defmacro ergoemacs-sv (symbol)
+  "Error free `symbol-value'.
+If SYMBOL is void, return nil"
+  `(ignore-errors (symbol-value ,symbol)))
+
+;;;###autoload
 (defmacro ergoemacs-with-ergoemacs (&rest body)
   "With basic `ergoemacs-mode' mode keys.
 major-mode, minor-mode, and global keys are ignored."
@@ -175,15 +181,15 @@ Uses `ergoemacs-theme-component--parse-keys-and-body' and
               ((ignore-errors (string-match "-mode$" (symbol-name (nth 0 elt))))
                `(ergoemacs-theme--set (quote ,(nth 0 elt)) '(lambda() ,(nth 1 elt))))
               ((ignore-errors (eq (nth 0 elt) 'global-set-key))
-               (if (ignore-errors (keymapp (symbol-value (nth 2 elt))))
+               (if (ignore-errors (keymapp (ergoemacs-sv (nth 2 elt))))
                    `(ergoemacs-define-key 'global-map ,(nth 1 elt) (quote ,(nth 2 elt)))
                  `(ergoemacs-define-key 'global-map ,(nth 1 elt) ,(nth 2 elt))))
               ((ignore-errors (eq (nth 0 elt) 'define-key))
                (if (equal (nth 1 elt) '(current-global-map))
-                   (if (ignore-errors (keymapp (symbol-value (nth 3 elt))))
+                   (if (ignore-errors (keymapp (ergoemacs-sv (nth 3 elt))))
                        `(ergoemacs-define-key 'global-map ,(nth 2 elt) (quote ,(nth 3 elt)))
                      `(ergoemacs-define-key 'global-map ,(nth 2 elt) ,(nth 3 elt)))
-                 (if (ignore-errors (keymapp (symbol-value (nth 3 elt))))
+                 (if (ignore-errors (keymapp (ergoemacs-sv (nth 3 elt))))
                      `(ergoemacs-define-key (quote ,(nth 1 elt)) ,(nth 2 elt) (quote ,(nth 3 elt)))
                    `(ergoemacs-define-key (quote ,(nth 1 elt)) ,(nth 2 elt) ,(nth 3 elt)))))
               ((or (ignore-errors (eq (nth 0 elt) 'with-hook))
@@ -263,21 +269,19 @@ Maybe be similar to use-package"
             ,(if (plist-get plist ':macro)
                  `(edmacro-parse-keys ,(plist-get plist ':macro) t)))
            (old-ergoemacs-keyboard-layout ergoemacs-keyboard-layout))
-       (ergoemacs-mode -1)
        (setq ergoemacs-theme ,(plist-get plist ':theme))
        (setq ergoemacs-keyboard-layout ,(or (plist-get plist ':layout) "us"))
        (ergoemacs-theme-set-version ,(or (plist-get plist ':version) nil))
-       (ergoemacs-mode 1)
+       (ergoemacs-theme-reset)
        ,(if (plist-get plist :cua)
             `(cua-mode 1))
        (unwind-protect
            (progn
              ,@body)
-         (ergoemacs-mode -1)
          (setq ergoemacs-theme old-ergoemacs-theme)
          (setq ergoemacs-keyboard-layout old-ergoemacs-keyboard-layout)
          (ergoemacs-theme-set-version old-version)
-         (ergoemacs-mode 1)))))
+         (ergoemacs-theme-reset)))))
 
 (fset 'ergoemacs-theme-component--parse-keys-and-body
       #'(lambda (keys-and-body &optional parse-function  skip-first)

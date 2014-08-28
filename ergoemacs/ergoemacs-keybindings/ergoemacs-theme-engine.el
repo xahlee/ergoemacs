@@ -274,6 +274,7 @@
 (declare-function ergoemacs-is-movement-command-p "ergoemacs-mode.el")
 (declare-function ergoemacs-setup-translation "ergoemacs-translate.el")
 (declare-function ergoemacs-kbd "ergoemacs-translate.el")
+
 (defun ergoemacs-copy-list (list)
   "Return a copy of LIST, which may be a dotted list.
 The elements of LIST are not copied, just the list structure itself."
@@ -560,10 +561,10 @@ This will return if the map object was modified.
           (oset obj map map))
         (ergoemacs-define-map--cmd-list obj key-desc def)
         t)
-       ((ignore-errors (keymapp (symbol-value def)))
+       ((ignore-errors (keymapp (ergoemacs-sv def)))
         ;; Keymap variable.
         (ergoemacs-define-map--cmd-list obj key-desc def)
-        (define-key map key-vect (symbol-value def))
+        (define-key map key-vect (ergoemacs-sv def))
         (oset obj map map)
         t)
        ((and (listp def) (or (stringp (nth 0 def))))
@@ -1460,7 +1461,7 @@ If FORCE is true, set it even if it changed.
          (new-value (or (and (not minor-mode-p) value)
                         (and (integerp value) (< 0 value) value)
                         (and (not (integerp value)) value))) ; Otherwise negative integers are the same as nil
-         (last-value (ignore-errors (symbol-value variable))))
+         (last-value (ignore-errors (ergoemacs-sv variable))))
     (when (and minor-mode-p (not last-value))
       (setq last-value -1))
     (cond
@@ -1474,19 +1475,19 @@ If FORCE is true, set it even if it changed.
        ((and (custom-variable-p variable) (or force (not (get variable 'save-value))))
         ;; (message "Changed customizable %s" variable)
         (unless (get variable 'ergoemacs-save-value)
-          (put variable 'ergoemacs-save-value (symbol-value variable)))
+          (put variable 'ergoemacs-save-value (ergoemacs-sv variable)))
         (customize-set-variable variable new-value)
         (customize-mark-to-save variable)
         (when (and minor-mode-p (not new-value))
           (funcall variable -1)))
-       ((or force (equal (symbol-value variable) (default-value variable)))
+       ((or force (equal (ergoemacs-sv variable) (default-value variable)))
         (unless (get variable 'ergoemacs-save-value)
-          (put variable 'ergoemacs-save-value (symbol-value variable)))
+          (put variable 'ergoemacs-save-value (ergoemacs-sv variable)))
         ;; (message "Changed variable %s" variable)
         (set variable new-value)
         (set-default variable new-value)
         (unless (get variable 'ergoemacs-save-value)
-          (put variable 'ergoemacs-save-value (symbol-value variable)))
+          (put variable 'ergoemacs-save-value (ergoemacs-sv variable)))
         (when minor-mode-p
           (if new-value
               (funcall variable new-value)
@@ -1506,6 +1507,7 @@ If FORCE is true, set it even if it changed.
     (customize-set-variable variable value)
     (customize-mark-as-set variable)))
 
+(defvar ergoemacs-theme-refresh nil)
 (defvar ergoemacs-applied-inits '())
 (defmethod ergoemacs-apply-inits-obj ((obj ergoemacs-theme-component-map-list))
   (dolist (init (ergoemacs-get-inits obj))
@@ -1514,6 +1516,10 @@ If FORCE is true, set it even if it changed.
       )
      ((assq (nth 0 init) ergoemacs-applied-inits)
       ;; Already applied, Do nothing for now.
+      (when ergoemacs-theme-refresh ;; When refreshing don't reset.
+        (let ((x (assq (nth 0 init) ergoemacs-theme-refresh)))
+          (when x
+            (setq ergoemacs-theme-refresh (delq x ergoemacs-theme-refresh)))))
       )
      ((nth 2 init)
       ;; Hook
@@ -1528,27 +1534,37 @@ If FORCE is true, set it even if it changed.
               ergoemacs-applied-inits)))
      (t
       ;; (Nth 0 Init)iable state change
-      (push (list (nth 0 init) (symbol-value (nth 0 init)))
+      (push (list (nth 0 init) (ergoemacs-sv (nth 0 init)))
             ergoemacs-applied-inits)
-      (ergoemacs-set (nth 0 init) (funcall (nth 1 init)))))))
+      (ergoemacs-set (nth 0 init) (funcall (nth 1 init))))))
+  ;; Now remove things that were not set
+  (when ergoemacs-theme-refresh
+    (let ((tmp ergoemacs-applied-inits))
+      (setq ergoemacs-applied-inits ergoemacs-theme-refresh)
+      (setq ergoemacs-theme-refresh nil)
+      (unwind-protect
+          (ergoemacs-remove-inits)
+        (setq ergoemacs-applied-inits tmp)))))
 
 (defun ergoemacs-remove-inits ()
-  "Remove the applied initilizations of modes and variables.
+  "Remove the applied initializations of modes and variables.
 This assumes the variables are stored in `ergoemacs-applied-inits'"
-  (dolist (init ergoemacs-applied-inits)
-    (let ((var (nth 0 init))
-          ;; (val (nth 1 init))
-          (hook (nth 2 init)))
-      (cond
-       (hook
-        (let ((add-hook-p (nth 0 hook))
-              (append-p (nth 1 hook))
-              (local-p (nth 2 hook)))
-          (if add-hook-p
-              (funcall 'add-hook (nth 0 init) (nth 1 init) append-p local-p)
-            (funcall 'remove-hook (nth 0 init) (nth 1 init) local-p))))
-       (t
-        (ergoemacs-reset var)))))
+  (if ergoemacs-theme-refresh
+      (setq ergoemacs-theme-refresh ergoemacs-applied-inits)
+    (dolist (init ergoemacs-applied-inits)
+      (let ((var (nth 0 init))
+            ;; (val (nth 1 init))
+            (hook (nth 2 init)))
+        (cond
+         (hook
+          (let ((add-hook-p (nth 0 hook))
+                (append-p (nth 1 hook))
+                (local-p (nth 2 hook)))
+            (if add-hook-p
+                (funcall 'add-hook (nth 0 init) (nth 1 init) append-p local-p)
+              (funcall 'remove-hook (nth 0 init) (nth 1 init) local-p))))
+         (t
+          (ergoemacs-reset var))))))
   (setq ergoemacs-applied-inits '()))
 
 (defun ergoemacs-theme--install-shortcuts-list (shortcut-list keymap lookup-keymap full-shortcut-map-p)
@@ -1645,14 +1661,21 @@ FULL-SHORTCUT-MAP-P "
   (let (ret)
     (mapatoms
      (lambda(map)
-       (when (and (ignore-errors (keymapp (symbol-value map)))
-                  (equal (keymap-parent (symbol-value map)) keymap))
+       (when (and (ignore-errors (keymapp (ergoemacs-sv map)))
+                  (equal (keymap-parent (ergoemacs-sv map)) keymap))
          (push map ret)))
      ob)
     ret))
 
 (defvar ergoemacs-modified-map-hash)
 (declare-function ergoemacs-extract-prefixes "ergoemacs-shortcuts.el")
+(defvar ergoemacs-alt-text)
+(defvar ergoemacs-ctl-text)
+(defvar ergoemacs-alt-ctl-text)
+(declare-function ergoemacs-pretty-key
+                  "ergoemacs-translate.el")
+(declare-function ergoemacs-update-translation-text
+                  "ergoemacs-translate.el")
 (defmethod ergoemacs-theme-obj-install ((obj ergoemacs-theme-component-map-list) &optional remove-p)
   (with-slots (read-map
                map
@@ -1773,7 +1796,7 @@ FULL-SHORTCUT-MAP-P "
                       (ergoemacs-setcdr map-name (cdr (copy-keymap o-map))))
                   ;; (message "Modify %s"  map-name)
                   (unless o-map
-                    (setq o-map (copy-keymap (symbol-value map-name)))
+                    (setq o-map (copy-keymap (ergoemacs-sv map-name)))
                     (puthash map-name o-map ergoemacs-original-map-hash))
                   (setq n-map (copy-keymap map))
                   (ergoemacs-theme--install-shortcuts-list
@@ -1837,10 +1860,14 @@ The actual keymap changes are included in `ergoemacs-emulation-mode-map-alist'."
       
       ;; Reset shortcut hash
       (setq ergoemacs-command-shortcuts-hash (make-hash-table :test 'equal)
+            ergoemacs-alt-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-q"))
+            ergoemacs-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "C-q"))
+            ergoemacs-alt-ctl-text (replace-regexp-in-string "[Qq]" "" (ergoemacs-pretty-key "M-C-q"))
             ergoemacs-modified-map-hash (make-hash-table :test 'equal)
             ergoemacs-shortcut-prefix-keys '()
             ergoemacs-original-keys-to-shortcut-keys-regexp ""
             ergoemacs-original-keys-to-shortcut-keys (make-hash-table :test 'equal))
+      (ergoemacs-update-translation-text)
       (unless remove-p
         ;; Remove keys that should not be in the keymap.
         ;; This includes globally set keys that `ergoemacs-mode' will
@@ -2362,10 +2389,20 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
 
 (defvar ergoemacs-theme--object nil
   "Current `ergoemacs-mode' theme object")
+
+(declare-function ergoemacs-mode "ergoemacs-mode.el")
+(defun ergoemacs-theme-reset ()
+  "Resets the `ergoemacs-mode' theme."
+  (setq ergoemacs-theme-refresh t)
+  (ergoemacs-mode -1)
+  (ergoemacs-mode 1))
+
 (defun ergoemacs-theme-install (&optional theme  version)
   "Gets the keymaps for THEME for VERSION."
   (setq ergoemacs-theme--object (ergoemacs-theme-get-obj (or theme ergoemacs-theme "standard") (or version (ergoemacs-theme-get-version))))
   (ergoemacs-theme-obj-install ergoemacs-theme--object))
+
+
 
 (defun ergoemacs-apply-inits (&rest _ignore)
   "Applies any deferred initializations."
@@ -2379,8 +2416,7 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
               (when (and (commandp fn t) (ergoemacs-apply-deferred ergoemacs-theme--object))
                 (throw 'found-keymap-changes t))))
       ;; Reset ergoemacs-mode
-      (ergoemacs-theme-remove)
-      (ergoemacs-theme-install))))
+      (ergoemacs-theme-reset))))
 
 (defun ergoemacs-theme-debug ()
   "Prints debugging information about the currently installed theme object."
@@ -2413,15 +2449,15 @@ DONT-COLLAPSE doesn't collapse empty keymaps"
             (when reset ;; Reset keymaps
               ;; Reset keymaps.
               (dolist (map '(ergoemacs-no-shortcut-keymap ergoemacs-shortcut-keymap ergoemacs-read-input-keymap ergoemacs-keymap ergoemacs-unbind-keymap))
-                (when (symbol-value map)
-                  (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (symbol-value map) key)))
-                  (setq lk (lookup-key (symbol-value map) key))
+                (when (ergoemacs-sv map)
+                  (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (ergoemacs-sv map) key)))
+                  (setq lk (lookup-key (ergoemacs-sv map) key))
                   (if (not (integerp lk))
                       (setq test-key key)
                     (setq test-key (substring key 0 lk))
-                    (setq lk (lookup-key (symbol-value map) test-key)))
+                    (setq lk (lookup-key (ergoemacs-sv map) test-key)))
                   (when (or (not lk) (commandp lk t))
-                    (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (symbol-value map) test-key))))))
+                    (ergoemacs-setcdr map (cdr (ergoemacs-rm-key (ergoemacs-sv map) test-key))))))
               ;; Remove from shortcuts, if present
               ;; (remhash key ergoemacs-command-shortcuts-hash)
               ;; Reset `ergoemacs-shortcut-prefix-keys'
@@ -2519,7 +2555,17 @@ This respects `ergoemacs-theme-options'."
 Uses `ergoemacs-theme-option-on'."
   (ergoemacs-theme-option-on option no-custom 'off))
 
-(defun ergoemacs-require (option &optional theme type)
+(defun ergoemacs-remove (option &optional theme type keep)
+  "Removes an OPTION on ergoemacs themes.
+
+Calls `ergoemacs-require' with TYPE defaulting to 'off and
+remove defaulting to t.
+
+KEEP can change remove to nil.
+"
+  (ergoemacs-require option theme (or type 'off) (if keep nil t)))
+
+(defun ergoemacs-require (option &optional theme type remove)
   "Requires an OPTION on ergoemacs themes.
 
 THEME can be a single theme or list of themes to apply the option
@@ -2534,6 +2580,9 @@ and it dosen't show up on the ergoemacs-mode menu.
 
 TYPE can also be 'off, where the option will be included in the
 theme, but assumed to be disabled by default.
+
+REMOVE represents when you would remove the OPTION from the
+ergoemacs THEME.
 "
   (if (eq (type-of option) 'cons)
       (dolist (new-option option)
@@ -2554,6 +2603,7 @@ theme, but assumed to be disabled by default.
                 on (delq option-sym on)
                 off (delq option-sym off))
           (cond
+           (remove) ;; Don't do anything.
            ((eq type 'required-hidden)
             (push option-sym comp))
            ((eq type 'off)
@@ -2594,8 +2644,7 @@ If OFF is non-nil, turn off the options instead."
           (setq ergoemacs-theme-options tmp)
         (ergoemacs-save 'ergoemacs-theme-options tmp))))
   (when ergoemacs-mode
-    (ergoemacs-mode -1)
-    (ergoemacs-mode 1)))
+    (ergoemacs-theme-reset)))
 
 (defun ergoemacs-theme-toggle-option (option)
   "Toggles theme OPTION."
@@ -2645,8 +2694,7 @@ If OFF is non-nil, turn off the options instead."
                    (interactive)
                    (ergoemacs-theme-toggle-option ',option)
                    (customize-mark-as-set 'ergoemacs-theme-options)
-                   (ergoemacs-mode -1)
-                   (ergoemacs-mode 1))
+                   (ergoemacs-theme-reset))
                  :button (:toggle . (ergoemacs-theme-option-enabled-p ',option)))
                ret)))
           (unless (eq ret '())
@@ -2674,8 +2722,7 @@ If OFF is non-nil, turn off the options instead."
                     (interactive)
                     (ergoemacs-theme-toggle-option ',option)
                     (customize-mark-as-set 'ergoemacs-theme-options)
-                    (ergoemacs-mode -1)
-                    (ergoemacs-mode 1))
+                    (ergoemacs-theme-reset))
                   :button (:toggle . (ergoemacs-theme-option-enabled-p ',option)))))
             (sort options-list 'string<)))))))
 
@@ -2692,8 +2739,7 @@ If OFF is non-nil, turn off the options instead."
             (interactive)
             (ergoemacs-theme-set-version nil)
             (customize-mark-as-set 'ergoemacs-theme-version)
-            (ergoemacs-mode -1)
-            (ergoemacs-mode 1))
+            (ergoemacs-theme-reset))
           :button (:radio . (equal (ergoemacs-theme-get-version) nil)))
          ,@(mapcar
             (lambda(version)
@@ -2701,8 +2747,7 @@ If OFF is non-nil, turn off the options instead."
                 (lambda() (interactive)
                   (ergoemacs-theme-set-version ,version)
                   (customize-mark-as-set 'ergoemacs-theme-version)
-                  (ergoemacs-mode -1)
-                  (ergoemacs-mode 1))
+                  (ergoemacs-theme-reset))
                 :button (:radio . (equal (ergoemacs-theme-get-version) ,version))))
             theme-versions))))))
 
@@ -2963,7 +3008,7 @@ Ignores _DESC."
                       (read-kbd-macro key)) function)))
 
 (defconst ergoemacs-font-lock-keywords
-  '(("(\\(ergoemacs\\(?:-theme-component\\|-theme\\|-component\\|-require\\)\\)\\_>[ \t']*\\(\\(?:\\sw\\|\\s_\\)+\\)?"
+  '(("(\\(ergoemacs\\(?:-theme-component\\|-theme\\|-component\\|-require\\|-remove\\)\\)\\_>[ \t']*\\(\\(?:\\sw\\|\\s_\\)+\\)?"
      (1 font-lock-keyword-face)
      (2 font-lock-constant-face nil t))))
 
