@@ -1378,9 +1378,9 @@ The anchor text may be of 4 possibilities, depending on value of `universal-argu
         ξurl domainName linkText resultLinkStr)
 
     (setq bds (get-selection-or-unit 'url))
-    (setq inputStr (elt bds 0) )
-    (setq p1-input (elt bds 1) )
-    (setq p2-input (elt bds 2) )
+    (setq inputStr (elt bds 0))
+    (setq p1-input (elt bds 1))
+    (setq p2-input (elt bds 2))
 
     ;; check if it's just plain URL or already in linked form 「<a href=…>…</a>」
     ;; If latter, you need to get the boundaries for the entire link too.
@@ -1393,33 +1393,30 @@ The anchor text may be of 4 possibilities, depending on value of `universal-argu
           (setq p2-url (- (point) 1))
 
           (goto-char p1-url)
-          (search-backward "<a" (- p1-url 30) )
+          (search-backward "<a" (- p1-url 30))
           (setq p1-tag (point))
           (goto-char p2-url)
           (search-forward "</a>" (+ p2-url 140))
-          (setq p2-tag (point))
-          )
+          (setq p2-tag (point)))
       (progn
         (setq p1-url p1-input)
         (setq p2-url p2-input)
         (setq p1-tag p1-input)
-        (setq p2-tag p2-input) ) )
+        (setq p2-tag p2-input)))
 
-    (setq ξurl (replace-regexp-in-string "&amp;" "&" (buffer-substring-no-properties p1-url p2-url) nil "LITERAL") ) ; in case it's already encoded. TODO this is only 99% correct.
+    (setq ξurl (replace-regexp-in-string "&amp;" "&" (buffer-substring-no-properties p1-url p2-url) nil "LITERAL")) ; in case it's already encoded. TODO this is only 99% correct.
 
     ;; get the domainName
     (setq domainName
           (progn
             (string-match "://\\([^\/]+?\\)/" ξurl)
-            (match-string 1 ξurl)
-            )
-          )
+            (match-string 1 ξurl)))
 
     (setq linkText
           (cond
-           ((equal prefixArgCode 1) ξurl)           ; full url
-           ((or (equal prefixArgCode 2) (equal prefixArgCode 4) (equal prefixArgCode '(4))) (concat domainName "…"))           ; ‹domain›…
-           ((equal prefixArgCode 3) "img src")           ; img src
+           ((equal prefixArgCode 1) ξurl) ; full url
+           ((or (equal prefixArgCode 2) (equal prefixArgCode 4) (equal prefixArgCode '(4))) (concat domainName "…")) ; ‹domain›…
+           ((equal prefixArgCode 3) "img src") ; img src
            (t (if
                   (or
                    (string-match "wikipedia\\.org.+jpg$" ξurl)
@@ -1427,25 +1424,21 @@ The anchor text may be of 4 possibilities, depending on value of `universal-argu
                    (string-match "wikipedia\\.org.+png$" ξurl)
                    (string-match "wikipedia\\.org.+PNG$" ξurl)
                    (string-match "wikipedia\\.org.+svg$" ξurl)
-                   (string-match "wikipedia\\.org.+SVG$" ξurl)
-                   )
+                   (string-match "wikipedia\\.org.+SVG$" ξurl))
                   "img src"
                 ξurl
-                ))        ; smart
-           )
-          )
+                )) ; smart
+           ))
 
     (setq ξurl (replace-regexp-in-string "&" "&amp;" ξurl))
     (setq resultLinkStr
           (format "<a class=\"sorc\" href=\"%s\" data-accessed=\"%s\">%s</a>"
                   ξurl (format-time-string "%Y-%m-%d") linkText
-                  )
-          )
+                  ))
 
     ;; delete URL and insert the link
     (delete-region p1-tag p2-tag)
-    (insert resultLinkStr)
-    ))
+    (insert resultLinkStr)))
 
 (defun xhm-wikipedia-url-linkify (φstring &optional φfrom-to-pair)
   "Make the URL at cursor point into a html link.

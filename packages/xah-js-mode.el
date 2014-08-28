@@ -342,6 +342,7 @@
 "createElementNS"
 "innerHTML"
 "hasChildNodes"
+"childNodes"
 "firstChild"
 "lastChild"
 "removeChild"
