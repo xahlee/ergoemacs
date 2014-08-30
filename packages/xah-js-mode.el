@@ -243,7 +243,7 @@
 "sort"
 "splice"
 "toLocalString"
-
+"isArray"
 "unshift"
 ) )
 
