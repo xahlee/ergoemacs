@@ -44,11 +44,15 @@
 
 (require 'xfrp_find_replace_pairs)
 (require 'xeu_elisp_util)
-
-(require 'ido)
-(require 'sgml-mode)
 (require 'htmlize)
-(require 'hi-lock) ; uses its face definitions
+
+
+(progn 
+  ;; part of emacs
+  (require 'ido)
+  (require 'sgml-mode)
+  (require 'hi-lock) ; uses its face definitions
+  )
 
 (defvar xah-html-mode-hook nil "Standard hook for `xah-html-mode'")
 
@@ -1930,6 +1934,8 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
 
 
 
+
+
 (defun xhm-abbrev-enable-function ()
   "Determine whether to expand abbrev.
 This is called by emacs abbrev system."
@@ -2008,8 +2014,17 @@ t
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   ;; :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  :enable-function 'xhm-abbrev-enable-function
+
   )
+
+;; (symbol-plist 'xhm-abbrev-table)
+;; (get 'xhm-abbrev-table 'case-fixed)
+;; (abbrev-table-get xhm-abbrev-table :case-fixed)
+;; (abbrev-table-get xhm-abbrev-table :enable-function)
+;; (abbrev-table-get xhm-abbrev-table :parents)
+
+  ;; :enable-function 'xhm-abbrev-enable-function
+
 
 
 ;; keybinding

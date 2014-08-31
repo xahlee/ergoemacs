@@ -24,30 +24,6 @@
 
 (require 'lisp-mode)
 
-(defcustom xem-electric-pair-mode-activate-p t
-  "Whether to turn on `electric-pair-mode'.
-The value must t or nil."
-  :type '(booleanp)
-  :group 'xah-elisp-mode)
-
-(defcustom xem-show-paren-mode-activate-p t
-  "Whether to turn on paren highlighting globally.
-The value must t or nil."
-  :type '(booleanp)
-  :group 'xah-elisp-mode)
-
-(defcustom xem-override-paren-mode-style-p t
-  "Whether to override `show-paren-style'.
-The value must t or nil."
-  :type '(booleanp)
-  :group 'xah-elisp-mode)
-
-(defcustom xem-override-completion-face-p t
-  "Whether to override `completions-common-part' face style.
-The value must t or nil."
-  :type '(booleanp)
-  :group 'xah-elisp-mode)
-
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
 (defvar xem-elisp-lang-words nil "a list of elisp keyword more or less related to elisp the language.")
@@ -1788,7 +1764,7 @@ If there's a text selection, act on the region, else, on defun block."
 ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  :enable-function 'xem-abbrev-enable-function
+  ;; :enable-function 'xem-abbrev-enable-function
   )
 
 
@@ -1920,28 +1896,8 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
 
   (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
 
-  (when xem-electric-pair-mode-activate-p
-    (electric-pair-mode 1) ; global only
-    )
-
-  (when xem-show-paren-mode-activate-p
-    (show-paren-mode 1) ; global only
-    )
-
   (abbrev-mode 1)
-
-  (when xem-override-paren-mode-style-p
-    ;; highlight entire bracket expression
-    (setq show-paren-style 'expression)
-    ;; make the color used for show-paren-style more readable
-    (custom-set-faces
-     '(show-paren-match ((((class color) (background light)) (:background "azure2"))))))
-
-  (when xem-override-completion-face-p
-    ;; make the color used for completion more readable
-    (custom-set-faces
-     '(completions-common-part ((t (:inherit default :foreground "red"))))))
-
+  
   (progn
     ;; setup auto-complete-mode
     (when (fboundp 'auto-complete-mode)

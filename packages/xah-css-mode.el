@@ -772,7 +772,7 @@ This is called by emacs abbrev system."
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  :enable-function 'xcm-abbrev-enable-function
+  ;; :enable-function 'xcm-abbrev-enable-function
   )
 
 
