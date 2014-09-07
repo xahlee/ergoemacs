@@ -1810,11 +1810,11 @@ Case shouldn't matter, except when it's emacs's key notation.
 (defvar xhm-class-input-history nil "for input history of `xhm-wrap-html-tag'")
 (setq xhm-class-input-history (list) )
 
-(defun xhm-add-open/close-tag (φtag-name className φp1 φp2)
+(defun xhm-add-open/close-tag (φtag-name φclass-name φp1 φp2)
   "Add HTML open/close tags around region boundary φp1 φp2.
 This function does not `save-excursion'."
   (let* (
-         (classStr (if (or (equal className nil) (string= className "")) "" (format " class=\"%s\"" className)))
+         (classStr (if (or (equal φclass-name nil) (string= φclass-name "")) "" (format " class=\"%s\"" φclass-name)))
          (insStrLeft (format "<%s%s>" φtag-name classStr))
          (insStrRight (format "</%s>" φtag-name )))
 
@@ -1827,7 +1827,7 @@ This function does not `save-excursion'."
         (goto-char (+ φp2 (length insStrLeft)))
         (insert insStrRight )))))
 
-(defun xhm-wrap-html-tag (φtag-name &optional className)
+(defun xhm-wrap-html-tag (φtag-name &optional φclass-name)
   "Insert/wrap HTML tag to current text unit or text selection.
 When there's no text selection, the tag will be wrapped around current {word, line, text-block}, depending on the tag used.
 
@@ -1852,7 +1852,7 @@ If `universal-argument' is called first, then also prompt for a “class” attr
              (t (get-selection-or-unit 'word))))
       (setq p1 (elt bds 1))
       (setq p2 (elt bds 2))
-      (xhm-add-open/close-tag φtag-name className p1 p2)
+      (xhm-add-open/close-tag φtag-name φclass-name p1 p2)
 
       (when ; put cursor between when input text is empty
           (and (equal p1 p2) (not (xhm-tag-self-closing? φtag-name)))
