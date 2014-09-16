@@ -55,7 +55,7 @@
 
     ("elf" "else if (▮) { ▮ }" nil :system t)
 
-    ("ter" "test ? expr1 : expr2" nil :system t)
+    ("ife" "test ? expr1 : expr2" nil :system t)
 
     ("switch" "switch(▮) {
     case ▮:
