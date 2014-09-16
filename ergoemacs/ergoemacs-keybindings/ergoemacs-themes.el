@@ -222,7 +222,7 @@
   (global-set-key (kbd "C-a") 'mark-whole-buffer)
   
   ;; (global-set-key (kbd "C-u") 'ergoemacs-universal-argument)
-  (global-set-key (kbd "C-z") '(undo-tree-undo undo))
+  (global-set-key (kbd "C-z") 'undo)
 
   ;; Take out undo-tree's redo bindings
   (when ergoemacs-theme-hook
@@ -360,9 +360,12 @@
     :full-shortcut-map t
     (define-key isearch-mode-map (kbd "C-S-f") 'isearch-occur)
     (define-key isearch-mode-map (kbd "C-M-f") 'isearch-occur)
-    (define-key isearch-mode-map (kbd "<S-insert>") 'isearch-yank-kill)
-    (define-key isearch-mode-map (kbd "M-v") 'isearch-yank-kill)
-    (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill)))
+    (define-key isearch-mode-map (kbd "<S-insert>") 'ergoemacs-paste)
+    (define-key isearch-mode-map (kbd "C-S-v") 'ergoemacs-paste-cycle)
+    (define-key isearch-mode-map (kbd "C-c") 'isearch-yank-word-or-char)
+    (define-key isearch-mode-map (kbd "M-c") 'isearch-yank-word-or-char)
+    (define-key isearch-mode-map (kbd "M-v") 'ergoemacs-paste)
+    (define-key isearch-mode-map (kbd "C-v") 'ergoemacs-paste)))
 
 (ergoemacs-component tab-indents-region ()
   "Tab indents selected region"
@@ -642,7 +645,7 @@
 
 (ergoemacs-component alt-backspace-is-undo ()
   "Alt+Backspace is Undo"
-  (global-set-key (kbd "<M-backspace>") '(undo-tree-undo undo)))
+  (global-set-key (kbd "<M-backspace>") 'undo))
 
 (ergoemacs-component move-page ()
   "Move by Page"
@@ -697,14 +700,14 @@
   (global-set-key (kbd "C-_") nil)
   (global-set-key (kbd "C-/") nil)
   (global-set-key (kbd "C-x u") nil)
-  (global-set-key (kbd "M-z") '(undo-tree-undo undo))
+  (global-set-key (kbd "M-z") 'undo)
   
   ;; Fixed Component; Note that <timeout> is the actual function.
   (global-set-key (kbd "C-c <timeout>") 'ergoemacs-copy-line-or-region)
   (global-set-key (kbd "C-c") 'ergoemacs-ctl-c)
   (global-set-key (kbd "C-x <timeout>") 'ergoemacs-cut-line-or-region)
   (global-set-key (kbd "C-x") 'ergoemacs-ctl-x)
-  (global-set-key (kbd "C-z") '(undo-tree-undo undo))
+  (global-set-key (kbd "C-z") 'undo)
   (global-set-key (kbd "C-S-z") '(redo undo-tree-redo ergoemacs-redo))
   (global-set-key (kbd "C-y") '(redo undo-tree-redo ergoemacs-redo))
 
@@ -712,8 +715,12 @@
   (when isearch-mode-hook
     :modify-keymap t
     :full-shortcut-keymap t
-    (define-key isearch-mode-map (kbd "M-v") 'isearch-yank-kill)
-    (define-key isearch-mode-map (kbd "C-v") 'isearch-yank-kill))
+    (define-key isearch-mode-map (kbd "C-c") 'isearch-yank-word-or-char)
+    (define-key isearch-mode-map (kbd "M-c") 'isearch-yank-word-or-char)
+    (define-key isearch-mode-map (kbd "M-v") 'ergoemacs-paste)
+    (define-key isearch-mode-map (kbd "M-V") 'ergoemacs-paste-cycle)
+    (define-key isearch-mode-map (kbd "C-v") 'ergoemacs-paste)
+    (define-key isearch-mode-map (kbd "C-S-v") 'ergoemacs-paste-cycle))
   (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
   (define-key org-mode-map [remap ergoemacs-paste] 'ergoemacs-org-yank)
   (define-key browse-kill-ring-mode-map [remap undo] 'browse-kill-ring-undo-other-window)
@@ -886,7 +893,7 @@
   (global-set-key (kbd "<apps> v") 'ergoemacs-paste)
   (global-set-key (kbd "<apps> b") '(redo undo-tree-redo ergoemacs-redo))
   (global-set-key (kbd "<apps> t") 'switch-to-buffer)
-  (global-set-key (kbd "<apps> z") '(undo-tree-undo undo))
+  (global-set-key (kbd "<apps> z") 'undo)
   (global-set-key (kbd "<apps> r") goto-map))
 
 (ergoemacs-component apps-toggle ()
@@ -1101,7 +1108,8 @@
 (ergoemacs-component ergoemacs-remaps ()
   "Remaps for ergoemacs-mode"
   (when undo-tree-mode
-    (global-set-key [remap ergoemacs-redo] 'undo-tree-redo))
+    (global-set-key [remap ergoemacs-redo] 'undo-tree-redo)
+    (global-set-key [remap undo] 'undo-tree-undo))
   (when mark-active
     (global-set-key (kbd "TAB") 'indent-region))
   (when ergoemacs-mode
