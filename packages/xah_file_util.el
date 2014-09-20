@@ -182,7 +182,7 @@ Path Regex 「%s」
       (highlight-phrase φsearch-regex (quote hi-yellow))
       (highlight-lines-matching-regexp "^• " (quote hi-pink)))))
 
-(defun xah-find-replace-text (φsearch-str φreplace-str φinput-dir φpath-regex φfixed-case-search-p φfixed-case-replace-p &optional φbackup-p)
+(defun xah-find-replace-text (φsearch-str φreplace-str φinput-dir φpath-regex φwrite-to-file-p φfixed-case-search-p φfixed-case-replace-p &optional φbackup-p)
   "Find/Replace string in all files of a directory.
 SearchStr can span multiple lines.
 No regex."
@@ -192,6 +192,7 @@ No regex."
     (read-string (format "Replace string: ") nil 'query-replace-history)
     (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
     (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
+    (y-or-n-p "Write changes to file?")
     (y-or-n-p "Fixed case in search?")
     (y-or-n-p "Fixed case in replacement?")
     (y-or-n-p "Make backup?")))
@@ -222,8 +223,9 @@ Directory 〔%s〕
                                       (min (point-max) (+ (point) xah-context-char-number )))))
 
              (when (> ξcount 0)
-               (when φbackup-p (copy-file ξf (concat ξf ξbackupSuffix) t))
-               (write-region 1 (point-max) ξf)
+               (when φwrite-to-file-p
+                 (when φbackup-p (copy-file ξf (concat ξf ξbackupSuffix) t))
+                 (write-region 1 (point-max) ξf))
                (xah-print-file-count ξf ξcount )))))
 
        (find-lisp-find-files φinput-dir φpath-regex))
@@ -237,14 +239,14 @@ Directory 〔%s〕
         (highlight-phrase (regexp-quote φreplace-str) (quote hi-yellow)))
       (highlight-lines-matching-regexp "^• " (quote hi-pink)))))
 
-(defun xah-find-replace-text-regex (φregex φreplace-str φinput-dir φpath-regex φwriteToFile-p φfixed-case-search-p φfixed-case-replace-p)
+(defun xah-find-replace-text-regex (φregex φreplace-str φinput-dir φpath-regex φwrite-to-file-p φfixed-case-search-p φfixed-case-replace-p)
   "Find/Replace by regex in all files of a directory.
 
 φregex is a regex pattern.
 φreplace-str is replacement string.
 φinput-dir is input directory to search (includes all nested subdirectories).
 φpath-regex is a regex to filter file paths.
-φwriteToFile-p, when true, write to file, else, print a report of changes only.
+φwrite-to-file-p, when true, write to file, else, print a report of changes only.
 φfixed-case-search-p sets `case-fold-search' for this operation.
 φfixed-case-replace-p, if true, then the letter-case in replacement is literal. (this is relevant only if φfixed-case-search-p is true.)
 "
@@ -289,7 +291,7 @@ Directory 〔%s〕
                  (princ (format "『%s』\n" ξmatchStrReplaced)))
 
                (when (> ξcount 0)
-                 (when φwriteToFile-p
+                 (when φwrite-to-file-p
                    (copy-file ξfp (concat ξfp ξbackupSuffix) t)
                    (write-region 1 (point-max) ξfp))
                  (princ (format "• %d %s\n" ξcount ξfp)))))))
