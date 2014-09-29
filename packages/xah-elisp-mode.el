@@ -162,6 +162,18 @@
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
 (setq xem-emacs-words '(
 
+"left-char"
+"right-char"
+
+"propertize"
+
+"upcase"
+"upcase-region"
+"downcase-region"
+"downcase"
+"capitalize"
+"upcase-initials"
+
 "atomic-change-group"
 "ido-completing-read"
 "ido-read-directory-name"
@@ -1263,17 +1275,19 @@ Call `exchange-point-and-mark' to highlight them.
 
 (defun xem-expand-abbrev-maybe (&optional φexpand-func)
   "Expand emacs lisp function name before cursor into template.
-Don't expand when in string or comment.
-
+Right now, always expand.
+Used to be: Don't expand when in string or comment.
 Returns true if there's a expansion, else false."
   (interactive)
   (let (
         ξp1 ξp2
         ξab-str
         (ξsyntax-state (syntax-ppss)))
-    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
-        nil
-      (xem-expand-abbrev))))
+    ;; (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+    ;;     nil
+    ;;   (xem-expand-abbrev))
+    (xem-expand-abbrev)
+    ))
 
 (put 'xem-expand-abbrev-maybe 'no-self-insert t)
 

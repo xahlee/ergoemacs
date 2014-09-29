@@ -46,8 +46,7 @@
 (require 'xeu_elisp_util)
 (require 'htmlize)
 
-
-(progn 
+(progn
   ;; part of emacs
   (require 'ido)
   (require 'sgml-mode)
@@ -1027,8 +1026,8 @@ WARNING: this command does not cover all HTML tags or convert all HTML entities.
     (setq ξoutput-str
           (let ((case-fold-search t) (tempStr ξinput-str))
 
-            (setq tempStr 
-                  (replace-regexp-pairs-in-string 
+            (setq tempStr
+                  (replace-regexp-pairs-in-string
                    tempStr
                    '(
                      ["<script>\\([^\\<]+?\\)</script>" ""]
@@ -1901,8 +1900,6 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
 
 
 
-
-
 (defun xhm-abbrev-enable-function ()
   "Determine whether to expand abbrev.
 This is called by emacs abbrev system."
@@ -1940,6 +1937,8 @@ t
     ("3css" "<link rel=\"stylesheet\" href=\"lbasic.css\" />")
     ("3style" "<style type=\"text/css\">\np {line-height:130%}\n</style>")
     ("refresh" "<meta http-equiv=\"refresh\" content=\"0; url=http://example.com/\">")
+
+    ("iframe" "<iframe src=\"some.html\" width=\"200\" height=\"300\"></iframe>")
 
     ;; todo
 ;; http://xahlee.info/js/css_colors.html
@@ -1991,7 +1990,6 @@ t
 ;; (abbrev-table-get xhm-abbrev-table :parents)
 
   ;; :enable-function 'xhm-abbrev-enable-function
-
 
 
 ;; keybinding

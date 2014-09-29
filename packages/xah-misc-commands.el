@@ -440,8 +440,7 @@ Examples of changes:
  「--」 ⇒ 「—」
  「~=」 ⇒ 「≈」
 
- In lisp program, the arguments P1 and P2 are region boundaries.
-"
+ In lisp program, the arguments P1 and P2 are region boundaries."
 ;; some examples for debug
 ;; do "‘em all -- done..."
 ;; I’am not
@@ -471,7 +470,7 @@ Examples of changes:
 
       (replace-pairs-region (point-min) (point-max)
                             [
-                             ["  —  " " — "]                        ; rid of extra space in em-dash
+                             ["  —  " " — "] ; rid of extra space in em-dash
                              [" , " ", "]
                              ])
 
