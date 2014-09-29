@@ -11,7 +11,7 @@
 (setq initial-major-mode (quote text-mode))
 
 ;; make dired list not inclued 「.」 and 「..」, and use metric prefix for file size
-(setq dired-listing-switches "-Al --si")
+(setq dired-listing-switches "-Al --si --time-style long-iso")
 
 (setq mark-ring-max 5)
 
