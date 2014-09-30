@@ -69,13 +69,6 @@
 
 ;;;; productivity, enhancement, or minor modes
 
-;;; yasnippet template system
-(add-to-list 'load-path
- (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/yasnippet-0.8.0/")
- )
-
-(require 'yasnippet)
-
 ;;; enhanced “directory viewer”/“file manager” (diredplus mode)
 (require 'dired+)
 
