@@ -57,6 +57,7 @@ To solve this problem, when your code only knows the relative path of another fi
 (load (xah-get-fullpath "xah-fly-keys-cursor-movement"))
 (load (xah-get-fullpath "xah-fly-keys-editing-commands"))
 (load (xah-get-fullpath "xah-fly-keys-text-selection"))
+(load (xah-get-fullpath "xah-fly-keys-misc-commands"))
 
 
 
@@ -68,16 +69,17 @@ To solve this problem, when your code only knows the relative path of another fi
   (interactive)
   ;; TODO use a proper keymap
   (progn
+
     (global-set-key (kbd ";") 'self-insert-command)
     (global-set-key (kbd "=") 'self-insert-command)
-    (global-set-key (kbd "[") 'self-insert-command)
     (global-set-key (kbd "\\") 'self-insert-command)
     (global-set-key (kbd ".") 'self-insert-command)
     (global-set-key (kbd "'") 'self-insert-command)
     (global-set-key (kbd ",") 'self-insert-command)
     (global-set-key (kbd "-") 'self-insert-command)
     (global-set-key (kbd "/") 'self-insert-command)
-
+    (global-set-key (kbd "[") 'self-insert-command)
+    (global-set-key (kbd "]") 'self-insert-command)
     (global-set-key (kbd "SPC") 'self-insert-command)
 
     (global-set-key (kbd "1") 'self-insert-command)
@@ -124,11 +126,17 @@ To solve this problem, when your code only knows the relative path of another fi
   "set command mode keys"
   (interactive)
   (progn
-    (global-set-key (kbd ";") nil)
+
+    (global-set-key (kbd ";") 'self-insert-command)
+    (global-set-key (kbd "=") 'xah-next-emacs-buffer)
+    (global-set-key (kbd "\\") 'self-insert-command)
     (global-set-key (kbd ".") 'backward-kill-word)
     (global-set-key (kbd "'") 'xah-compact-uncompact-block)
     (global-set-key (kbd ",") 'xah-shrink-whitespaces)
-
+    (global-set-key (kbd "-") 'self-insert-command)
+    (global-set-key (kbd "/") 'xah-previous-emacs-buffer)
+    (global-set-key (kbd "[") 'xah-previous-user-buffer)
+    (global-set-key (kbd "]") 'xah-next-user-buffer)
     (global-set-key (kbd "SPC") 'xfk-insert-mode-activate)
 
     (global-set-key (kbd "1") 'xfk-insert-mode-activate)
@@ -164,7 +172,7 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "t") 'next-line)
     (global-set-key (kbd "u") 'delete-char)
     (global-set-key (kbd "v") 'xah-forward-right-bracket)
-    (global-set-key (kbd "w") nil)
+    (global-set-key (kbd "w") 'xah-insert-space-after)
     (global-set-key (kbd "x") 'xah-cycle-hyphen-underscore-space)
     (global-set-key (kbd "y") 'set-mark-command)
     (global-set-key (kbd "z") 'comment-dwim)

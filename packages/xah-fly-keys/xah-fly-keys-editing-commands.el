@@ -213,3 +213,43 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
      ((looking-at "[[:upper:]]") (downcase-region (point) (1+ (point))))
      )
     (right-char)))
+
+(defun xah-insert-space-after ()
+  "Toggle the letter case of the letter to the left of cursor."
+  (interactive)
+  (insert " ")
+  (left-char))
+
+(defun xah-upcase-sentence ()
+  "Upcase sentence.
+TODO 2014-09-30 command incomplete
+"
+  (interactive)
+  (let (p1 p2)
+ 
+    (if (region-active-p)
+        (progn 
+          (setq p1 (region-beginning))
+          (setq p2 (region-end)))
+      (progn 
+        (save-excursion 
+          (progn
+            (if (re-search-backward "\n[ \t]*\n" nil "move")
+                (progn (re-search-forward "\n[ \t]*\n")
+                       (setq p1 (point)))
+              (setq p1 (point)))
+            (if (re-search-forward "\n[ \t]*\n" nil "move")
+                (progn (re-search-backward "\n[ \t]*\n")
+                       (setq p2 (point)))
+              (setq p2 (point)))))))
+
+    (save-excursion  
+      (save-restriction 
+        (narrow-to-region p1 p2)
+
+        (goto-char (point-min))
+        (while (search-forward "\. \{1,2\}\\([a-z]\\)" nil t) 
+nil
+;; (replace-match "myReplaceStr2")
+
+)))))

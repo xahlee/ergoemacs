@@ -47,6 +47,7 @@
 
     ("function" "function () { ▮; }" nil :system t)
     ("for" "for (var i = 0; i < ▮.length; i++) { ▮; }" nil :system t)
+    ("while" "while (i<10) { ▮; i++; }" nil :system t)
     ("if" "if ( ▮ ) {
 ▮
 }" nil :system t)
