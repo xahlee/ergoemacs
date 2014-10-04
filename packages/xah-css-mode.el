@@ -35,7 +35,7 @@ Example output: hsl(100,24%,82%);"
 
 (defun xcm-hex-color-to-hsl ()
   "Convert color spec under cursor from “#rrggbb” to CSS HSL format.
- ⁖ #ffefd5 → hsl(37,100%,91%)
+ ⁖ #ffefd5 ⇒ hsl(37,100%,91%)
 "
   (interactive)
   (let* (
@@ -50,49 +50,42 @@ Example output: hsl(100,24%,82%);"
           (if (looking-back "#") (delete-char -1))
           (insert (xcm-hex-to-hsl-color currentWord )))
       (progn
-        (error "The current word 「%s」 is not of the form #rrggbb." currentWord)
-        )
-      )))
+        (error "The current word 「%s」 is not of the form #rrggbb." currentWord)))))
 
-(defun xcm-hex-to-hsl-color (hexStr)
-  "Convert hexStr color to CSS HSL format.
+(defun xcm-hex-to-hsl-color (φhex-str)
+  "Convert φhex-str color to CSS HSL format.
 Return a string.
  ⁖
- (xcm-hex-to-hsl-color \"#ffefd5\") ⇒ \"hsl(37,100%,91%)\"
+  \"#ffefd5\" ⇒ \"hsl(37,100%,91%)\"
 "
   (let* (
-         (colorVec (xcm-convert-color-hex-to-vec hexStr))
+         (colorVec (xcm-convert-color-hex-to-vec φhex-str))
          (xR (elt colorVec 0))
          (xG (elt colorVec 1))
          (xB (elt colorVec 2))
-         (hsl (color-rgb-to-hsl xR xG xB) )
+         (hsl (color-rgb-to-hsl xR xG xB))
          (xH (elt hsl 0))
          (xS (elt hsl 1))
-         (xL (elt hsl 2))
-         )
-    (format "hsl(%d,%d%%,%d%%)" (* xH 360) (* xS 100) (* xL 100) )
-    ))
+         (xL (elt hsl 2)))
+    (format "hsl(%d,%d%%,%d%%)" (* xH 360) (* xS 100) (* xL 100))))
 
-(defun xcm-convert-color-hex-to-vec (hexcolor)
-  "Convert HEXCOLOR from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
+(defun xcm-convert-color-hex-to-vec (φhexcolor)
+  "Convert φhexcolor from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
 Example:
  (xcm-convert-color-hex-to-vec \"00ffcc\") ⇒ [0.0 1.0 0.8]
 
 Note: The input string must NOT start with “#”. If so, the return value is nil."
   (vector
-   (xcm-normalize-number-scale (string-to-number (substring hexcolor 0 2) 16) 255)
-   (xcm-normalize-number-scale (string-to-number (substring hexcolor 2 4) 16) 255)
-   (xcm-normalize-number-scale (string-to-number (substring hexcolor 4) 16) 255)
+   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 0 2) 16) 255)
+   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 2 4) 16) 255)
+   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 4) 16) 255)
    ))
 
-(defun xcm-normalize-number-scale (myVal rangeMax)
-  "Return a number between [0, 1] that's a rescaled myVal.
-myVal's original range is [0, rangeMax].
-
+(defun xcm-normalize-number-scale (φval φrange-max)
+  "scale φval from range [0, φrange-max] to [0, 1]
 The arguments can be int or float.
-Return value is float.
-"
-  (/ (float myVal) (float rangeMax)))
+Return value is float."
+  (/ (float φval) (float φrange-max)))
 
 
 ;;; functions
