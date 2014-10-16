@@ -57,7 +57,17 @@ To solve this problem, when your code only knows the relative path of another fi
 (load (xah-get-fullpath "xah-fly-keys-cursor-movement"))
 (load (xah-get-fullpath "xah-fly-keys-editing-commands"))
 (load (xah-get-fullpath "xah-fly-keys-text-selection"))
+(load (xah-get-fullpath "xah-fly-keys-insert-commands"))
+(load (xah-get-fullpath "xah-fly-keys-replace-commands"))
+(load (xah-get-fullpath "xah-fly-keys-dired-commands"))
 (load (xah-get-fullpath "xah-fly-keys-misc-commands"))
+(load (xah-get-fullpath "xah-fly-keys-emacs-1k-keymap"))
+(load (xah-get-fullpath "xah-fly-keys-some-keymap"))
+(load (xah-get-fullpath "xah-fly-keys-control-key"))
+(load (xah-get-fullpath "xah-fly-keys-meta-key"))
+(load (xah-get-fullpath "xah-fly-keys-special-keys"))
+(load (xah-get-fullpath "xah-fly-keys-mode-specific"))
+
 
 
 
@@ -128,15 +138,15 @@ To solve this problem, when your code only knows the relative path of another fi
   (progn
 
     (global-set-key (kbd ";") 'self-insert-command)
-    (global-set-key (kbd "=") 'xah-next-emacs-buffer)
+    ;; (global-set-key (kbd "=") nil)
     (global-set-key (kbd "\\") 'self-insert-command)
     (global-set-key (kbd ".") 'backward-kill-word)
     (global-set-key (kbd "'") 'xah-compact-uncompact-block)
     (global-set-key (kbd ",") 'xah-shrink-whitespaces)
     (global-set-key (kbd "-") 'self-insert-command)
-    (global-set-key (kbd "/") 'xah-previous-emacs-buffer)
-    (global-set-key (kbd "[") 'xah-previous-user-buffer)
-    (global-set-key (kbd "]") 'xah-next-user-buffer)
+    ;; (global-set-key (kbd "/") nil)
+    ;; (global-set-key (kbd "[") nil)
+    ;; (global-set-key (kbd "]") nil)
     (global-set-key (kbd "SPC") 'xfk-insert-mode-activate)
 
     (global-set-key (kbd "1") 'xfk-insert-mode-activate)
@@ -161,7 +171,7 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "i") 'kill-line)
     (global-set-key (kbd "j") 'xah-copy-line-or-region)
     (global-set-key (kbd "k") 'yank)
-    (global-set-key (kbd "l") 'recenter-top-bottom)
+    (global-set-key (kbd "l") nil)
     (global-set-key (kbd "m") 'xah-backward-left-bracket)
     (global-set-key (kbd "n") 'forward-char)
     (global-set-key (kbd "o") 'other-window)
