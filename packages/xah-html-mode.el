@@ -734,15 +734,11 @@ The string replaced are:
  < ⇒ &lt;
  > ⇒ &gt;
 
-if `universal-argument' is called, the replacement direction is
- reversed. That is &amp; ⇒ & etc.
+If `universal-argument' is called, the replacement direction is reversed. That is &amp; ⇒ & etc.
 
-when called in lisp program, φp1 φp2 are region begin/end. if φentity-to-char-p is true, change entities to chars instead.
+When called in lisp program, φp1 φp2 are region begin/end. if φentity-to-char-p is true, change entities to chars instead.
 
-See also:
-`xhm-replace-html-named-entities'
-`xhm-replace-html-chars-to-unicode'
-"
+See also: `xhm-replace-html-named-entities', `xhm-replace-html-chars-to-unicode'"
   (interactive
    (let ((bds (get-selection-or-unit 'block)))
      (list (elt bds 1) (elt bds 2) (if current-prefix-arg t nil))))
@@ -1257,8 +1253,7 @@ After execution, the lines will become
 
 If there's a text selection, use it for input, otherwise the input is a text block between blank lines.
 
-The order of lines for {title, author, date/time, url} needs not be in that order. Author should start with “by”.
-"
+The order of lines for {title, author, date/time, url} needs not be in that order. Author should start with “by”."
   (interactive)
   (let* (
          (bds (get-selection-or-unit 'block))
@@ -1304,8 +1299,11 @@ The order of lines for {title, author, date/time, url} needs not be in that orde
     (setq ξurl (with-temp-buffer (insert ξurl) (xhm-source-url-linkify 1) (buffer-string)))
 
     (delete-region p1 p2 )
-    (insert (concat "<cite>" ξtitle "</cite>") " " "<time>" ξdate "</time>"  " By " ξauthor ". @ " ξurl)
-    ))
+    (insert (concat "〔<cite>" ξtitle "</cite> ") 
+            "<time>" ξdate "</time>"
+            " By " ξauthor 
+            ". @ " ξurl
+            "〕")))
 
 (defun xhm-make-link-defunct ()
   "Make the html link under cursor to a defunct form.

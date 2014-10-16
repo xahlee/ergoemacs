@@ -327,8 +327,11 @@ GNU Emacs 24.1.1 (i386-mingw-nt6.1.7601) of 2012-06-10 on MARVIN
    (replace-regexp-in-string "\\`C:/" "c:/" φfile-path  "FIXEDCASE" "LITERAL") φdir-path ))
 
 
+
+;; (require 'subr-x)
+
 (defun trim-string (φstring)
-  "Remove white spaces in beginning and ending of ΦSTRING.
+  "Remove white spaces in beginning and ending of φstring.
 White space here is any of: space, tab, emacs newline (line feed, ASCII 10).
 
 Note: in emacs GNU Emacs 24.4+ and later, there's `string-trim' function. You need to (require 'subr-x).

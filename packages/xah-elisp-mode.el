@@ -269,6 +269,7 @@
 "mark"
 "match-beginning"
 "match-end"
+"match-data"
 "match-string"
 "narrow-to-region"
 "point"
@@ -1213,8 +1214,10 @@ See
  `backward-up-list',
  `up-list'"
   (interactive)
-  (if (and (>= emacs-major-version 24)
-           (>= emacs-minor-version 4))
+  (if (or
+       (and (>= emacs-major-version 24)
+            (>= emacs-minor-version 4))
+       (>= emacs-major-version 25))
       (up-list arg1 arg2 arg3)
     (up-list arg1)))
 
@@ -1634,7 +1637,8 @@ If there's a text selection, act on the region, else, on defun block."
     ("mapconcat" "(mapconcat FUNCTION▮ SEQUENCE SEPARATOR)" nil :system t)
     ("match-beginning" "(match-beginning N▮)" nil :system t)
     ("match-end" "(match-end N▮)" nil :system t)
-    ("match-string" "(match-string ▮)" nil :system t)
+    ("match-data" "(match-data &optional INTEGERS▮ REUSE RESEAT)" nil :system t)
+    ("match-string" "(match-string NUM▮ &optional STRING)" nil :system t)
     ("member" "(member ELT▮ LIST)" nil :system t)
     ("memq" "(memq ELT▮ LIST)" nil :system t)
 
@@ -1699,18 +1703,20 @@ If there's a text selection, act on the region, else, on defun block."
     ("skip-chars-backward" "(skip-chars-backward \"▮\" &optional LIM)" nil :system t)
     ("skip-chars-forward" "(skip-chars-forward \"▮\" &optional LIM)" nil :system t)
     ("split-string" "(split-string ▮ &optional SEPARATORS OMIT-NULLS)" nil :system t)
+    ("string" "(string ▮)" nil :system t)
+    ("string=" "(string-equal str1▮ str2)" nil :system t)
+    ("string-equal" "(string-equal str1▮ str2)" nil :system t)
     ("string-match-p" "(string-match-p \"REGEXP▮\" \"STRING\" &optional START)" nil :system t)
     ("string-match" "(string-match \"REGEXP▮\" \"STRING\" &optional START)" nil :system t)
     ("string-to-number" "(string-to-number \"▮\")" nil :system t)
-    ("string" "(string ▮)" nil :system t)
-    ("string=" "(string= ▮)" nil :system t)
     ("stringp" "(stringp ▮)" nil :system t)
     ("substring-no-properties" "(substring-no-properties ▮ FROM TO)" nil :system t)
     ("substring" "(substring STRING▮ FROM &optional TO)" nil :system t)
-    ("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
+    ("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page …")
     ("throw" "(throw TAG▮ VALUE)" nil :system t)
     ("unless" "(unless ▮)" nil :system t)
     ("use-region-p" "(use-region-p)" nil :system t)
+    ("user-error" "(user-error FORMAT▮ &rest ARGS)" nil :system t)
     ("vector" "(vector ▮)" nil :system t)
     ("when" "(when ▮)" nil :system t)
     ("while" "(while ▮)" nil :system t)
@@ -1935,8 +1941,10 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
       (add-to-list 'ac-modes 'xah-elisp-mode)))
   ;; (add-hook 'xah-elisp-mode-hook 'ac-emacs-lisp-mode-setup)
 
-  (if (and (>= emacs-major-version 24)
-           (>= emacs-minor-version 4))
+  (if (or
+       (and (>= emacs-major-version 24)
+            (>= emacs-minor-version 4))
+       (>= emacs-major-version 25))
       (progn
         (setq abbrev-expand-function 'xem-expand-abbrev-maybe))
     (progn (add-hook 'abbrev-expand-functions 'xem-expand-abbrev-maybe nil t)))

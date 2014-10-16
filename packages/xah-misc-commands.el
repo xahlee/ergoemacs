@@ -593,6 +593,9 @@ Examples of changes:
                                   ["\\byour\\b" "ur"]
                                   ["\\band\\b" "＆"]
                                   [" at " " @ "]
+                                  [" love " " ♥ "]
+                                  [" one " " 1 "]
+                                  [" I " " i "]
                                   [", " "，"]
                                   ["\\b\\.\\.\\.\\b" "…"]
                                   ["\\. " "。"]
@@ -708,6 +711,7 @@ WARNING: If region has comment or string, the code'd be fucked up."
 
 (defun xah-clean-whitespace (p1 p2)
   "Delete trailing whitespace, and replace sequence of newlines into just 2.
+WARNING: This command saves buffer if it's a file.
 Work on text selection or whole buffer."
   (interactive
    (if (region-active-p)
@@ -723,6 +727,8 @@ Work on text selection or whole buffer."
       (progn
         (goto-char (point-min))
         (while (search-forward-regexp "\n\n\n+" nil "noerror")
-          (replace-match "\n\n"))))))
+          (replace-match "\n\n")))))
+  (when (buffer-file-name)
+    (save-buffer)))
 
 (provide 'xah-misc-commands)

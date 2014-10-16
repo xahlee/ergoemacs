@@ -25,23 +25,23 @@
 
 (random t) ; set seed
 
-(defun xah-insert-random-hex (φcount)
-  "Insert φcount random hexidecimal digits.
-φcount default to 8"
+(defun xah-insert-random-hex (φn)
+  "Insert φn random hexidecimal digits.
+φn default to 8"
   (interactive "P")
-  (let* ((myCharset "0123456789abcdef" )
-        (possibleCharsCount (length myCharset)))
-    (dotimes (ii (if (numberp φcount) (abs φcount) 8 ))
-      (insert (elt myCharset (random possibleCharsCount))) ) ))
+  (let* ((ξcharset "0123456789abcdef" )
+         (ξbaseCount (length ξcharset)))
+    (dotimes (ξi (if (numberp φn) (abs φn) 8 ))
+      (insert (elt ξcharset (random ξbaseCount))))))
 
-(defun xah-insert-random-string ()
-  "Insert a random alphanumerics string of length 5.
+(defun xah-insert-random-string (φn)
+  "Insert a random alphanumerics string of length 10.
 The possible chars are 0 to 9, and a to z (lower case)."
-  (interactive)
-  (let (myCharset (possibleCharsCount 36))
-    (setq myCharset "1234567890abcdefghijklmnopqrstuvwxyz" )
-    (dotimes (ii 5)
-      (insert (elt myCharset (random possibleCharsCount))) ) ) )
+  (interactive "P")
+  (let* ((ξcharset "1234567890abcdefghijklmnopqrstuvwxyz")
+         (ξbaseCount (length ξcharset)))
+    (dotimes (ξi (if (numberp φn) (abs φn) 10))
+      (insert (elt ξcharset (random ξbaseCount))))))
 
 (defun xah-insert-random-uuid ()
   "Insert a UUID. This uses a simple hashing of variable data.
@@ -70,14 +70,14 @@ Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
                     (substring myStr 17 20)
                     (substring myStr 20 32)))))
 
-(defun xah-insert-random-number (φcount)
-  "Insert φcount of random digits.
-φcount default to 5"
+(defun xah-insert-random-number (φn)
+  "Insert φn of random digits.
+φn default to 5"
   (interactive "P")
-  (let (myCharset (possibleCharsCount 10))
-    (setq myCharset "1234567890" )
-    (dotimes (ii (if (numberp φcount) (abs φcount) 5 ))
-      (insert (elt myCharset (random possibleCharsCount))) ) ) )
+  (let (ξcharset (ξbaseCount 10))
+    (setq ξcharset "1234567890" )
+    (dotimes (ξi (if (numberp φn) (abs φn) 5 ))
+      (insert (elt ξcharset (random ξbaseCount))) ) ) )
 
 (provide 'xah-insert-random-id)
 
