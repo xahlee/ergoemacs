@@ -10,8 +10,7 @@
   (interactive)
   (if line-move-visual
       (setq line-move-visual nil)
-    (setq line-move-visual t))
-  )
+    (setq line-move-visual t)))
 
 (defun cmd-shell (&optional arg)
   "Run cmd.exe (WinNT) or command.com shell. A numeric prefix

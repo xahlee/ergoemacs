@@ -66,6 +66,8 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
 (add-hook 'after-init-hook 'desktop-settings-setup "APPEND")
 (add-hook 'after-init-hook 'hide-init-buffers "APPEND")
 
+(setq page-break-lines-modes (quote (emacs-lisp-mode xah-elisp-mode compilation-mode fundamental-mode text-mode org-mode ruby-mode python-mode xah-html-mode html-mode nxml-mode )) )
+
 
 ;; compile elisp files after save, do so only if there exists a byte-compiled file
 ;; thanks to Adolfo Benedetti, 2011-07-15
