@@ -228,8 +228,22 @@ WARNING: not robust."
 (defvar xcm-property-names nil "a list of CSS property names.")
 (setq xcm-property-names
 '(
-"background"
 
+"align-content"
+"align-items"
+"align-self"
+"animation"
+"animation-delay"
+"animation-direction"
+"animation-duration"
+"animation-fill-mode"
+"animation-iteration-count"
+"animation-name"
+"animation-play-state"
+"animation-timing-function"
+"attr"
+"backface-visibility"
+"background"
 "background-attachment"
 "background-clip"
 "background-color"
@@ -238,22 +252,51 @@ WARNING: not robust."
 "background-position"
 "background-repeat"
 "background-size"
-
 "border"
 "border-bottom"
+"border-bottom-color"
+"border-bottom-left-radius"
+"border-bottom-right-radius"
+"border-bottom-style"
+"border-bottom-width"
+"border-collapse"
 "border-color"
+"border-image"
+"border-image-outset"
+"border-image-repeat"
+"border-image-slice"
+"border-image-source"
+"border-image-width"
 "border-left"
+"border-left-color"
+"border-left-style"
+"border-left-width"
 "border-radius"
 "border-right"
+"border-right-color"
+"border-right-style"
+"border-right-width"
+"border-spacing"
 "border-style"
 "border-top"
+"border-top-color"
+"border-top-left-radius"
+"border-top-right-radius"
+"border-top-style"
+"border-top-width"
 "border-width"
-"border-spacing"
-"border-collapse"
+"bottom"
+"box-decoration-break"
 "box-shadow"
+"box-sizing"
+"break-after"
+"break-before"
+"break-inside"
 "clear"
 "color"
 "content"
+"counter-increment"
+"counter-reset"
 "cursor"
 "direction"
 "display"
@@ -275,27 +318,55 @@ WARNING: not robust."
 "margin-left"
 "margin-right"
 "margin-top"
-"max-width"
-"min-width"
-"min-height"
 "max-height"
+"max-width"
+"min-height"
+"min-width"
 "opacity"
 "orphans"
 "overflow"
 "padding"
+"padding-bottom"
 "padding-left"
 "padding-right"
 "padding-top"
-"padding-bottom"
 "page-break-after"
 "page-break-inside"
 "position"
 "pre-wrap"
+
+"tab-size"
+"table-layout"
+"text-align"
+"text-align-last"
+"text-combine-horizontal"
+"text-decoration"
+"text-decoration-color"
+"text-decoration-line"
+"text-decoration-style"
+"text-indent"
+"text-orientation"
+"text-overflow"
+"text-rendering"
+"text-shadow"
+"text-transform"
+"text-underline-position"
+"top"
+"transform"
+"transform-origin"
+"transform-style"
+"transition"
+"transition-delay"
+"transition-duration"
+"transition-property"
+"transition-timing-function"
+
 "table"
 "table-cell"
 "text-align"
 "text-decoration"
 "text-shadow"
+
 "unicode-bidi"
 "vertical-align"
 "white-space"
@@ -305,12 +376,6 @@ WARNING: not robust."
 "word-wrap"
 "z-index"
 
-"border-top-left-radius"
-"border-top-right-radius"
-"border-bottom-right-radius"
-"border-bottom-left-radius"
-"counter-reset"
-"counter-increment"
 ) )
 
 (defvar xcm-pseudo-selector-names nil "a list of CSS pseudo selector names.")
@@ -402,6 +467,7 @@ WARNING: not robust."
 (defvar xcm-value-kwds nil "a list of CSS value names")
 (setq xcm-value-kwds
 '(
+
 "!important"
 "absolute"
 "alpha"
@@ -441,21 +507,41 @@ WARNING: not robust."
 "rgb"
 "rgba"
 "right"
+"rotate"
+"rotate3d"
+"rotateX"
+"rotateY"
+"rotateZ"
 "rtl"
 "sans-serif"
+"scale"
+"scale3d"
+"scaleX"
+"scaleY"
+"scaleZ"
 "serif"
+"skew"
+"skewX"
+"skewY"
 "small"
 "smaller"
 "solid"
 "square"
 "static"
+"steps"
 "thin"
 "top"
 "transparent"
+"translate"
+"translate3d"
+"translateX"
+"translateY"
+"translateZ"
 "underline"
 "url"
 "x-large"
 "xx-large"
+
 ) )
 
 (defvar xcm-color-names nil "a list of CSS color names.")
@@ -675,7 +761,7 @@ This uses `ido-mode' user interface for completion."
       (let (
           (htmlTagNames (regexp-opt xcm-html-tag-names 'words) )
           (cssPropertieNames (regexp-opt xcm-property-names 'symbols ) )
-          (cssValueNames (regexp-opt xcm-value-kwds 'symbols ) )
+          (cssValueNames (regexp-opt xcm-value-kwds ) )
           (cssColorNames (regexp-opt xcm-color-names 'symbols) )
           (cssUnitNames (regexp-opt xcm-unit-names 'symbols ) )
           (cssPseudoSelectorNames (regexp-opt xcm-pseudo-selector-names ) )
@@ -759,7 +845,31 @@ This is called by emacs abbrev system."
 (define-abbrev-table 'xcm-abbrev-table
   '(
 
-    ("bgc" "background-color" nil :system t))
+    ("bgc" "background-color" nil :system t)
+    ("rgb" "rgb(▮)" nil :system t)
+    ("rgba" "rgba(▮)" nil :system t)
+    ("rotate" "rotate(▮9deg)" nil :system t)
+    ("rotate3d" "rotate3d(▮)" nil :system t)
+    ("rotateX" "rotateX(▮)" nil :system t)
+    ("rotateY" "rotateY(▮)" nil :system t)
+    ("rotateZ" "rotateZ(▮)" nil :system t)
+    ("scale" "scale(▮)" nil :system t)
+    ("scale3d" "scale3d(▮)" nil :system t)
+    ("scaleX" "scaleX(▮)" nil :system t)
+    ("scaleY" "scaleY(▮)" nil :system t)
+    ("scaleZ" "scaleZ(▮)" nil :system t)
+    ("skew" "skew(▮9deg)" nil :system t)
+    ("skewX" "skewX(▮)" nil :system t)
+    ("skewY" "skewY(▮)" nil :system t)
+    ("steps" "steps(▮)" nil :system t)
+
+    ("translate" "translate(▮px,▮px)" nil :system t)
+    ("translate3d" "translate3d(▮)" nil :system t)
+    ("translateX" "translateX(▮)" nil :system t)
+    ("translateY" "translateY(▮)" nil :system t)
+    ("translateZ" "translateZ(▮)" nil :system t)
+
+)
 
   "abbrev table for `xah-css-mode'"
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
@@ -822,256 +932,3 @@ CSS keywords are colored. Basically that's it.
 
 (provide 'xah-css-mode)
 
-;; 2013-05-01
-
-;; complete list of css property names, as of 2013-05-01, from https://developer.mozilla.org/en-US/docs/CSS/CSS_Reference
-
-;; many of them are not that common in use. Some are experimental from CSS3.
-
-;; align-content
-;; align-items
-;; align-self
-;; animation
-;; animation-delay
-;; animation-direction
-;; animation-duration
-;; animation-fill-mode
-;; animation-iteration-count
-;; animation-name
-;; animation-play-state
-;; animation-timing-function
-;; attr
-;; auto
-;; backface-visibility
-;; background
-;; background-attachment
-;; background-clip
-;; background-color
-;; background-image
-;; background-origin
-;; background-position
-;; background-repeat
-;; background-size
-;; border
-;; border-bottom
-;; border-bottom-color
-;; border-bottom-left-radius
-;; border-bottom-right-radius
-;; border-bottom-style
-;; border-bottom-width
-;; border-collapse
-;; border-color
-;; border-image
-;; border-image-outset
-;; border-image-repeat
-;; border-image-slice
-;; border-image-source
-;; border-image-width
-;; border-left
-;; border-left-color
-;; border-left-style
-;; border-left-width
-;; border-radius
-;; border-right
-;; border-right-color
-;; border-right-style
-;; border-right-width
-;; border-spacing
-;; border-style
-;; border-top
-;; border-top-color
-;; border-top-left-radius
-;; border-top-right-radius
-;; border-top-style
-;; border-top-width
-;; border-width
-;; bottom
-;; box-decoration-break
-;; box-shadow
-;; box-sizing
-;; break-after
-;; break-before
-;; break-inside
-;; calc()
-;; caption-side
-;; clear
-;; clip
-;; clip-path
-;; color
-;; column-count
-;; column-fill
-;; column-gap
-;; column-rule
-;; column-rule-color
-;; column-rule-style
-;; column-rule-width
-;; column-span
-;; column-width
-;; columns
-;; content
-;; counter-increment
-;; counter-reset
-;; cross-fade()
-;; cubic-bezier()
-;; cursor
-;; cycle()
-;; direction
-;; display
-;; element()
-;; empty-cells
-;; filter
-;; flex
-;; flex-basis
-;; flex-direction
-;; flex-flow
-;; flex-grow
-;; flex-shrink
-;; flex-wrap
-;; float
-;; font
-;; font-family
-;; font-feature-settings
-;; font-kerning
-;; font-language-override
-;; font-size
-;; font-size-adjust
-;; font-stretch
-;; font-style
-;; font-variant
-;; font-variant-ligatures
-;; font-weight
-;; height
-;; hsl()
-;; hsla()
-;; hyphens
-;; icon
-;; image()
-;; image-orientation
-;; image-rendering
-;; image-resolution
-;; ime-mode
-;; inherit
-;; initial
-;; justify-content
-;; left
-;; letter-spacing
-;; line-height
-;; linear-gradient()
-;; list-style
-;; list-style-image
-;; list-style-position
-;; list-style-type
-;; margin
-;; margin-bottom
-;; margin-left
-;; margin-right
-;; margin-top
-;; marks
-;; mask
-;; matrix()
-;; matrix3d()
-;; max-height
-;; max-width
-;; min-height
-;; min-width
-;; nav-down
-;; nav-index
-;; nav-left
-;; nav-right
-;; nav-up
-;; none
-;; normal
-;; object-fit
-;; object-position
-;; opacity
-;; order
-;; orphans
-;; outline
-;; outline-color
-;; outline-offset
-;; outline-style
-;; outline-width
-;; overflow
-;; overflow-wrap
-;; overflow-x
-;; overflow-y
-;; padding
-;; padding-bottom
-;; padding-left
-;; padding-right
-;; padding-top
-;; page-break-after
-;; page-break-before
-;; page-break-inside
-;; perspective
-;; perspective()
-;; perspective-origin
-;; pointer-events
-;; position
-;; quotes
-;; radial-gradient()
-;; rect()
-;; repeating-linear-gradient()
-;; repeating-radial-gradient()
-;; resize
-;; rgb()
-;; rgba()
-;; right
-;; rotate()
-;; rotate3d()
-;; rotateX()
-;; rotateY()
-;; rotateZ()
-;; scale()
-;; scale3d()
-;; scaleX()
-;; scaleY()
-;; scaleZ()
-;; skew()
-;; skewX()
-;; skewY()
-;; steps()
-;; tab-size
-;; table-layout
-;; text-align
-;; text-align-last
-;; text-combine-horizontal
-;; text-decoration
-;; text-decoration-color
-;; text-decoration-line
-;; text-decoration-style
-;; text-indent
-;; text-orientation
-;; text-overflow
-;; text-rendering
-;; text-shadow
-;; text-transform
-;; text-underline-position
-;; top
-;; transform
-;; transform-origin
-;; transform-style
-;; transition
-;; transition-delay
-;; transition-duration
-;; transition-property
-;; transition-timing-function
-;; translate()
-;; translate3d()
-;; translateX()
-;; translateY()
-;; translateZ()
-;; unicode-bidi
-;; url()
-;; var()
-;; var-*
-;; vertical-align
-;; visibility
-;; white-space
-;; widows
-;; width
-;; word-break
-;; word-spacing
-;; word-wrap
-;; writing-mode
-;; z-index

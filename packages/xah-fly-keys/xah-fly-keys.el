@@ -137,7 +137,7 @@ To solve this problem, when your code only knows the relative path of another fi
   (interactive)
   (progn
 
-    (global-set-key (kbd ";") 'self-insert-command)
+    (global-set-key (kbd ";") 'xah-insert-space-after)
     ;; (global-set-key (kbd "=") nil)
     (global-set-key (kbd "\\") 'self-insert-command)
     (global-set-key (kbd ".") 'backward-kill-word)
@@ -171,7 +171,7 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "i") 'kill-line)
     (global-set-key (kbd "j") 'xah-copy-line-or-region)
     (global-set-key (kbd "k") 'yank)
-    (global-set-key (kbd "l") nil)
+    (global-set-key (kbd "l") 'isearch-forward)
     (global-set-key (kbd "m") 'xah-backward-left-bracket)
     (global-set-key (kbd "n") 'forward-char)
     (global-set-key (kbd "o") 'other-window)

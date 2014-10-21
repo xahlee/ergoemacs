@@ -81,12 +81,17 @@
 (defun xah-find-text (φsearch-str1 φinput-dir φpath-regex φfixed-case-search-p φprintContext-p)
   "Report files that contain string, similar to Linux 「grep -F」."
   (interactive
-   (list
-    (read-string (format "Search string (default %s): " (current-word)) nil 'query-replace-history (current-word))
-    (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
-    (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
-    (y-or-n-p "Fixed case in search?")
-    (y-or-n-p "Print surrounding Text?")))
+   (let (
+         (ξdefault-input
+          (if (use-region-p)
+              (buffer-substring-no-properties (region-beginning) (region-end))
+            (current-word))))
+     (list
+      (read-string (format "Search string (default %s): " ξdefault-input) nil 'query-replace-history ξdefault-input)
+      (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
+      (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
+      (y-or-n-p "Fixed case in search?")
+      (y-or-n-p "Print surrounding Text?"))))
 
   (let (
         (case-fold-search (not φfixed-case-search-p))
