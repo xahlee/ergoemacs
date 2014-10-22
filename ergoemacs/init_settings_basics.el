@@ -78,9 +78,9 @@
 
   ;; make icomplete prettier
   (setq icomplete-separator "\n")
-  (setq icomplete-prospects-height 3)
   (setq icomplete-hide-common-prefix nil)
   (setq icomplete-in-buffer t)
+
 )
 
 (progn
