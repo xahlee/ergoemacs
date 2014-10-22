@@ -63,7 +63,10 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
           (setq buffer-offer-save t))
         ) ))
 
-(add-hook 'after-init-hook 'desktop-settings-setup "APPEND")
+(when (version< emacs-version "24.4")
+  (add-hook 'after-init-hook 'desktop-settings-setup "APPEND"))
+
+
 (add-hook 'after-init-hook 'hide-init-buffers "APPEND")
 
 (setq page-break-lines-modes (quote (emacs-lisp-mode xah-elisp-mode compilation-mode fundamental-mode text-mode org-mode ruby-mode python-mode xah-html-mode html-mode nxml-mode )) )
