@@ -63,9 +63,10 @@ No splash screen. and If the *scratch* buffer is the current one, then create a 
           (setq buffer-offer-save t))
         ) ))
 
-(when (version< emacs-version "24.4")
-  (add-hook 'after-init-hook 'desktop-settings-setup "APPEND"))
-
+(if (version< emacs-version "24.4")
+    (add-hook 'after-init-hook 'desktop-settings-setup "APPEND")
+  (desktop-save-mode 1)
+)
 
 (add-hook 'after-init-hook 'hide-init-buffers "APPEND")
 
