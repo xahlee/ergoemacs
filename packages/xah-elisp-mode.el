@@ -392,6 +392,10 @@
 "remove-from-invisibility-spec"
 "invisible-p"
 "number-or-marker-p"
+"version<"
+"version<="
+"version"
+"emacs-version"
 
 ))
 
@@ -1533,8 +1537,10 @@ If there's a text selection, act on the region, else, on defun block."
     ("wg" "widget-get" nil :system t)
     ("yonp" "yes-or-no-p" nil :system t)
 
-    ("add-hook" "(add-hook HOOK▮ FUNCTION)" nil :system t)
+    ("add-hook" "(add-hook 'HOOK▮ 'FUNCTION)" nil :system t)
     ("and" "(and ▮)" nil :system t )
+    ("version<" "(version< \"24.4\" emacs-version)" nil :system t )
+    ("version<=" "(version<= \"24.4\" emacs-version)" nil :system t )
 
     ("append" "(append ▮)" nil :system t)
     ("add-to-list" "(add-to-list LIST-VAR▮ ELEMENT &optional APPEND COMPARE-FN)" nil :system t)
