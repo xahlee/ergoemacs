@@ -404,10 +404,10 @@ Version 2014-10-20"
            ξcharMap)))))
 
 (defun xah-asciify-string (φstring)
-  "Returns a new string. European language chars are changed ot ASCII ones ⁖ “café” ⇒ “cafe”. 
+  "Returns a new string. European language chars are changed ot ASCII ones ⁖ “café” ⇒ “cafe”.
 See `xah-asciify-region'
 Version 2014-10-20"
-  (with-temp-buffer 
+  (with-temp-buffer
       (insert φstring)
       (xah-asciify-region (point-min) (point-max))
       (buffer-string)))

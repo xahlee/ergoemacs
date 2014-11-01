@@ -163,7 +163,7 @@
 (setq xem-emacs-words '(
 
 "current-word"
-
+"call-interactively"
 "left-char"
 "right-char"
 
@@ -1559,6 +1559,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("buffer-modified-p" "(buffer-modified-p ▮)" nil :system t)
     ("buffer-substring-no-properties" "(buffer-substring-no-properties START▮ END)" nil :system t)
     ("buffer-substring" "(buffer-substring START▮ END)" nil :system t)
+    ("call-interactively" "(call-interactively 'FUNCTION▮ &optional RECORD-FLAG KEYS)" nil :system t)
     ("called-interactively-p" "(called-interactively-p 'interactive▮)" nil :system t)
     ("car" "(car ▮)" nil :system t)
     ("catch" "(catch TAG▮ BODY)" nil :system t)
