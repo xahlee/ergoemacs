@@ -20,6 +20,9 @@
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 
+; everytime bookmark is changed, automatically save it
+(setq bookmark-save-flag 1)
+
 ;; make dired suggest target dir (for copy, move, …) that's in the other dired pane
 (setq dired-dwim-target t)
 
