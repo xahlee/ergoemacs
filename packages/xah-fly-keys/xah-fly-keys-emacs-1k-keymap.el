@@ -92,12 +92,28 @@
 
 (progn
   (define-prefix-command 'xah-menu-tab-keymap)
+
   (global-set-key (kbd "<menu> <tab>") xah-menu-tab-keymap)
-  (global-set-key (kbd "<menu> <tab> <tab>") 'indent-for-tab-command)
-  (global-set-key (kbd "<menu> <tab> i") 'complete-symbol)
-  (global-set-key (kbd "<menu> <tab> g") 'indent-rigidly)
-  (global-set-key (kbd "<menu> <tab> r") 'indent-region)
-  (global-set-key (kbd "<menu> <tab> e") 'expand-abbrev)
+
+  (define-key xah-menu-tab-keymap (kbd "<tab>") 'indent-for-tab-command)
+
+  (define-key xah-menu-tab-keymap (kbd "SPC") 'expand-abbrev)
+
+  (define-key xah-menu-tab-keymap (kbd "i") 'complete-symbol)
+  (define-key xah-menu-tab-keymap (kbd "g") 'indent-rigidly)
+  (define-key xah-menu-tab-keymap (kbd "r") 'indent-region)
+
+  (define-key xah-menu-tab-keymap (kbd "'") 'abbrev-prefix-mark)
+  (define-key xah-menu-tab-keymap (kbd "e") 'edit-abbrevs)
+  (define-key xah-menu-tab-keymap (kbd "r") 'expand-region-abbrevs)
+  (define-key xah-menu-tab-keymap (kbd "u") 'unexpand-abbrev)
+  (define-key xah-menu-tab-keymap (kbd "g") 'add-global-abbrev)
+  (define-key xah-menu-tab-keymap (kbd "a") 'add-mode-abbrev)
+  (define-key xah-menu-tab-keymap (kbd "v") 'inverse-add-global-abbrev)
+  (define-key xah-menu-tab-keymap (kbd "l") 'inverse-add-mode-abbrev)
+  (define-key xah-menu-tab-keymap (kbd "n") 'expand-jump-to-next-slot)
+  (define-key xah-menu-tab-keymap (kbd "p") 'expand-jump-to-previous-slot)
+
   )
 
   (global-set-key (kbd "<menu> SPC") 'xah-insert-keymap)
@@ -116,32 +132,14 @@
 (global-set-key (kbd "<menu> 2") 'delete-window)
 (global-set-key (kbd "<menu> 3") 'delete-other-windows)
 (global-set-key (kbd "<menu> 4") 'split-window-vertically)
-(global-set-key (kbd "<menu> 5") 'mark-whole-buffer)
+(global-set-key (kbd "<menu> 5") nil)
 (global-set-key (kbd "<menu> 6") nil)
 (global-set-key (kbd "<menu> 7") nil)
 (global-set-key (kbd "<menu> 8") nil)
 (global-set-key (kbd "<menu> 9") 'ispell-word)
 (global-set-key (kbd "<menu> 0") nil)
 
-(progn
-  (define-prefix-command 'xah-menu-a-keymap)
-  (global-set-key (kbd "<menu> a") xah-menu-a-keymap)
-
-  (global-set-key (kbd "<menu> a SPC") 'expand-abbrev)
-
-  (global-set-key (kbd "<menu> a m") 'abbrev-mode)
-
-  (global-set-key (kbd "<menu> a '") 'abbrev-prefix-mark)
-  (global-set-key (kbd "<menu> a e") 'edit-abbrevs)
-  (global-set-key (kbd "<menu> a r") 'expand-region-abbrevs)
-  (global-set-key (kbd "<menu> a u") 'unexpand-abbrev)
-  (global-set-key (kbd "<menu> a g") 'add-global-abbrev)
-  (global-set-key (kbd "<menu> a a") 'add-mode-abbrev)
-  (global-set-key (kbd "<menu> a v") 'inverse-add-global-abbrev)
-  (global-set-key (kbd "<menu> a l") 'inverse-add-mode-abbrev)
-  (global-set-key (kbd "<menu> a n") 'expand-jump-to-next-slot)
-  (global-set-key (kbd "<menu> a p") 'expand-jump-to-previous-slot)
-  )
+(global-set-key (kbd "<menu> a") 'mark-whole-buffer)
 
 (global-set-key (kbd "<menu> b") 'end-of-buffer)
 
@@ -212,8 +210,8 @@
 )
 
 (progn
-  ;; commands here shouldn't change the buffer immediately.
-  ;; they turn on minor/major mode, change display, or prompt, etc.
+  ;; commands here are hameless (safe). They don't modify text.
+  ;; they turn on minor/major mode, change display, prompt, start shell, etc.
   (define-prefix-command 'xah-harmless-keymap)
   (global-set-key (kbd "<menu> n") xah-harmless-keymap)
 
@@ -230,14 +228,13 @@
   (define-key xah-harmless-keymap (kbd "9") 'shell-command)
   (define-key xah-harmless-keymap (kbd "0") 'shell-command-on-region)
 
+  (define-key xah-harmless-keymap (kbd "a") 'text-scale-adjust)
   (define-key xah-harmless-keymap (kbd "b") 'toggle-debug-on-error)
   (define-key xah-harmless-keymap (kbd "c") 'toggle-case-fold-search)
   (define-key xah-harmless-keymap (kbd "d") 'narrow-to-page)
   (define-key xah-harmless-keymap (kbd "e") 'eshell)
-  (define-key xah-harmless-keymap (kbd "h") 'widen)
-
-
   (define-key xah-harmless-keymap (kbd "f") ctl-x-5-map) ; frame
+  (define-key xah-harmless-keymap (kbd "h") 'widen)
 
   (define-key xah-harmless-keymap (kbd "n") 'narrow-to-region)
   (define-key xah-harmless-keymap (kbd "r") 'read-only-mode)
@@ -297,12 +294,13 @@
   (global-set-key (kbd "<menu> t SPC") 'exchange-point-and-mark)
   (global-set-key (kbd "<menu> t <return>") 'pop-global-mark)
 
-  (global-set-key (kbd "<menu> t 3") 'copy-to-register)
-  (global-set-key (kbd "<menu> t 4") 'insert-register)
   (global-set-key (kbd "<menu> t 5") 'number-to-register)
   (global-set-key (kbd "<menu> t 6") 'increment-register)
   (global-set-key (kbd "<menu> t 7") 'point-to-register)
   (global-set-key (kbd "<menu> t 8") 'jump-to-register)
+
+  (global-set-key (kbd "<menu> t e") 'copy-to-register)
+  (global-set-key (kbd "<menu> t u") 'insert-register)
 
   (global-set-key (kbd "<menu> t p") 'query-replace-regexp)
   (global-set-key (kbd "<menu> t q") 'xah-cut-line-or-region)

@@ -5,55 +5,6 @@
 ;; (define-key xmsi-keymap (kbd "<end> <menu>") nil)
 
 (progn
-  (define-prefix-command 'xah-help-keymap)
-
-  (define-key xah-help-keymap (kbd "1") nil)
-  (define-key xah-help-keymap (kbd "2") nil)
-  (define-key xah-help-keymap (kbd "3") 'man)
-
-  (define-key xah-help-keymap (kbd "4") 'elisp-index-search)
-  (define-key xah-help-keymap (kbd "5") 'apropos-variable)
-  (define-key xah-help-keymap (kbd "6") 'apropos-value)
-  (define-key xah-help-keymap (kbd "7") 'lookup-google)
-  (define-key xah-help-keymap (kbd "8") 'lookup-wikipedia)
-  (define-key xah-help-keymap (kbd "9") 'lookup-word-definition)
-  (define-key xah-help-keymap (kbd "0") 'lookup-all-dictionaries)
-
-  (define-key xah-help-keymap (kbd "a") 'apropos-command)
-  (define-key xah-help-keymap (kbd "b") 'describe-bindings)
-  (define-key xah-help-keymap (kbd "c") 'describe-char)
-  (define-key xah-help-keymap (kbd "C") 'describe-coding-system)
-  (define-key xah-help-keymap (kbd "d") 'apropos-documentation)
-  (define-key xah-help-keymap (kbd "e") 'view-echo-area-messages)
-  (define-key xah-help-keymap (kbd "f") 'describe-function)
-  (define-key xah-help-keymap (kbd "F") 'Info-goto-emacs-command-node)
-  (define-key xah-help-keymap (kbd "g") nil)
-  (define-key xah-help-keymap (kbd "h") 'describe-face)
-  (define-key xah-help-keymap (kbd "i") 'info)
-  (define-key xah-help-keymap (kbd "I") 'describe-input-method)
-  (define-key xah-help-keymap (kbd "j") nil)
-  (define-key xah-help-keymap (kbd "k") 'describe-key)
-  (define-key xah-help-keymap (kbd "K") 'Info-goto-emacs-key-command-node)
-  (define-key xah-help-keymap (kbd "l") 'view-lossage)
-  (define-key xah-help-keymap (kbd "L") 'describe-language-environment)
-  (define-key xah-help-keymap (kbd "m") 'xah-describe-major-mode)
-  (define-key xah-help-keymap (kbd "n") nil)
-  (define-key xah-help-keymap (kbd "o") nil)
-  (define-key xah-help-keymap (kbd "p") 'finder-by-keyword)
-  (define-key xah-help-keymap (kbd "q") nil)
-  (define-key xah-help-keymap (kbd "r") nil)
-  (define-key xah-help-keymap (kbd "s") 'describe-syntax)
-  (define-key xah-help-keymap (kbd "S") 'info-lookup-symbol)
-  (define-key xah-help-keymap (kbd "t") nil)
-  (define-key xah-help-keymap (kbd "u") nil)
-  (define-key xah-help-keymap (kbd "v") 'describe-variable)
-  (define-key xah-help-keymap (kbd "w") nil)
-  (define-key xah-help-keymap (kbd "x") nil)
-  (define-key xah-help-keymap (kbd "y") nil)
-  (define-key xah-help-keymap (kbd "z") nil)
-  )
-
-(progn
   ;; this should reserved for user-defined keys
   (define-prefix-command 'xah-user-keymap)
 
@@ -94,11 +45,26 @@
   (define-key xah-user-keymap (kbd "g f") 'xah-dired-2drawing)
 
   (define-key xah-user-keymap (kbd "h") nil)
+
   (define-key xah-user-keymap (kbd "i n") 'xah-insert-random-number)
   (define-key xah-user-keymap (kbd "i s") 'xah-insert-random-string)
   (define-key xah-user-keymap (kbd "i u") 'xah-insert-random-uuid)
   (define-key xah-user-keymap (kbd "i x") 'xah-insert-random-hex)
   (define-key xah-user-keymap (kbd "j") nil)
+
+  (define-key xah-user-keymap (kbd "j t") 'xwe-move-word-to-page)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-new-word-entry)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-insert-word-entry)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-add-definition)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-add-source)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-add-comment)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-search-next-unbold)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-chinese-linkify)
+  (define-key xah-user-keymap (kbd "j k") 'xwe-annotate)
+  (define-key xah-user-keymap (kbd "j e") 'xwe-word-etymology-linkify)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-query-find-then-bold)
+  (define-key xah-user-keymap (kbd "j t") 'xwe-find-word-usage)
+
   (define-key xah-user-keymap (kbd "k") nil)
   (define-key xah-user-keymap (kbd "l") nil)
   (define-key xah-user-keymap (kbd "m") 'magit-status)
@@ -142,8 +108,6 @@
   (define-key xah-dump-keymap (kbd "<f11>") nil)
   (define-key xah-dump-keymap (kbd "<f12>") nil)
 
-  (define-key xah-dump-keymap (kbd "<left>") 'xah-goto-previous-overlay)
-  (define-key xah-dump-keymap (kbd "<right>") 'xah-goto-next-overlay)
   (define-key xah-dump-keymap (kbd "<backspace>") 'xah-remove-overlays-region)
   (define-key xah-dump-keymap (kbd "<return>") 'xah-show-overlay-at-point)
 
@@ -171,8 +135,7 @@
   (define-key xah-dump-keymap (kbd "q") nil)
   (define-key xah-dump-keymap (kbd "r") nil)
   (define-key xah-dump-keymap (kbd "s") 'xah-scan-sexps)
-  (define-key xah-dump-keymap (kbd "s") nil)
-  (define-key xah-dump-keymap (kbd "t") nil)
+  (define-key xah-dump-keymap (kbd "t") 'xah-clojure-mode)
   (define-key xah-dump-keymap (kbd "u") nil)
   (define-key xah-dump-keymap (kbd "v") nil)
   (define-key xah-dump-keymap (kbd "w") nil)
@@ -181,7 +144,6 @@
   (define-key xah-dump-keymap (kbd "z") nil)
 
   )
-
 
 (progn
 
@@ -231,9 +193,10 @@
   (define-key xah-insert-keymap (kbd "u") nil)
   (define-key xah-insert-keymap (kbd "v") nil)
   (define-key xah-insert-keymap (kbd "w") 'xah-insert-angle-bracket〈〉)
+  (define-key xah-insert-keymap (kbd "W") 'xah-insert-double-angle-bracket《》)
   (define-key xah-insert-keymap (kbd "x") nil)
   (define-key xah-insert-keymap (kbd "y") 'xah-insert-double-angle-quote«»)
-  (define-key xah-insert-keymap (kbd "z") nil)
+  (define-key xah-insert-keymap (kbd "z") 'xah-insert-word-3)
 
   )
 

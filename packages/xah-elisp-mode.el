@@ -180,6 +180,9 @@
 "ido-completing-read"
 "ido-read-directory-name"
 
+"terpri"
+"match-string-no-properties"
+
 "frame-parameter"
 "frame-parameters"
 "modify-frame-parameters"
@@ -1342,7 +1345,7 @@ Returns true if there's a expansion, else false."
 This is called by emacs abbrev system."
   (let ((ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
-        (progn nil)
+        nil
       t)))
 
 (defun xem--abbrev-position-cursor (&optional φpos)
@@ -1591,7 +1594,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("delete-char" "(delete-char ▮)" nil :system t)
     ("delete-directory" "(delete-directory ▮ &optional RECURSIVE)" nil :system t)
     ("delete-file" "(delete-file ▮)" nil :system t)
-    ("delete-region" "(delete-region ▮)" nil :system t)
+    ("delete-region" "(delete-region pos1▮ pos2)" nil :system t)
     ("directory-files" "(directory-files ▮ &optional FULL MATCH NOSORT)" nil :system t)
     ("dolist" "(dolist ▮)" nil :system t)
     ("dotimes" "(dotimes (VAR▮ COUNT [RESULT]) BODY)" nil :system t)
@@ -1728,7 +1731,8 @@ If there's a text selection, act on the region, else, on defun block."
     ("user-error" "(user-error FORMAT▮ &rest ARGS)" nil :system t)
     ("vector" "(vector ▮)" nil :system t)
     ("when" "(when ▮)" nil :system t)
-    ("while" "(while ▮)" nil :system t)
+    ("while" "(while (< ξi▮ 9)
+      (setq ξi (1+ ξi)))" nil :system t)
     ("widget-get" "(widget-get ▮)" nil :system t)
     ("with-current-buffer" "(with-current-buffer ▮)" nil :system t)
     ("with-temp-buffer" "(with-temp-buffer ▮)" nil :system t)
@@ -1810,7 +1814,7 @@ If there's a text selection, act on the region, else, on defun block."
 ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  ;; :enable-function 'xem-abbrev-enable-function
+  :enable-function 'xem-abbrev-enable-function
   )
 
 

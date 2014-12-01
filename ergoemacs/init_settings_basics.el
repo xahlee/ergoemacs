@@ -77,7 +77,8 @@
   (icomplete-mode 1)
 
   ;; make icomplete prettier
-  (setq icomplete-separator "\n")
+  (setq icomplete-separator " ")
+  ;; (setq icomplete-separator "\n")
   (setq icomplete-hide-common-prefix nil)
   (setq icomplete-in-buffer t)
 
