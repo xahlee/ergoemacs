@@ -554,6 +554,12 @@ Examples of changes:
                                     ["\"$" "”"]
                                     ])
 
+      ;; fix back escaped quotes in code
+      (replace-pairs-region (point-min) (point-max)
+                                   [
+                                    ["\\”" "\\\""]
+                                    ])
+
       ;; fix back. quotes in HTML code
       (replace-regexp-pairs-region (point-min) (point-max)
                                    [

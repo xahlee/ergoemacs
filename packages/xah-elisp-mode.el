@@ -1311,10 +1311,10 @@ Returns true if there's a expansion, else false."
         ξp1 ξp2
         ξab-str
         (ξsyntax-state (syntax-ppss)))
-    ;; (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
-    ;;     nil
-    ;;   (xem-expand-abbrev))
-    (xem-expand-abbrev)
+    (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
+        nil
+      (xem-expand-abbrev))
+    ;; (xem-expand-abbrev)
     ))
 
 (put 'xem-expand-abbrev-maybe 'no-self-insert t)

@@ -308,7 +308,7 @@ See also: `get-image-dimensions'."
 ;   (find-lisp-find-files φdir φregex)) )
 
 (defun delete-files-by-regex (φdir φregex)
-  "Delete files in a φdir whose file name (not full path) matches a φregex.
+  "Delete files in φdir whose file name (not full path) matches regex φregex.
  Example:
   (delete-files-by-regex \"~/web\" \"~$\") ; remove files ending in ~
 "
