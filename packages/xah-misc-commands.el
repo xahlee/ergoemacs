@@ -181,6 +181,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           [". " "。"]
           [".\n" "。\n"]
           [", " "，"]
+          [",\n" "，\n"]
           [": " "："]
           ["; " "；"]
           ["? " "？"] ; no space after

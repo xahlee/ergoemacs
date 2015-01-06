@@ -1950,7 +1950,7 @@ t
     ("8menu" "〖a ▸ b ▸ c〗")
     ("8key" "【Alt+f】")
     ("8song" "singer ❀ 〈title〉")
-    ("faq" "<div class=\"a\">
+    ("8faq" "<div class=\"question-box32371\">
 <p class=\"q\">How to do this?</p>
 <p>this way</p>
 </div>
