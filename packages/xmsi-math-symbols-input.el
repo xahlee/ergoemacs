@@ -963,7 +963,7 @@
     (puthash "angstrom" "Å" xmsi-abrvs)
     (puthash "R2" "ℝ²" xmsi-abrvs)
     (puthash "R3" "ℝ³" xmsi-abrvs)
-    (puthash "fun" "ƒ" xmsi-abrvs))
+    (puthash "fn" "ƒ" xmsi-abrvs))
 
   (progn 
     ;; relations
