@@ -599,7 +599,7 @@ Examples of changes:
                                   ["\\byou\\b" "u"]
                                   ["\\byour\\b" "ur"]
                                   [" and " "＆"]
-                                  [" because " " cuz "]
+                                  ["\\bbecause\\b" "cuz"]
                                   [" at " " @ "]
                                   [" love " " ♥ "]
                                   [" one " " 1 "]

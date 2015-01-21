@@ -369,22 +369,21 @@ See also, emacs 24.4's new functions.
 
 (defun xah-asciify-region (&optional φfrom φto)
   "Change European language characters into equivalent ASCII ones, ⁖ “café” ⇒ “cafe”.
+When called interactively, work on current line or text selection.
 
-This command does not transcode all Unicode chars such as Greek, math symbols. They remains.
-
-When called interactively, work on text selection or current line.
 URL `http://ergoemacs.org/emacs/emacs_zap_gremlins.html'
-Version 2014-10-20"
+Version 2015-01-20"
   (interactive
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (list (line-beginning-position) (line-end-position))))
   (let ((ξcharMap [
-                         ["á\\|à\\|â\\|ä\\|ã\\|å" "a"]
-                         ["é\\|è\\|ê\\|ë" "e"]
-                         ["í\\|ì\\|î\\|ï" "i"]
-                         ["ó\\|ò\\|ô\\|ö\\|õ\\|ø" "o"]
-                         ["ú\\|ù\\|û\\|ü"     "u"]
+
+                         ["á\\|à\\|â\\|ä\\|ã\\|å\\|ā" "a"]
+                         ["é\\|è\\|ê\\|ë\\|ē" "e"]
+                         ["í\\|ì\\|î\\|ï\\|ī" "i"]
+                         ["ó\\|ò\\|ô\\|ö\\|õ\\|ø\\|ō" "o"]
+                         ["ú\\|ù\\|û\\|ü\\|ū"     "u"]
                          ["Ý\\|ý\\|ÿ"     "y"]
                          ["ñ" "n"]
                          ["ç" "c"]

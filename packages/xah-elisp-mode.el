@@ -1892,15 +1892,18 @@ If there's a text selection, act on the region, else, on defun block."
   (setq xem-keymap (make-sparse-keymap))
   (define-key xem-keymap (kbd "<tab>") 'xem-complete-or-indent)
 
-  (define-key xem-keymap (kbd "<menu> e u") 'xem-add-paren-around-symbol)
+  (define-prefix-command 'xem-single-keys-keymap)
+  (define-key xem-keymap (kbd "<menu> e") xem-single-keys-keymap)
 
-  (define-key xem-keymap (kbd "<menu> e t") 'xem-prettify-root-sexp)
-  (define-key xem-keymap (kbd "<menu> e h") 'xem-remove-paren-pair)
+  (define-key xem-single-keys-keymap (kbd "u") 'xem-add-paren-around-symbol)
 
-  (define-key xem-keymap (kbd "<menu> e p") 'xem-compact-parens)
-  (define-key xem-keymap (kbd "<menu> e c") 'xem-complete-symbol)
+  (define-key xem-single-keys-keymap (kbd "t") 'xem-prettify-root-sexp)
+  (define-key xem-single-keys-keymap (kbd "h") 'xem-remove-paren-pair)
 
-  (define-key xem-keymap (kbd "<menu> e e") 'xem-expand-abbrev-maybe))
+  (define-key xem-single-keys-keymap (kbd "p") 'xem-compact-parens)
+  (define-key xem-single-keys-keymap (kbd "c") 'xem-complete-symbol)
+
+  (define-key xem-single-keys-keymap (kbd "e") 'xem-expand-abbrev-maybe))
 
 
 

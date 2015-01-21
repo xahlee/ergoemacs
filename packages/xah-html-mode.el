@@ -45,6 +45,7 @@
 (require 'xfrp_find_replace_pairs)
 (require 'xeu_elisp_util)
 (require 'htmlize)
+(require 'url-util)
 
 (progn
   ;; part of emacs
@@ -1449,7 +1450,7 @@ http://en.wikipedia.org/wiki/Emacs
 ⇒
 <a href=\"http://en.wikipedia.org/wiki/Emacs\">Emacs</a>.
 
-When called interactively, work on current URL or text selection.
+When called interactively, work on current URL or text selection (of a URL).
 
 When called in lisp code, if φstring is non-nil, returns a changed string.  If φstring nil, change the text in the region between positions in sequence φfrom-to-pair."
 
@@ -1467,12 +1468,15 @@ When called in lisp code, if φstring is non-nil, returns a changed string.  If 
          (list nil (vector p1 p2))))))
 
   (let (ξwork-on-string-p ξinput-str ξoutput-str
-                         (ξfrom (elt φfrom-to-pair 0))
-                         (ξto (elt φfrom-to-pair 1)))
+                          (ξfrom (elt φfrom-to-pair 0))
+                          (ξto (elt φfrom-to-pair 1)))
     (setq ξwork-on-string-p (if () t nil))
     (setq ξinput-str (if ξwork-on-string-p φstring (buffer-substring-no-properties ξfrom ξto)))
 
-    (setq ξoutput-str (format "<a href=\"%s\">%s</a>" (url-percent-encode-string ξinput-str) (replace-regexp-in-string "_" " " (url-percent-decode-string (file-name-nondirectory ξinput-str)))))
+    (setq ξoutput-str
+          (format "<a href=\"%s\">%s</a>" (url-encode-url ξinput-str)
+                  (replace-regexp-in-string "_" " "
+                                            (xhm-url-percent-decode-string (file-name-nondirectory ξinput-str)))))
 
     (if ξwork-on-string-p
         ξoutput-str
@@ -1496,7 +1500,7 @@ When called in lisp code, if φstring is non-nil, returns a changed string.  If 
   (let (ξwork-on-string-p ξinput-str ξoutput-str)
     (setq ξwork-on-string-p (if φstring t nil))
     (setq ξinput-str (if ξwork-on-string-p φstring (buffer-substring-no-properties φfrom φto)))
-    (setq ξoutput-str (concat "<a href=\"" (url-percent-encode-string ξinput-str) "\">" ξinput-str "</a>" ))
+    (setq ξoutput-str (concat "<a href=\"" (url-encode-url ξinput-str) "\">" ξinput-str "</a>" ))
 
     (if ξwork-on-string-p
         ξoutput-str
@@ -1869,7 +1873,6 @@ If `universal-argument' is called first, then also prompt for a “class” attr
   "Replace current HTML inline image's file name.
 
 When cursor is in HTML link file path, e.g.  <img src=\"gki/macosxlogo.png\" > and this command is called, it'll prompt user for a new name. The link path will be changed to the new name, the corresponding file will also be renamed. The operation is aborted if a name exists."
-
   (interactive
    (let (
          (defaultInput (expand-file-name
@@ -1928,6 +1931,41 @@ This is heuristic based, does not remove ALL possible redundant whitespace."
           (goto-char (point-min))
           (while (search-forward-regexp " *<p>\n+" nil "noerror")
             (replace-match "<p>")))))))
+
+(defun xhm-url-percent-decode-string (φstring)
+  "Returns URL percent-encoded
+
+Example:
+    http://en.wikipedia.org/wiki/Saint_Jerome_in_His_Study_%28D%C3%BCrer%29
+becomes
+    http://en.wikipedia.org/wiki/Saint_Jerome_in_His_Study_(Dürer)
+
+    http://zh.wikipedia.org/wiki/%E6%96%87%E6%9C%AC%E7%BC%96%E8%BE%91%E5%99%A8
+becomes
+    http://zh.wikipedia.org/wiki/文本编辑器"
+  (decode-coding-string (url-unhex-string φstring) 'utf-8))
+
+(defun xhm-decode-percent-encoded-uri (&optional φp1 φp2)
+  "decode URI percent encoding of current line or selection."
+  (interactive 
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (line-beginning-position) (line-end-position))))
+  (let ((myStr (buffer-substring-no-properties φp1 φp2)))
+    (save-excursion
+      (save-restriction
+        (delete-region φp1 φp2 )
+        (insert (decode-coding-string (url-unhex-string myStr) 'utf-8))))))
+
+(defun xhm-decode-percent-encoded-uri-js (φp1 φp2)
+  "Percent decode URI for text selection.
+Requires a node.js script. See source code.
+See also `xhm-decode-percent-encoded-uri'."
+  (interactive "r")
+  (let (scriptName)
+    (save-excursion
+      (setq scriptName (concat "/usr/bin/node ~/git/xahscripts/emacs_uri_decode.js"))
+      (shell-command-on-region φp1 φp2 scriptName nil "REPLACE" nil t))))
 
 
 
@@ -2034,10 +2072,6 @@ t
   (define-key xhm-keymap (kbd "<tab>") 'xhm-wrap-html-tag)
 
   (define-prefix-command 'xhm-single-keys-keymap)
-
-  ;; . p  g c
-  ;; e u  h t
-
   (define-key xhm-keymap (kbd "<menu> e") xhm-single-keys-keymap)
 
   (define-key xhm-single-keys-keymap (kbd ".") 'xhm-lines-to-html-list)
@@ -2063,6 +2097,7 @@ t
   (define-key xhm-single-keys-keymap (kbd "r m") 'xhm-make-html-table)
   (define-key xhm-single-keys-keymap (kbd "t u") 'xhm-extract-url)
   (define-key xhm-single-keys-keymap (kbd "r v") 'xhm-make-html-table-undo)
+  (define-key xhm-single-keys-keymap (kbd "r z") 'xhm-decode-percent-encoded-uri)
   (define-key xhm-single-keys-keymap (kbd "x") 'xhm-rename-html-inline-image)
   (define-key xhm-single-keys-keymap (kbd "y") 'xhm-make-citation)
 

@@ -146,39 +146,80 @@ When there is a text selection, act on the the selection, else, act on a text bl
   ;; This command symbol has a property “'stateIsCompact-p”, the possible values are t and nil. This property is used to easily determine whether to compact or uncompact, when this command is called again
   (let ( currentStateIsCompact
          (deactivate-mark nil)
-         (bigFillColumnVal 4333999)
-         (blanklinesRegex "\n[ \t]*\n"))
+         (blanklinesRegex "\n[ \t]*\n")
+         p1 p2
+         )
+
+    (progn
+      ;; set region boundary p1 p2
+      (if (use-region-p)
+          (progn (setq p1 (region-beginning))
+                 (setq p2 (region-end)))
+        (save-excursion
+          (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
+              (progn (re-search-forward "\n[ \t]*\n")
+                     (setq p1 (point)))
+            (setq p1 (point)))
+          (if (re-search-forward "\n[ \t]*\n" nil "NOERROR")
+              (progn (re-search-backward "\n[ \t]*\n")
+                     (setq p2 (point)))
+            (setq p2 (point))))))
 
     (save-excursion
       (setq currentStateIsCompact
             (if (eq last-command this-command)
                 (get this-command 'stateIsCompact-p)
-              (if (> (- (line-end-position) (line-beginning-position)) fill-column) t nil)))
+              (progn
+                (goto-char p1)
+                (if (> (- (line-end-position) (line-beginning-position)) fill-column) t nil))))
 
-      (if (use-region-p)
-          (if currentStateIsCompact
-              (fill-region (region-beginning) (region-end))
-            (let ((fill-column bigFillColumnVal))
-              (fill-region (region-beginning) (region-end))))
-
-        (let (p1 p2)
-          (progn
-            ;; set p1 p2 as boundary of text block
-            (if (re-search-backward blanklinesRegex nil "move")
-                (progn (re-search-forward blanklinesRegex)
-                       (setq p1 (point)))
-              (setq p1 (point)))
-            (if (re-search-forward blanklinesRegex nil "move")
-                (progn (re-search-backward blanklinesRegex)
-                       (setq p2 (point)))
-              (setq p2 (point))))
-
-          (if currentStateIsCompact
-              (fill-region p1 p2)
-            (let ((fill-column bigFillColumnVal))
-              (fill-region p1 p2)))))
+      (if currentStateIsCompact
+          (fill-region p1 p2)
+        (xah-replace-newline-whitespaces-to-space p1 p2))
 
       (put this-command 'stateIsCompact-p (if currentStateIsCompact nil t)))))
+
+(defun xah-unfill-paragraph ()
+  "Replace newline chars in current paragraph by single spaces.
+This command does the inverse of `fill-paragraph'."
+  (interactive)
+  (let ((fill-column 90002000)) ; 90002000 is just random. you can use `most-positive-fixnum'
+    (fill-paragraph nil)))
+
+(defun xah-unfill-region (start end)
+  "Replace newline chars in region by single spaces.
+This command does the inverse of `fill-region'."
+  (interactive "r")
+  (let ((fill-column 90002000))
+    (fill-region start end)))
+
+(defun xah-replace-newline-whitespaces-to-space (&optional p1 p2)
+  "Replace newline with surrounding {tab, space} characters to 1 space, in current text block or selection.
+This is similar to `fill-paragraph' or `fill-region' for making a text block into a single line, except that fill command does many other things. For example, if you have
+
+ > some
+ > thing
+
+it'll remove the second >."
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (save-excursion
+       (let (q1 q2)
+         (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
+             (progn (re-search-forward "\n[ \t]*\n")
+                    (setq q1 (point)))
+           (setq q1 (point)))
+         (if (re-search-forward "\n[ \t]*\n" nil "NOERROR")
+             (progn (re-search-backward "\n[ \t]*\n")
+                    (setq q2 (point)))
+           (setq q2 (point)))
+         (list q1 q2)))))
+  (save-excursion
+    (save-restriction
+      (narrow-to-region p1 p2)
+      (goto-char (point-min))
+      (while (search-forward-regexp "[ \t]*\n[ \t]*" nil t) (replace-match " ")))))
 
 (defun xah-cycle-hyphen-underscore-space ()
   "Cyclically replace {underscore, space, hypen} chars on current word or text selection.
@@ -221,7 +262,9 @@ When called repeatedly, this command cycles the {“_”, “-”, “ ”} char
 
 (defun xah-copy-file-path (&optional φdir-path-only-p)
   "Copy the current buffer's file path or dired path to `kill-ring'.
-If `universal-argument' is called, copy only the dir path."
+If `universal-argument' is called, copy only the dir path.
+Version 2015-01-14
+URL `http://ergoemacs.org/emacs/emacs_copy_file_path.html'"
   (interactive "P")
   (let ((fPath
          (if (equal major-mode 'dired-mode)
@@ -230,8 +273,8 @@ If `universal-argument' is called, copy only the dir path."
     (kill-new
      (if (equal φdir-path-only-p nil)
          fPath
-       (file-name-directory fPath))))
-  (message "File path copied."))
+       (file-name-directory fPath)))
+    (message "File path copied: 「%s」" fPath)))
 
 (defun xah-delete-text-block ()
   "delete the current text block (paragraph) and also put it to `kill-ring'."
