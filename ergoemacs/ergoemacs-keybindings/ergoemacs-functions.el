@@ -1527,6 +1527,22 @@ Installs `undo-tree' if not present."
 (declare-function ergoemacs-get-override-function "ergoemacs-shortcuts.el")
 (declare-function minibuffer-keyboard-quit "delsel.el")
 (declare-function org-edit-src-save "org-src.el")
+
+(defvar ergoemacs-started-emacsclient nil
+  "Tells if the emacsclient was called.")
+
+(defun ergoemacs-server-switch-hook ()
+  "Turns on `ergoemacs-started-emacsclient' for use with `ergoemacs-close-current-buffer'"
+  (set (make-local-variable 'ergoemacs-started-emacsclient) t))
+
+(defun ergoemacs-server-visit-hook ()
+  "Turns on `ergoemacs-started-emacsclient' for use with `ergoemacs-close-current-buffer'"
+  (unless ergoemacs-started-emacsclient
+    (set (make-local-variable 'ergoemacs-started-emacsclient) t)))
+
+(add-hook 'server-switch-hook 'ergoemacs-server-switch-hook)
+
+(declare-function server-edit "server.el")
 (defun ergoemacs-close-current-buffer ()
   "Close the current buffer.
 
@@ -1537,7 +1553,8 @@ Similar to (kill-buffer (current-buffer)) with the following addition:
 • If the buffer is editing a source file in an org-mode file, prompt the user to save before closing.
 • If the buffer is editing a CAPTUREd task in an org-mode file, prompt the user to save before closing.
 • If the buffer is editing a magit commit, prompt the user to save the commit before closing.
-• If it is the minibuffer, exit the minibuffer
+• If it is the minibuffer, exit the minibuffer.
+• If the buffer was created by `server-execute', call `server-edit' instead of `kill-buffer'
 
 A emacs buffer is one who's name starts with *.
 Else it is a user buffer."
@@ -1550,6 +1567,15 @@ Else it is a user buffer."
         (git-commit-p (eq major-mode 'git-commit-mode)))
     (setq emacs-buff-p (if (string-match "^*" (buffer-name)) t nil))
     (cond
+     (ergoemacs-started-emacsclient
+      (when (and (buffer-modified-p)
+                 (if (equal (buffer-file-name) nil)
+                     (if (string-equal "" (save-restriction (widen) (buffer-string))) nil t)
+                   t))
+        (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
+            (save-buffer)
+          (set-buffer-modified-p nil)))
+      (server-edit))
      ((string= major-mode "minibuffer-inactive-mode")
       (if override-fn
           (progn
@@ -1576,15 +1602,13 @@ Else it is a user buffer."
       ;; offer to save buffers that are non-empty and modified, even
       ;; for non-file visiting buffer. (because kill-buffer does not
       ;; offer to save buffers that are not associated with files)
-      
+      (kill-buffer (current-buffer))
       ;; 
       (when (and (buffer-modified-p)
                  org-p)
         (if (y-or-n-p (format "Buffer %s modified; Do you want to save? " (buffer-name)))
             (org-edit-src-save)
           (set-buffer-modified-p nil)))
-      ;; save to a list of closed buffer
-      (kill-buffer (current-buffer))
       ;; if emacs buffer, switch to a user buffer
       (if (string-match "^*" (buffer-name))
           (setq is-emacs-buffer-after-p t)
