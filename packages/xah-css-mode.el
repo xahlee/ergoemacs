@@ -9,12 +9,13 @@
 ;; You can redistribute this program and/or modify it. Please give credit and link. Thanks.
 
 ;;; Commentary:
-;; Major mode for editing CSS code. Beta stage.
+;; Major mode for editing CSS code.
 ;; home page http://ergoemacs.org/emacs/xah-css-mode.html
 
 ;;; HISTORY
 
 ;; version history no longer kept here.
+;; version 2015-01-30 fix a problem with emacs 24.3.1, Debugger entered--Lisp error: (file-error "Cannot open load file" "prog-mode")
 ;; version 0.3, 2013-05-02 added xcm-hex-color-to-hsl, and other improvements.
 ;; version 0.2, 2013-04-22 added xcm-compact-css-region
 ;; version 0.1, 2013-04-18 first version
@@ -904,34 +905,34 @@ This is called by emacs abbrev system."
 
 
 
-(require 'prog-mode)
-
 ;; define the mode
-(define-derived-mode xah-css-mode prog-mode
-  "ξCSS "
+(defun xah-css-mode ()
   "A major mode for CSS.
 
 CSS keywords are colored. Basically that's it.
 
 \\{xcm-keymap}"
 
+  (kill-all-local-variables)
+
+  (setq mode-name "∑CSS")
+  (setq major-mode 'xah-css-mode)
+
   (set-syntax-table xcm-syntax-table)
   (setq font-lock-defaults '((xcm-font-lock-keywords)))
-
-  (setq local-abbrev-table xcm-abbrev-table)
-  (set (make-local-variable 'comment-start) "/*")
-  (set (make-local-variable 'comment-start-skip) "/\\*+[ \t]*")
-  (set (make-local-variable 'comment-end) "*/")
-  (set (make-local-variable 'comment-end-skip) "[ \t]*\\*+/")
   (use-local-map xcm-keymap)
 
-  (run-mode-hooks 'xah-css-mode-hook)
-)
+  (setq local-abbrev-table xcm-abbrev-table)
+  (setq-local comment-start "/*")
+  (setq-local comment-start-skip "/\\*+[ \t]*")
+  (setq-local comment-end "*/")
+  (setq-local comment-end-skip "[ \t]*\\*+/")
 
-(when (featurep 'auto-complete )
-  (add-to-list 'ac-modes 'xah-css-mode)
-  (add-hook 'xah-css-mode-hook 'ac-css-mode-setup)
-  )
+  (run-mode-hooks 'xah-css-mode-hook))
+
+;; (when (featurep 'auto-complete )
+;;   (add-to-list 'ac-modes 'xah-css-mode)
+;;   (add-hook 'xah-css-mode-hook 'ac-css-mode-setup))
 
 (provide 'xah-css-mode)
 

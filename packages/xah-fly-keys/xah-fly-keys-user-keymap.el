@@ -81,6 +81,7 @@
   (define-key xah-user-keymap (kbd "r d") 'fix-datetimestamp)
   (define-key xah-user-keymap (kbd "r e") 'xah-replace-straight-quotes)
   (define-key xah-user-keymap (kbd "r g") 'xah-convert-latin-alphabet-gothic)
+  (define-key xah-user-keymap (kbd "r l") 'xah-unescape-quotes)
   (define-key xah-user-keymap (kbd "r p") 'xah-convert-asian/ascii-space)
   (define-key xah-user-keymap (kbd "r p") 'xah-replace-profanity)
   (define-key xah-user-keymap (kbd "r t") 'xah-twitterfy)
@@ -93,7 +94,7 @@
   (define-key xah-user-keymap (kbd "v") nil)
   (define-key xah-user-keymap (kbd "w") 'xah-angle-brackets-to-html)
   (define-key xah-user-keymap (kbd "y") 'xah-open-last-closed)
-  (define-key xah-user-keymap (kbd "z") 'xah-toggle-read-novel-mode)
+  (define-key xah-user-keymap (kbd "z") nil)
 
   )
 

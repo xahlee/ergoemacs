@@ -615,23 +615,6 @@ Examples of changes:
                                   ["! " "！"]
                                   ))))
 
-(defun xah-escape-quotes ()
-  "Replace 「\"」 by 「\\\"」 in current line or text selection."
-  (interactive)
-  (let* ((bds (get-selection-or-unit 'line))
-         (p1 (elt bds 1))
-         (p2 (elt bds 2)))
-    ;; todo: might also call replace-quote
-    (replace-pairs-region p1 p2 '(["\"" "\\\""]))))
-
-(defun xah-unescape-quotes ()
-  "Replace  「\\\"」 by 「\"」 in current line or text selection."
-  (interactive)
-  (let* ((bds (get-selection-or-unit 'line))
-        (p1 (elt bds 1))
-        (p2 (elt bds 2)))
-    (replace-pairs-region p1 p2 '(["\\\"" "\""]))))
-
 (defun xah-remove-vowel-old (&optional ξstring ξfrom ξto)
   "Remove the following letters: {a e i o u}.
 

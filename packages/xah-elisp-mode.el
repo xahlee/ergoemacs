@@ -168,7 +168,7 @@
 "right-char"
 
 "propertize"
-
+"setq-local"
 "upcase"
 "upcase-region"
 "downcase-region"
@@ -1223,10 +1223,7 @@ See
  `backward-up-list',
  `up-list'"
   (interactive)
-  (if (or
-       (and (>= emacs-major-version 24)
-            (>= emacs-minor-version 4))
-       (>= emacs-major-version 25))
+  (if (>= emacs-major-version 25)
       (up-list arg1 arg2 arg3)
     (up-list arg1)))
 
@@ -1932,13 +1929,13 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
 
   (setq mode-name "∑lisp")
   (setq major-mode 'xah-elisp-mode)
-  (setq font-lock-defaults '((xem-font-lock-keywords)))
-
   (set-syntax-table emacs-lisp-mode-syntax-table)
+  (setq font-lock-defaults '((xem-font-lock-keywords)))
+  
   (use-local-map xem-keymap)
   (setq local-abbrev-table xem-abbrev-table)
 
-  (setq-local comment-start ";")
+  (setq-local comment-start "; ")
   (setq-local comment-end "")
   (setq-local comment-start-skip ";+ *")
   (setq-local comment-add 1) ;default to `;;' in comment-region
@@ -1965,6 +1962,10 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
         (setq abbrev-expand-function 'xem-expand-abbrev-maybe))
     (progn (add-hook 'abbrev-expand-functions 'xem-expand-abbrev-maybe nil t)))
 
-  (run-mode-hooks 'xah-elisp-mode-hook))
+  (setq prettify-symbols-alist '(("lambda" . 955)))
+
+  (run-mode-hooks 'xah-elisp-mode-hook)
+
+  )
 
 (provide 'xah-elisp-mode)

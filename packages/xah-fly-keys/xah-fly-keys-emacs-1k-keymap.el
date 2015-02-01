@@ -119,7 +119,7 @@
   (global-set-key (kbd "<menu> SPC") 'xah-insert-keymap)
 
 (global-set-key (kbd "<menu> .") 'universal-argument)
-(global-set-key (kbd "<menu> '") 'quoted-insert)
+(global-set-key (kbd "<menu> '") nil)
 (global-set-key (kbd "<menu> ,") nil)
 (global-set-key (kbd "<menu> -") nil)
 (global-set-key (kbd "<menu> /") nil)
@@ -133,11 +133,11 @@
 (global-set-key (kbd "<menu> 3") 'delete-other-windows)
 (global-set-key (kbd "<menu> 4") 'split-window-vertically)
 (global-set-key (kbd "<menu> 5") 'split-window-horizontally)
-(global-set-key (kbd "<menu> 6") nil)
-(global-set-key (kbd "<menu> 7") nil)
+(global-set-key (kbd "<menu> 6") 'xah-select-current-block)
+(global-set-key (kbd "<menu> 7") 'xah-select-current-line)
 (global-set-key (kbd "<menu> 8") nil)
-(global-set-key (kbd "<menu> 9") 'ispell-word)
-(global-set-key (kbd "<menu> 0") nil)
+(global-set-key (kbd "<menu> 9") 'xah-select-text-in-quote)
+(global-set-key (kbd "<menu> 0") 'ispell-word)
 
 (global-set-key (kbd "<menu> a") 'mark-whole-buffer)
 
@@ -145,25 +145,23 @@
 
 (progn
   (define-prefix-command 'xah-menu-c-keymap)
-  (global-set-key (kbd "<menu> c") xah-menu-c-keymap)
-  (global-set-key (kbd "<menu> c SPC") nil)
-  (global-set-key (kbd "<menu> c <return>") nil)
 
-  (global-set-key (kbd "<menu> c ,") 'xah-open-in-external-app)
-  (global-set-key (kbd "<menu> c .") 'find-file)
-  (global-set-key (kbd "<menu> c c") 'bookmark-bmenu-list)
-  (global-set-key (kbd "<menu> c e") 'dired-jump)
-  (global-set-key (kbd "<menu> c g") 'ido-switch-buffer)
-  (global-set-key (kbd "<menu> c h") 'recentf-open-files)
-  (global-set-key (kbd "<menu> c l") 'bookmark-set)
-  (global-set-key (kbd "<menu> c n") 'xah-new-empty-buffer)
-  (global-set-key (kbd "<menu> c o") 'xah-open-in-desktop)
-  (global-set-key (kbd "<menu> c p") 'xah-open-last-closed)
-  (global-set-key (kbd "<menu> c f") 'xah-open-recently-closed)
-  (global-set-key (kbd "<menu> c y") 'xah-list-recently-closed)
-  (global-set-key (kbd "<menu> c r") 'bookmark-jump)
-  (global-set-key (kbd "<menu> c t") 'ibuffer)
-  (global-set-key (kbd "<menu> c u") 'xah-open-file-path-under-cursor)
+  (global-set-key (kbd "<menu> c") xah-menu-c-keymap)
+  (define-key xah-menu-c-keymap (kbd ",") 'xah-open-in-external-app)
+  (define-key xah-menu-c-keymap (kbd ".") 'find-file)
+  (define-key xah-menu-c-keymap (kbd "c") 'bookmark-bmenu-list)
+  (define-key xah-menu-c-keymap (kbd "e") 'dired-jump)
+  (define-key xah-menu-c-keymap (kbd "g") 'ido-switch-buffer)
+  (define-key xah-menu-c-keymap (kbd "h") 'recentf-open-files)
+  (define-key xah-menu-c-keymap (kbd "l") 'bookmark-set)
+  (define-key xah-menu-c-keymap (kbd "n") 'xah-new-empty-buffer)
+  (define-key xah-menu-c-keymap (kbd "o") 'xah-open-in-desktop)
+  (define-key xah-menu-c-keymap (kbd "p") 'xah-open-last-closed)
+  (define-key xah-menu-c-keymap (kbd "f") 'xah-open-recently-closed)
+  (define-key xah-menu-c-keymap (kbd "y") 'xah-list-recently-closed)
+  (define-key xah-menu-c-keymap (kbd "r") 'bookmark-jump)
+  (define-key xah-menu-c-keymap (kbd "t") 'ibuffer)
+  (define-key xah-menu-c-keymap (kbd "u") 'xah-open-file-path-under-cursor)
 
   )
 
@@ -217,10 +215,19 @@
   (define-prefix-command 'xah-harmless-keymap)
   (global-set-key (kbd "<menu> n") xah-harmless-keymap)
 
-  (define-key xah-harmless-keymap (kbd "SPC") nil)
-  (define-key xah-harmless-keymap (kbd "<return>") nil)
+  (define-key xah-harmless-keymap (kbd "RET") nil)
+  (define-key xah-harmless-keymap (kbd "RET F") 'set-file-name-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET X") 'set-next-selection-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET c") 'universal-coding-system-argument)
+  (define-key xah-harmless-keymap (kbd "RET f") 'set-buffer-file-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET k") 'set-keyboard-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET l") 'set-language-environment)
+  (define-key xah-harmless-keymap (kbd "RET p") 'set-buffer-process-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET r") 'revert-buffer-with-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET t") 'set-terminal-coding-system)
+  (define-key xah-harmless-keymap (kbd "RET x") 'set-selection-coding-system)
 
-  (define-key xah-harmless-keymap (kbd "1") nil)
+  (define-key xah-harmless-keymap (kbd "1") 'set-input-method)
   (define-key xah-harmless-keymap (kbd "2") 'global-hl-line-mode)
   (define-key xah-harmless-keymap (kbd "3") 'whitespace-mode)
   (define-key xah-harmless-keymap (kbd "4") 'linum-mode)
@@ -254,18 +261,24 @@
   (define-key xah-harmless-keymap (kbd "v") nil)
   (define-key xah-harmless-keymap (kbd "w") 'eww)
 
-;; <menu> n f C-f  find-file-other-frame
-;; <menu> n f C-o  display-buffer-other-frame
-;; <menu> n f .    find-tag-other-frame
-;; <menu> n f 0    delete-frame
-;; <menu> n f 1    delete-other-frames
-;; <menu> n f 2    make-frame-command
-;; <menu> n f b    switch-to-buffer-other-frame
-;; <menu> n f d    dired-other-frame
-;; <menu> n f f    find-file-other-frame
-;; <menu> n f m    compose-mail-other-frame
-;; <menu> n f o    other-frame
-;; <menu> n f r    find-file-read-only-other-frame
+  (progn
+    (define-key xah-harmless-keymap (kbd "SPC") nil)
+    (define-key xah-harmless-keymap (kbd "SPC h") 'xah-toggle-read-novel-mode)
+    (define-key xah-harmless-keymap (kbd "SPC t") 'xah-toggle-margin-right)
+    (define-key xah-harmless-keymap (kbd "SPC n") 'xah-toggle-line-spacing))
+
+  ;; <menu> n f C-f  find-file-other-frame
+  ;; <menu> n f C-o  display-buffer-other-frame
+  ;; <menu> n f .    find-tag-other-frame
+  ;; <menu> n f 0    delete-frame
+  ;; <menu> n f 1    delete-other-frames
+  ;; <menu> n f 2    make-frame-command
+  ;; <menu> n f b    switch-to-buffer-other-frame
+  ;; <menu> n f d    dired-other-frame
+  ;; <menu> n f f    find-file-other-frame
+  ;; <menu> n f m    compose-mail-other-frame
+  ;; <menu> n f o    other-frame
+  ;; <menu> n f r    find-file-read-only-other-frame
 
   )
 
@@ -316,6 +329,7 @@
 
   (define-key xah-menu-t-keymap (kbd "SPC") 'exchange-point-and-mark)
   (define-key xah-menu-t-keymap (kbd "<return>") 'pop-global-mark)
+  (define-key xah-menu-t-keymap (kbd ".") 'insert-char)
 
   (define-key xah-menu-t-keymap (kbd "5") 'number-to-register)
   (define-key xah-menu-t-keymap (kbd "6") 'increment-register)
@@ -490,17 +504,7 @@
 ;; C-x C-k r	apply-macro-to-region-lines
 ;; C-x C-k s	kmacro-start-macro
 
-;; C-x RET C-\	set-input-method
-;; C-x RET F	set-file-name-coding-system
-;; C-x RET X	set-next-selection-coding-system
-;; C-x RET c	universal-coding-system-argument
-;; C-x RET f	set-buffer-file-coding-system
-;; C-x RET k	set-keyboard-coding-system
-;; C-x RET l	set-language-environment
-;; C-x RET p	set-buffer-process-coding-system
-;; C-x RET r	revert-buffer-with-coding-system
-;; C-x RET t	set-terminal-coding-system
-;; C-x RET x	set-selection-coding-system
+
 
 ;; C-x 4 C-f	find-file-other-window
 ;; C-x 4 C-o	display-buffer
