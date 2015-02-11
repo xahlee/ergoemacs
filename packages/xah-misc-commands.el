@@ -48,10 +48,10 @@ WARNING: this command is currently unstable."
           (setq startedWithRegion-p t )
           (setq p1 (region-beginning))
           (setq p2 (region-end)))
-      (let ((bds (bounds-of-thing-at-point 'word)))
+      (let ((ξboundary (bounds-of-thing-at-point 'word)))
         (setq startedWithRegion-p nil )
-        (setq p1 (car bds))
-        (setq p2 (cdr bds))))
+        (setq p1 (car ξboundary))
+        (setq p2 (cdr ξboundary))))
 
     (setq char_array [" " "_"])
 
@@ -101,8 +101,8 @@ WARNING: this command is currently unstable."
 
 ;; See also: `xah-remove-punctuation-trailing-redundant-space'."
 ;;   (interactive
-;;    (let ( (bds (get-selection-or-unit 'block)))
-;;      (list (elt bds 1) (elt bds 2)
+;;    (let ( (ξboundary (get-selection-or-unit 'block)))
+;;      (list (elt ξboundary 1) (elt ξboundary 2)
 ;;            (cond
 ;;             ((equal current-prefix-arg nil) "auto")
 ;;             ((equal current-prefix-arg '(4)) "english")
@@ -112,11 +112,11 @@ WARNING: this command is currently unstable."
 ;;             )
 ;;            ) ) )
 ;;   (let* (
-;;         (inputStr (buffer-substring-no-properties p1 p2))
+;;         (ξinput-str (buffer-substring-no-properties p1 p2))
 ;; (chinese-numeral-simple "○一二三四五六七八九十")
 ;; (english-numeral "0123456789")
 
-;;         (ξ-english-chinese-punctuation-map
+;;         (ξenglish-chinese-punctuation-map
 ;;          [
 ;;           [":</" "：</"]
 ;;           ]
@@ -140,43 +140,44 @@ WARNING: this command is currently unstable."
 
 ;;     (replace-pairs-region p1 p2
 ;;                               (cond
-;;                                ((string= φ-to-direction "chinese") ξ-english-chinese-punctuation-map)
-;;                                ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
+;;                                ((string= φ-to-direction "chinese") ξenglish-chinese-punctuation-map)
+;;                                ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξenglish-chinese-punctuation-map))
 ;;                                ((string= φ-to-direction "auto")
-;;                                 (if (string-match ",\\|. " inputStr)
-;;                                   ξ-english-chinese-punctuation-map
-;;                                   (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map)
+;;                                 (if (string-match ",\\|. " ξinput-str)
+;;                                   ξenglish-chinese-punctuation-map
+;;                                   (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξenglish-chinese-punctuation-map)
 ;;                                   ))
 
 ;;                                (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction)) ) ) ) )
 
-(defun xah-convert-english-chinese-punctuation (p1 p2 &optional φ-to-direction)
-  "Convert punctuation from/to English/Chinese Unicode symbols.
+(defun xah-convert-english-chinese-punctuation (p1 p2 &optional φto-direction)
+  "Convert punctuation from/to English/Chinese characters.
 
-When called interactively, do current text block (paragraph) or text selection. The conversion direction is automatically determined.
+When called interactively, do current text block or selection. The conversion direction is automatically determined.
 
-If `universal-argument' is called:
+If `universal-argument' is called, ask user for change direction.
 
- no C-u → Automatic.
- C-u → to English
- C-u 1 → to English
- C-u 2 → to Chinese
+When called in lisp code, p1 p2 are region begin/end positions. φto-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
 
-When called in lisp code, p1 p2 are region begin/end positions. φ-to-direction must be any of the following values: 「\"chinese\"」, 「\"english\"」, 「\"auto\"」.
+See also: `xah-remove-punctuation-trailing-redundant-space'.
 
-See also: `xah-remove-punctuation-trailing-redundant-space'."
+URL `http://ergoemacs.org/emacs/elisp_convert_chinese_punctuation.html'
+Version 2015-02-04
+"
   (interactive
-   (let ( (bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2)
-           (cond
-            ((equal current-prefix-arg nil) "auto")
-            ((equal current-prefix-arg '(4)) "english")
-            ((equal current-prefix-arg 1) "english")
-            ((equal current-prefix-arg 2) "chinese")
-            (t "chinese")))))
+   (let ( (ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2)
+           (if current-prefix-arg
+               (ido-completing-read
+                "Change to: "
+                '( "english"  "chinese")
+                "PREDICATE"
+                "REQUIRE-MATCH")
+             "auto"
+             ))))
   (let (
-        (inputStr (buffer-substring-no-properties p1 p2))
-        (ξ-english-chinese-punctuation-map
+        (ξinput-str (buffer-substring-no-properties p1 p2))
+        (ξenglish-chinese-punctuation-map
          [
           [". " "。"]
           [".\n" "。\n"]
@@ -194,26 +195,23 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
           ]
          ))
 
-    (when (string= φ-to-direction "auto")
-      (if
-          (or (string-match "。" inputStr)
-              (string-match "，" inputStr)
-              (string-match "？" inputStr)
-              (string-match "！" inputStr)) ;; (or (string-match ", " inputStr)
-          ;;     (string-match ".  " inputStr)
-          ;;     (string-match "! " inputStr)
-          ;;     (string-match "? " inputStr)
-          ;;     (string-match ". " inputStr)
-          ;;     )
-          (setq φ-to-direction "english")
-        (setq φ-to-direction "chinese")))
+    (when (string= φto-direction "auto")
+      (setq
+       φto-direction
+       (if
+           (or (string-match "。" ξinput-str)
+               (string-match "，" ξinput-str)
+               (string-match "？" ξinput-str)
+               (string-match "！" ξinput-str))
+           "english"
+         "chinese")))
 
     (replace-pairs-region
      p1 p2
      (cond
-      ((string= φ-to-direction "chinese") ξ-english-chinese-punctuation-map)
-      ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξ-english-chinese-punctuation-map))
-      (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction))))))
+      ((string= φto-direction "chinese") ξenglish-chinese-punctuation-map)
+      ((string= φto-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξenglish-chinese-punctuation-map))
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" φto-direction))))))
 
 (defun xah-convert-asian/ascii-space (p1 p2)
   "Change all space characters between Asian Ideographic one to ASCII one.
@@ -225,8 +223,8 @@ See also `xah-convert-english-chinese-punctuation'
  `xah-remove-punctuation-trailing-redundant-space'
 "
   (interactive
-   (let ( (bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2))))
+   (let ( (ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2))))
   (let ((ξ-space-char-map
          [
           ["　" " "]
@@ -244,10 +242,14 @@ Works on current block or text selection.
 
 When called in emacs lisp code, the φp1 φp2 are cursor positions for region.
 
-See also `xah-convert-english-chinese-punctuation'."
+See also `xah-convert-english-chinese-punctuation'.
+
+URL `http://ergoemacs.org/emacs/elisp_convert_chinese_punctuation.html'
+version 2015-02-04
+"
   (interactive
-   (let ( (bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2))))
+   (let ((ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2))))
   (replace-regexp-pairs-region φp1 φp2
                                [
                                 ;; clean up. Remove extra space.
@@ -268,7 +270,7 @@ See also `xah-convert-english-chinese-punctuation'."
                                 ]
                                "FIXEDCASE" "LITERAL"))
 
-(defun xah-convert-fullwidth-chars (φp1 φp2 &optional φ-to-direction)
+(defun xah-convert-fullwidth-chars (φp1 φp2 &optional φto-direction)
   "Convert ASCII chars to/from Unicode fullwidth version.
 
 When called interactively, do text selection or text block (paragraph).
@@ -282,12 +284,12 @@ If `universal-argument' is called:
  C-u 1 → to ASCII
  C-u 2 → to Unicode
 
-When called in lisp code, φp1 φp2 are region begin/end positions. φ-to-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
+When called in lisp code, φp1 φp2 are region begin/end positions. φto-direction must be any of the following values: 「\"unicode\"」, 「\"ascii\"」, 「\"auto\"」.
 
 See also: `xah-remove-punctuation-trailing-redundant-space'."
   (interactive
-   (let ( (bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2)
+   (let ( (ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2)
            (cond
             ((equal current-prefix-arg nil) "auto")
             ((equal current-prefix-arg '(4)) "ascii")
@@ -314,7 +316,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
 
   ;(message "before %s" stateBefore)
   ;(message "after %s" stateAfter)
-  ;(message "φ-to-direction %s" φ-to-direction)
+  ;(message "φto-direction %s" φto-direction)
   ;(message "real-this-command  %s" this-command)
   ;(message "real-last-command %s" last-command)
 
@@ -322,9 +324,9 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
       (replace-pairs-region
        φp1 φp2
        (cond
-        ((string= φ-to-direction "unicode") ξ-ascii-unicode-map)
-        ((string= φ-to-direction "ascii") ξ-reverse-map)
-        ((string= φ-to-direction "auto")
+        ((string= φto-direction "unicode") ξ-ascii-unicode-map)
+        ((string= φto-direction "ascii") ξ-reverse-map)
+        ((string= φto-direction "auto")
          (if (equal this-command last-command)
              (if (eq stateBefore 0)
                  ξ-ascii-unicode-map
@@ -332,7 +334,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
                )
            ξ-ascii-unicode-map
            ))
-        (t (user-error "Your 3rd argument 「%s」 isn't valid" φ-to-direction)))))
+        (t (user-error "Your 3rd argument 「%s」 isn't valid" φto-direction)))))
     (put 'xah-convert-fullwidth-chars 'state stateAfter)))
 
 (defun xah-convert-latin-alphabet-gothic (φp1 φp2 φreverse-direction-p)
@@ -345,8 +347,8 @@ If any `universal-argument' is given, reverse direction.
 
 When called in elisp, the φp1 and φp2 are region begin/end positions to work on."
   (interactive
-   (let ((bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2) current-prefix-arg )))
+   (let ((ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2) current-prefix-arg )))
 
   (let (
         (latin-to-gothic [ ["A" "𝔄"] ["B" "𝔅"] ["C" "ℭ"] ["D" "𝔇"] ["E" "𝔈"] ["F" "𝔉"] ["G" "𝔊"] ["H" "ℌ"] ["I" "ℑ"] ["J" "𝔍"] ["K" "𝔎"] ["L" "𝔏"] ["M" "𝔐"] ["N" "𝔑"] ["O" "𝔒"] ["P" "𝔓"] ["Q" "𝔔"] ["R" "ℜ"] ["S" "𝔖"] ["T" "𝔗"] ["U" "𝔘"] ["V" "𝔙"] ["W" "𝔚"] ["X" "𝔛"] ["Y" "𝔜"] ["Z" "ℨ"] ["a" "𝔞"] ["b" "𝔟"] ["c" "𝔠"] ["d" "𝔡"] ["e" "𝔢"] ["f" "𝔣"] ["g" "𝔤"] ["h" "𝔥"] ["i" "𝔦"] ["j" "𝔧"] ["k" "𝔨"] ["l" "𝔩"] ["m" "𝔪"] ["n" "𝔫"] ["o" "𝔬"] ["p" "𝔭"] ["q" "𝔮"] ["r" "𝔯"] ["s" "𝔰"] ["t" "𝔱"] ["u" "𝔲"] ["v" "𝔳"] ["w" "𝔴"] ["x" "𝔵"] ["y" "𝔶"] ["z" "𝔷"] ])
@@ -376,9 +378,9 @@ Works on current block or text selection.
   (interactive
    (list (ido-completing-read "from:" xah-bracketsList) ) )
   (let* (
-         (bds (get-selection-or-unit 'block))
-         (p1 (elt bds 1))
-         (p2 (elt bds 2))
+         (ξboundary (get-selection-or-unit 'block))
+         (p1 (elt ξboundary 1))
+         (p2 (elt ξboundary 2))
          )
     (replace-regexp-pairs-region p1 p2
                                  (vector
@@ -399,9 +401,9 @@ When called in lisp program, φfromType and φtoType is a string of a bracket pa
       (ido-completing-read "Replace this:" xah-bracketsList )
       (ido-completing-read "To:" xah-bracketsList ) ) ) )
   (let* (
-         (bds (get-selection-or-unit 'block))
-         (p1 (elt bds 1))
-         (p2 (elt bds 2))
+         (ξboundary (get-selection-or-unit 'block))
+         (p1 (elt ξboundary 1))
+         (p2 (elt ξboundary 2))
          (changePairs (vector
                  (vector (char-to-string (elt φfromType 0)) (char-to-string (elt φtoType 0)))
                  (vector (char-to-string (elt φfromType 1)) (char-to-string (elt φtoType 1)))
@@ -414,9 +416,9 @@ When called in lisp program, φfromType and φtoType is a string of a bracket pa
 in text selection or text block.
 Example: 「it’s」 ⇒ 「it's」."
   (interactive "r")
-(let (bds p1 p2)
-    (setq bds (get-selection-or-unit 'block))
-    (setq p1 (elt bds 1) p2 (elt bds 2)  )
+(let (ξboundary p1 p2)
+    (setq ξboundary (get-selection-or-unit 'block))
+    (setq p1 (elt ξboundary 1) p2 (elt ξboundary 2)  )
     (replace-pairs-region p1 p2 '(
 ["‘tis" "'tis"]
 ["’s" "'s"]
@@ -448,8 +450,8 @@ Examples of changes:
 ;; said "can’t have it, can’t, just can’t"
 ;; ‘I’ve can’t’
   (interactive
-   (let ( (bds (get-selection-or-unit 'block)))
-     (list (elt bds 1) (elt bds 2) ) ) )
+   (let ( (ξboundary (get-selection-or-unit 'block)))
+     (list (elt ξboundary 1) (elt ξboundary 2) ) ) )
   (save-excursion
     ;; Note: order is important since this is huristic.
 
@@ -579,41 +581,80 @@ Examples of changes:
   "Replace fuck shit scumbag … in current line or text selection.
 "
   (interactive)
-  (let* ((bds (get-selection-or-unit 'line))
-         (p1 (elt bds 1))
-         (p2 (elt bds 2)))
+  (let* ((ξboundary (get-selection-or-unit 'line))
+         (p1 (elt ξboundary 1))
+         (p2 (elt ξboundary 2)))
     (replace-pairs-region p1 p2 '(
-["fuck" "f��k"]
-["shit" "sh�t"]
-["motherfucker" "momf��ker"]
-))))
-
-(defun xah-twitterfy ()
-  "Shorten words for Twitter 140 char limit."
-  (interactive)
-  (let* ((bds (get-selection-or-unit 'block))
-         (p1 (elt bds 1))
-         (p2 (elt bds 2)))
-    (replace-regexp-pairs-region p1 p2 '(
-                                  ["\\bare\\b" "r"]
-                                  ["\\byou\\b" "u"]
-                                  ["\\byour\\b" "ur"]
-                                  [" and " "＆"]
-                                  ["\\bbecause\\b" "cuz"]
-                                  [" at " " @ "]
-                                  [" love " " ♥ "]
-                                  [" one " " 1 "]
-                                  [" two " " 2 "]
-                                  [" three " " 3 "]
-                                  [" I " " i "]
-                                  [", " "，"]
-                                  ["\\b\\.\\.\\.\\b" "…"]
-                                  ["\\. " "。"]
-                                  ["。 " "。"]
-                                  ["\\? " "？"]
-                                  [": " "："]
-                                  ["! " "！"]
+                                  ["fuck" "f��k"]
+                                  ["shit" "sh�t"]
+                                  ["motherfucker" "momf��ker"]
                                   ))))
+
+(defun xah-twitterfy (p1 p2 &optional φto-direction)
+  "Shorten words for Twitter 140 char limit.
+
+When called interactively, do current text block or selection. The conversion direction is automatically determined.
+
+If `universal-argument' is called, ask for conversion direction.
+
+When called in lisp code, p1 p2 are region begin/end positions. φto-direction must be any of the following values: 「\"auto\"」, 「\"twitterfy\"」, 「\"untwitterfy\"」.
+
+URL `http://ergoemacs.org/emacs/elisp_twitterfy.html'
+Version 2015-02-10"
+  (interactive
+   (let ((ξboundary (get-selection-or-unit 'block)))
+     (list
+      (elt ξboundary 1)
+      (elt ξboundary 2)
+      (if current-prefix-arg
+          (ido-completing-read
+           "direction: "
+           '( "twitterfy"  "untwitterfy")
+           "PREDICATE"
+           "REQUIRE-MATCH")
+        "auto"
+        ))))
+  (let (
+        (ξinput-str (buffer-substring-no-properties p1 p2))
+        (ξtwitterfy-map
+         [
+          [" are " " r "]
+          [" you " " u "]
+          [" to " " 2 "]
+          [" you." " u。"]
+          [" your" " ur "]
+          [" and " "＆"]
+          ["because" "cuz"]
+          [" at " " @ "]
+          [" love " " ♥ "]
+          [" one " " 1 "]
+          [" two " " 2 "]
+          [" three " " 3 "]
+          [" four " " 4 "]
+          [" zero " " 0 "]
+          [", " "，"]
+          ["..." "…"]
+          [". " "。"]
+          ["? " "？"]
+          [": " "："]
+          ["! " "！"]]
+         ))
+
+    (when (string= φto-direction "auto")
+      (if
+          (or 
+              (string-match "。" ξinput-str)
+              (string-match "，" ξinput-str)
+              (string-match "？" ξinput-str)
+              (string-match "！" ξinput-str))
+          (setq φto-direction "untwitterfy")
+        (setq φto-direction "twitterfy")))
+    (replace-pairs-region
+     p1 p2
+     (cond
+      ((string= φto-direction "twitterfy") ξtwitterfy-map)
+      ((string= φto-direction "untwitterfy") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξtwitterfy-map))
+      (t (user-error "Your 3rd argument 「%s」 isn't valid" φto-direction))))))
 
 (defun xah-remove-vowel-old (&optional ξstring ξfrom ξto)
   "Remove the following letters: {a e i o u}.
@@ -624,22 +665,22 @@ When called in lisp code, if ξstring is non-nil, returns a changed string.  If 
   (interactive
    (if (region-active-p)
        (list nil (region-beginning) (region-end))
-     (let ((bds (bounds-of-thing-at-point 'paragraph)))
-       (list nil (car bds) (cdr bds)))))
+     (let ((ξboundary (bounds-of-thing-at-point 'paragraph)))
+       (list nil (car ξboundary) (cdr ξboundary)))))
 
-  (let (workOnStringP inputStr outputStr)
-    (setq workOnStringP (if ξstring t nil))
-    (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
-    (setq outputStr
+  (let (ξwork-on-string-p ξinput-str ξoutput-str)
+    (setq ξwork-on-string-p (if ξstring t nil))
+    (setq ξinput-str (if ξwork-on-string-p ξstring (buffer-substring-no-properties ξfrom ξto)))
+    (setq ξoutput-str
           (let ((case-fold-search t))
-            (replace-regexp-in-string "a\\|e\\|i\\|o\\|u\\|" "" inputStr)))
+            (replace-regexp-in-string "a\\|e\\|i\\|o\\|u\\|" "" ξinput-str)))
 
-    (if workOnStringP
-        outputStr
+    (if ξwork-on-string-p
+        ξoutput-str
       (save-excursion
         (delete-region ξfrom ξto)
         (goto-char ξfrom)
-        (insert outputStr)))))
+        (insert ξoutput-str)))))
 
 (defun xah-remove-vowel (ξstring &optional ξfrom-to-pair)
   "Remove the following letters: {a e i o u}.
@@ -652,26 +693,26 @@ list or vector pair.  Else, returns a changed string."
   (interactive
    (if (region-active-p)
        (list nil (vector (region-beginning) (region-end)))
-     (let ((bds (bounds-of-thing-at-point 'paragraph)))
-       (list nil (vector (car bds) (cdr bds))))))
+     (let ((ξboundary (bounds-of-thing-at-point 'paragraph)))
+       (list nil (vector (car ξboundary) (cdr ξboundary))))))
 
-  (let (workOnStringP inputStr outputStr ξfrom ξto )
+  (let (ξwork-on-string-p ξinput-str ξoutput-str ξfrom ξto )
     (when ξfrom-to-pair
       (setq ξfrom (elt ξfrom-to-pair 0))
       (setq ξto (elt ξfrom-to-pair 1)))
 
-    (setq workOnStringP (if ξfrom-to-pair nil t))
-    (setq inputStr (if workOnStringP ξstring (buffer-substring-no-properties ξfrom ξto)))
-    (setq outputStr
+    (setq ξwork-on-string-p (if ξfrom-to-pair nil t))
+    (setq ξinput-str (if ξwork-on-string-p ξstring (buffer-substring-no-properties ξfrom ξto)))
+    (setq ξoutput-str
           (let ((case-fold-search t))
-            (replace-regexp-in-string "a\\|e\\|i\\|o\\|u\\|" "" inputStr)))
+            (replace-regexp-in-string "a\\|e\\|i\\|o\\|u\\|" "" ξinput-str)))
 
-    (if workOnStringP
-        outputStr
+    (if ξwork-on-string-p
+        ξoutput-str
       (save-excursion
         (delete-region ξfrom ξto)
         (goto-char ξfrom)
-        (insert outputStr)))))
+        (insert ξoutput-str)))))
 
 
 
@@ -703,9 +744,11 @@ WARNING: If region has comment or string, the code'd be fucked up."
       (indent-region p1 p2))))
 
 (defun xah-clean-whitespace (p1 p2)
-  "Delete trailing whitespace, and replace sequence of newlines into just 2.
-WARNING: This command saves buffer if it's a file.
-Work on text selection or whole buffer."
+  "Delete trailing whitespace, and replace repeated blank lines into just 2.
+This function works on whole buffer or text selection.
+
+URL `http://ergoemacs.org/emacs/elisp_compact_empty_lines.html'
+version 2015-02-06"
   (interactive
    (if (region-active-p)
        (list (region-beginning) (region-end))
@@ -720,8 +763,6 @@ Work on text selection or whole buffer."
       (progn
         (goto-char (point-min))
         (while (search-forward-regexp "\n\n\n+" nil "noerror")
-          (replace-match "\n\n")))))
-  (when (buffer-file-name)
-    (save-buffer)))
+          (replace-match "\n\n"))))))
 
 (provide 'xah-misc-commands)

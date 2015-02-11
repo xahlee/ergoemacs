@@ -29,6 +29,9 @@
 (defvar xem-elisp-lang-words nil "a list of elisp keyword more or less related to elisp the language.")
 (setq xem-elisp-lang-words '(
 
+"read"
+"eval"
+
 "zerop"
 "listp"
 "numberp"
@@ -157,6 +160,9 @@
 "vectorp"
 "vconcat"
 "car-safe"
+
+"print-level"
+"print-length"
 ))
 
 (defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
@@ -1603,6 +1609,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("expand-file-name" "(expand-file-name ▮ &optional relativedir)" nil :system t)
     ("format" "(format \"▮\" &optional OBJECTS)" nil :system t)
     ("fboundp" "(fboundp '▮)" nil :system t)
+    ("featurep" "(featurep 'FEATURE▮)" nil :system t)
     ("file-directory-p" "(file-directory-p ▮)" nil :system t)
     ("file-exists-p" "(file-exists-p ▮)" nil :system t)
     ("file-name-directory" "(file-name-directory ▮)" nil :system t)
