@@ -191,6 +191,13 @@ To solve this problem, when your code only knows the relative path of another fi
 
 ))
 
+;; 67890
+;; fgcrl
+;; dhtns
+;; x z
+;; 
+
+
 (defun xfk-mode-toggle ()
   "Switch between {insertion, command} modes."
   (interactive)

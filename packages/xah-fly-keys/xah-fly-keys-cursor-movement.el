@@ -86,7 +86,7 @@ See: `xah-forward-block'"
 (setq xah-punctuations '("=" ";"))
 
 (defvar xah-punctuation-regex nil "a regex string for the purpose of jumping to punctuations in programing modes.")
-(setq xah-punctuation-regex "=+")
+(setq xah-punctuation-regex "[\\!\?\"'#$%&*+,/:;<=>@^`|~]+")
 
 (defun xah-forward-punct (&optional φn)
   "Move cursor to the next occurrence of punctuation.
