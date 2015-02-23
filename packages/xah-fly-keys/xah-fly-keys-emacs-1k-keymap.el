@@ -249,8 +249,8 @@
   (define-key xah-harmless-keymap (kbd "h") 'widen)
   (define-key xah-harmless-keymap (kbd "i") 'make-frame-command)
   (define-key xah-harmless-keymap (kbd "j") nil)
-  (define-key xah-harmless-keymap (kbd "k") 'toggle-input-method)
-  (define-key xah-harmless-keymap (kbd "l") nil)
+  (define-key xah-harmless-keymap (kbd "k") 'menu-bar-open)
+  (define-key xah-harmless-keymap (kbd "l") 'toggle-word-wrap)
   (define-key xah-harmless-keymap (kbd "m") nil)
   (define-key xah-harmless-keymap (kbd "n") 'narrow-to-region)
   (define-key xah-harmless-keymap (kbd "o") nil)
@@ -259,7 +259,7 @@
   (define-key xah-harmless-keymap (kbd "r") nil)
   (define-key xah-harmless-keymap (kbd "s") 'flyspell-buffer)
   (define-key xah-harmless-keymap (kbd "t") 'narrow-to-defun)
-  (define-key xah-harmless-keymap (kbd "u") 'menu-bar-open)
+  (define-key xah-harmless-keymap (kbd "u") 'toggle-input-method)
   (define-key xah-harmless-keymap (kbd "v") nil)
   (define-key xah-harmless-keymap (kbd "w") 'eww)
   (define-key xah-harmless-keymap (kbd "x") 'nil)
@@ -393,6 +393,7 @@
   (define-key xah-danger-keymap (kbd "p") 'eval-expression)
   (define-key xah-danger-keymap (kbd "q") 'save-buffers-kill-terminal)
   (define-key xah-danger-keymap (kbd "u") 'eval-region)
+  (define-key xah-danger-keymap (kbd "w") 'close-frame)
   
   )
 
