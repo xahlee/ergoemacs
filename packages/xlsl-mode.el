@@ -1,6 +1,6 @@
 ;;; xlsl-mode.el --- Major mode for editing LSL (Linden Scripting Language). -*- coding: utf-8 -*-
 
-;; Copyright © 2008, 2009, 2010, 2011 by Xah Lee
+;; Copyright © 2008, 2009, 2010, 2011, 2015 by Xah Lee
 
 ;; Author: Xah Lee ( http://xahlee.org/ )
 ;; Created: 2008-10-29
@@ -12,26 +12,20 @@
 
 ;; A major mode for editing LSL (Linden Scripting Language).
 ;; for download location and documentation, see:
-;; http://xahlee.org/sl/ls-emacs.html
+;; http://xahsl.org/sl/ls-emacs.html
 
 ;;; INSTALL
 
-;; Open the file, then type Alt+x eval-buffer.
-;; Open any LSL source code, then type Alt+x xlsl-mode, you'll have syntax coloring and other features.
-
-;; To have emacs automatically load the file when it restarts, and automatically use the mode when opening files ending in “.lsl”, follow these steps:
-
-;; Rename the file to “xlsl-mode.el” (if the file is not already that name). Now, put the following lines in your emacs init file “.emacs”:
-
-;; (add-to-list 'load-path "~/.emacs.d/") ;; create the dir if it doesn't exist
+;; 1. create the directory ~/.emacs.d/lisp/ if it doesn't exist
+;; 2. put this file xlsl-mode.el in ~/.emacs.d/lisp/
+;; 3. add the following lines in your emacs init file “.emacs”:
+;; (add-to-list 'load-path "~/.emacs.d/lisp/")
 ;; (autoload 'xlsl-mode "xlsl-mode" "Load xlsl-mode for editing Linden Scripting Lang." t)
-;; (add-to-list 'auto-mode-alist '("\\.lsl\\'" . xlsl-mode))
-
-;; Then, restart emacs.
+;; 4. restart emacs.
 
 ;;; DOCUMENTATION
 
-;; Full documentation is at: http://xahlee.org/sl/ls-emacs.html
+;; Full documentation is at: http://xahsl.org/sl/ls-emacs.html
 
 ;; To see the inline documentation in emacs, type “C-h m”
 ;; (describe-mode). (if you have not load the mode type, first type
@@ -41,7 +35,7 @@
 
 ;;; HISTORY
 
-;; version 1.6.3, 2015-02-28 • added coloring of Firestorm viewer's lsl preprocessor keywords. And other refactoring of code.
+;; version 1.6.4, 2015-02-28 • added coloring of Firestorm viewer's lsl preprocessor keywords. And other refactoring of code.
 ;; version 1.6.2, 2012-04-13 • fixed a few typo (which'd cause memory leak). The typos are related to these {xlsl-keywords-regexp xlsl-type-regexp xlsl-constant-regexp xlsl-event-regexp xlsl-function-regexp}
 ;; version 1.6.1, 2011-05-04 • added constants OBJECT_RUNNING_SCRIPT_COUNT OBJECT_SCRIPT_MEMORY OBJECT_TOTAL_SCRIPT_COUNT
 ;; version 1.6.0, 2011-04-25 • Added function completion for these functions: llCastRay llClearPrimMedia llGetEnv llGetLinkNumberOfSides llGetLinkPrimitiveParams llGetPrimMediaParams llGetSPMaxMemory llGetUsedMemory llGetUsername llLinkParticleSystem llRegionSayTo llRequestUsername llScriptProfiler llSetLinkPrimitiveParamsFast llSetLinkTextureAnim llSetPrimMediaParams llTextBox.
@@ -82,7 +76,7 @@
 (require 'thingatpt )
 
 (defvar xlsl-mode-version)
-(setq xlsl-mode-version "1.6.2")
+(setq xlsl-mode-version "1.6.4")
 
 (defgroup xlsl-mode nil
   "Major mode for editing Linden Scripting Language."
@@ -140,7 +134,7 @@ The value can be any of:
   (let ((menuMap (make-sparse-keymap "LSL")))
     (define-key xlsl-mode-map [menu-bar xlsl] (cons "LSL" menuMap))
 
-    (define-key menuMap [goto-home-page] '("Goto xlsl-mode website" . (lambda () (interactive) (browse-url "http://xahlee.org/sl/ls-emacs.html"))))
+    (define-key menuMap [goto-home-page] '("Goto xlsl-mode website" . (lambda () (interactive) (browse-url "http://xahsl.org/sl/ls-emacs.html"))))
 
     (define-key menuMap [about] '("About xlsl-mode" . xlsl-about))
 
@@ -184,7 +178,7 @@ The value can be any of:
              "Author: Xah Lee\n\n"
              "Version: " xlsl-mode-version "\n\n"
              "To see inline documentation, type “Alt+x `describe-mode'” while you are in xlsl-mode.\n\n"
-             "Home page: URL `http://xahlee.org/sl/ls-emacs.html' \n\n"))))
+             "Home page: URL `http://xahsl.org/sl/ls-emacs.html' \n\n"))))
 
 (defun xlsl-copy-all ()
   "Copy buffer content into the kill-ring.
@@ -1001,7 +995,6 @@ See also `xlsl-color-vectors-region' and `list-colors-display'."
           (,ξfunction-regexp . font-lock-function-name-face)
           (,ξkeywords-regexp . font-lock-keyword-face)
 
-
           ;; font-lock-builtin-face
           ;; font-lock-comment-delimiter-face
           ;; font-lock-comment-face
@@ -1078,7 +1071,7 @@ Shortcuts             Command Name
 
 \\[xlsl-copy-all]          `xlsl-copy-all'
 
-Complete documentation at URL `http://xahlee.org/sl/ls-emacs.html'."
+Complete documentation at URL `http://xahsl.org/sl/ls-emacs.html'."
   (interactive)
   (kill-all-local-variables)
 
@@ -1102,5 +1095,7 @@ Complete documentation at URL `http://xahlee.org/sl/ls-emacs.html'."
   (setq font-lock-defaults '((xlsl-font-lock-keywords)))
 
   (run-mode-hooks 'xlsl-mode-hook))
+
+(add-to-list 'auto-mode-alist '("\\.lsl\\'" . xlsl-mode))
 
 (provide 'xlsl-mode)
