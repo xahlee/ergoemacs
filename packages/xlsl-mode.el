@@ -37,21 +37,22 @@
 ;; (describe-mode). (if you have not load the mode type, first type
 ;; Alt+x xlsl-mode)
 
-;; donate $3 please. Paypal to xah@xahlee.org , thanks.
+;; donate $5 please. Paypal to xah@xahlee.org , thanks.
 
 ;;; HISTORY
 
+;; version 1.6.3, 2015-02-28 • added coloring of Firestorm viewer's lsl preprocessor keywords. And other refactoring of code.
 ;; version 1.6.2, 2012-04-13 • fixed a few typo (which'd cause memory leak). The typos are related to these {xlsl-keywords-regexp xlsl-type-regexp xlsl-constant-regexp xlsl-event-regexp xlsl-function-regexp}
 ;; version 1.6.1, 2011-05-04 • added constants OBJECT_RUNNING_SCRIPT_COUNT OBJECT_SCRIPT_MEMORY OBJECT_TOTAL_SCRIPT_COUNT
 ;; version 1.6.0, 2011-04-25 • Added function completion for these functions: llCastRay llClearPrimMedia llGetEnv llGetLinkNumberOfSides llGetLinkPrimitiveParams llGetPrimMediaParams llGetSPMaxMemory llGetUsedMemory llGetUsername llLinkParticleSystem llRegionSayTo llRequestUsername llScriptProfiler llSetLinkPrimitiveParamsFast llSetLinkTextureAnim llSetPrimMediaParams llTextBox.
 ;; version 1.5.16, 2010-12-19 • Added completion for AGENT_BY_LEGACY_NAME, AGENT_BY_USERNAME, llGetDisplayName, llRequestDisplayName.
 ;; version 1.5.15, 2010-01-16 • Added about 5 STATUS_* constants, e.g. STATUS_BLOCK_GRAB.
-;; version 1.5.14, 2009-12-14 • Minor improvement in the help menu “LSL‣About xlsl-mode.”, and added the corresponding command xlsl-about. 
+;; version 1.5.14, 2009-12-14 • Minor improvement in the help menu “LSL‣About xlsl-mode.”, and added the corresponding command xlsl-about.
 ;; version 1.5.13, 2009-11-15 • Added AGENT Constant.
 ;; version 1.5.12, 2009-10-10 • Added these constants for keyword completion: OBJECT_NAME OBJECT_DESC OBJECT_POS OBJECT_ROT OBJECT_VELOCITY OBJECT_OWNER OBJECT_GROUP OBJECT_CREATOR
 ;; version 1.5.11, 2009-08-27 • if emacs 23, turn on linum-mode.
-;; version 1.5.10, 2009-04-28 • Added constants: DATA_BORN DATA_NAME DATA_ONLINE DATA_PAYINFO 
-;; version 1.5.9, 2009-04-28 • Added constants: STRING_TRIM STRING_TRIM_HEAD STRING_TRIM_TAIL 
+;; version 1.5.10, 2009-04-28 • Added constants: DATA_BORN DATA_NAME DATA_ONLINE DATA_PAYINFO
+;; version 1.5.9, 2009-04-28 • Added constants: STRING_TRIM STRING_TRIM_HEAD STRING_TRIM_TAIL
 ;; version 1.5.8, 2009-04-27 • Added about 13 constants starting with “AGENT_”.
 ;; version 1.5.7, 2009-04-26 • Modified xlsl-color-vectors-region so that if a vector component is not a number between 0 to 1, no color is applied. Added chars such as < > + - * & etc to syntax table, so that emacs knows better when lsl keyword char stops.
 ;; version 1.5.6, 2009-04-24 • Added the “jump” lang keyword.
@@ -183,10 +184,7 @@ The value can be any of:
              "Author: Xah Lee\n\n"
              "Version: " xlsl-mode-version "\n\n"
              "To see inline documentation, type “Alt+x `describe-mode'” while you are in xlsl-mode.\n\n"
-             "Home page: URL `http://xahlee.org/sl/ls-emacs.html' \n\n")
-     )
-    )
-  )
+             "Home page: URL `http://xahlee.org/sl/ls-emacs.html' \n\n"))))
 
 (defun xlsl-copy-all ()
   "Copy buffer content into the kill-ring.
@@ -226,7 +224,6 @@ For detail, see `comment-dwim'."
   ;; now, pos1 and pos2 are the starting and ending positions of the current word, or current text selection if exist. Sample code:
   (downcase-region pos1 pos2)
 ))
-
 
 (defun xlsl-lookup-lsl-site (site-url)
   "Switch to browser to particular url.
@@ -319,7 +316,7 @@ See also: `xlsl-convert-rgb' and `list-colors-display'."
                       (vector
                        (string-to-number (match-string 1))
                        (string-to-number (match-string 2))
-                       (string-to-number (match-string 3))))))) ) ))) 
+                       (string-to-number (match-string 3))))))) ) )))
 
 (defun xlsl-convert-rgb ()
   "Convert color spec under cursor between “#rrggbb” and “<r,g,b>”.
@@ -365,16 +362,15 @@ See also `xlsl-color-vectors-region' and `list-colors-display'."
 
 ;;; font-lock
 
-(defvar xlsl-keywords
-  '("break" "default" "do" "else" "for" "if" "return" "state" "while" "jump")
-  "LSL keywords.")
+(defvar xlsl-keywords nil "LSL keywords.")
+(setq xlsl-keywords '("break" "default" "do" "else" "for" "if" "return" "state" "while" "jump")
+)
 
-(defvar xlsl-types
-  '("float" "integer" "key" "list" "rotation" "string" "vector")
-  "LSL types.")
+(defvar xlsl-types nil "LSL types.")
+(setq xlsl-types '("float" "integer" "key" "list" "rotation" "string" "vector"))
 
-(defvar xlsl-constants
-'(
+(defvar xlsl-constants nil "LSL constants.")
+(setq xlsl-constants '(
 "ACTIVE"
 "AGENT"
 "AGENT_ALWAYS_RUN"
@@ -618,15 +614,13 @@ See also `xlsl-color-vectors-region' and `list-colors-display'."
 "TYPE_VECTOR"
 "ZERO_ROTATION"
 "ZERO_VECTOR"
-)
-  "LSL constants.")
+))
 
-(defvar xlsl-events
-  '("at_rot_target" "at_target" "attach" "changed" "collision" "collision_end" "collision_start" "control" "dataserver" "email" "http_response" "land_collision" "land_collision_end" "land_collision_start" "link_message" "listen" "money" "moving_end" "moving_start" "no_sensor" "not_at_rot_target" "not_at_target" "object_rez" "on_rez" "remote_data" "run_time_permissions" "sensor" "state_entry" "state_exit" "timer" "touch" "touch_end" "touch_start")
-  "LSL events.")
+(defvar xlsl-events nil "LSL events.")
+(setq xlsl-events '("at_rot_target" "at_target" "attach" "changed" "collision" "collision_end" "collision_start" "control" "dataserver" "email" "http_response" "land_collision" "land_collision_end" "land_collision_start" "link_message" "listen" "money" "moving_end" "moving_start" "no_sensor" "not_at_rot_target" "not_at_target" "object_rez" "on_rez" "remote_data" "run_time_permissions" "sensor" "state_entry" "state_exit" "timer" "touch" "touch_end" "touch_start"))
 
-(defvar xlsl-functions
-'(
+(defvar xlsl-functions nil "LSL functions.")
+(setq xlsl-functions '(
 "llAbs"
 "llAcos"
 "llAddToLandBanList"
@@ -985,25 +979,47 @@ See also `xlsl-color-vectors-region' and `list-colors-display'."
 "llWhisper"
 "llWind"
 "llXorBase64StringsCorrect"
-)  
-  "LSL functions.")
-
-(defvar xlsl-keywords-regexp (regexp-opt xlsl-keywords 'words))
-(defvar xlsl-type-regexp (regexp-opt xlsl-types 'words))
-(defvar xlsl-constant-regexp (regexp-opt xlsl-constants 'words))
-(defvar xlsl-event-regexp (regexp-opt xlsl-events 'words))
-(defvar xlsl-function-regexp (regexp-opt xlsl-functions 'words))
-
-(defvar xlsl-font-lock-keywords)
-(setq xlsl-font-lock-keywords
-  `(
-    (,xlsl-type-regexp . font-lock-type-face)
-    (,xlsl-constant-regexp . font-lock-constant-face)
-    (,xlsl-event-regexp . font-lock-builtin-face)
-    (,xlsl-function-regexp . font-lock-function-name-face)
-    (,xlsl-keywords-regexp . font-lock-keyword-face)
-;; note: order above matters. Keywords goes last here because, for example, otherwise the keyword “state” in the function “state_entry” would be highlighted.
 ))
+
+(defvar xlsl-preprocessor-keywords nil "LSL preprocessor keywords, supported by Firestorm viewer.")
+(setq xlsl-preprocessor-keywords '("#define" "#if" "#else" "#endif" "#include"))
+
+(setq xlsl-font-lock-keywords
+      (let (
+            (ξkeywords-regexp (regexp-opt xlsl-keywords 'words))
+            (ξtype-regexp (regexp-opt xlsl-types 'words))
+            (ξconstant-regexp (regexp-opt xlsl-constants 'words))
+            (ξevent-regexp (regexp-opt xlsl-events 'words))
+            (ξfunction-regexp (regexp-opt xlsl-functions 'words))
+            (ξpreprocessor-regexp (regexp-opt xlsl-preprocessor-keywords ))
+)
+        `(
+          (,ξpreprocessor-regexp . font-lock-preprocessor-face)
+          (,ξtype-regexp . font-lock-type-face)
+          (,ξconstant-regexp . font-lock-constant-face)
+          (,ξevent-regexp . font-lock-builtin-face)
+          (,ξfunction-regexp . font-lock-function-name-face)
+          (,ξkeywords-regexp . font-lock-keyword-face)
+
+
+          ;; font-lock-builtin-face
+          ;; font-lock-comment-delimiter-face
+          ;; font-lock-comment-face
+          ;; font-lock-constant-face
+          ;; font-lock-doc-face
+          ;; font-lock-function-name-face
+          ;; font-lock-keyword-face
+          ;; font-lock-negation-char-face
+          ;; font-lock-preprocessor-face
+          ;; font-lock-reference-face
+          ;; font-lock-string-face
+          ;; font-lock-type-face
+          ;; font-lock-variable-name-face
+          ;; font-lock-warning-face
+
+          ;; note: order above matters. Keywords goes last here because, for example, otherwise the keyword “state” in the function “state_entry” would be highlighted.
+
+          )))
 
 ;; keyword completion
 (defvar xlsl-kwdList nil "LSL keywords.")
@@ -1040,13 +1056,6 @@ Keywords include all LSL's event handlers, functions, and CONSTANTS."
                 (all-completions meat xlsl-kwdList)
                 meat))
              (message "Making completion list...%s" "done")))))
-
-;; clear memory
-(setq xlsl-keywords nil)
-(setq xlsl-types nil)
-(setq xlsl-constants nil)
-(setq xlsl-events nil)
-(setq xlsl-functions nil)
 
 (defun xlsl-mode ()
 ;; (define-derived-mode xlsl-mode c-mode "LSL"
@@ -1090,26 +1099,7 @@ Complete documentation at URL `http://xahlee.org/sl/ls-emacs.html'."
   (set-syntax-table xlsl-mode-syntax-table)
   (use-local-map xlsl-mode-map)
 
-  (make-local-variable 'font-lock-defaults)
-  (setq font-lock-defaults '((xlsl-font-lock-keywords) nil nil))
-
-  ;; clear memory
-  (setq xlsl-keywords-regexp nil)
-  (setq xlsl-type-regexp nil)
-  (setq xlsl-constant-regexp nil)
-  (setq xlsl-event-regexp nil)
-  (setq xlsl-function-regexp nil)
-
-  ;; if emacs 23, turn on linum-mode
-  (when
-      (and
-       (fboundp 'linum-mode)
-       (>= emacs-major-version 23)
-       (>= emacs-minor-version 1)
-       )
-    ;; (setq linum-format #'(lambda (n) (format "%3d" (1- n)))) ;; make it start at 0 to be compatible with inworld editor. Prob with this is that it sticks. Need to revert it back when out of xlsl-mode.
-    (linum-mode 1)
-    )
+  (setq font-lock-defaults '((xlsl-font-lock-keywords)))
 
   (run-mode-hooks 'xlsl-mode-hook))
 
