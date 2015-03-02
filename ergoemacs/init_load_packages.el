@@ -48,10 +48,6 @@
   (autoload 'powershell "powershell" "Interactive shell for Microsoft PowerShell." t)
 )
 
-;;; xlsl-mode. http://en.wikipedia.org/wiki/Linden_Scripting_Language
-(autoload 'xlsl-mode "xlsl-mode" "Load xlsl-mode for editing Linden Scripting Lang." t)
-(add-to-list 'auto-mode-alist '("\\.lsl\\'" . xlsl-mode))
-
 ;;; AutoHotKey (ahk) mode (a keyboard macro for Windows)
 (autoload 'xahk-mode "xahk-mode" "AutoHotKey mode" t)
 (add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
