@@ -560,7 +560,7 @@ This uses `ido-mode' user interface style for completion."
   (set-syntax-table xjs-syntax-table)
   (use-local-map xjs-keymap)
 
-  (setq-local comment-start "//")
+  (setq-local comment-start "// ")
   (setq-local comment-end "")
   (setq-local comment-column 2)
 

@@ -889,7 +889,7 @@ This is called by emacs abbrev system."
 
 (progn
   (setq xcm-keymap (make-sparse-keymap))
-  (define-key xcm-keymap (kbd "<tab>") 'xcm-complete-or-indent)
+  (define-key xcm-keymap (kbd "TAB") 'xcm-complete-or-indent)
 
   (define-prefix-command 'xcm-single-keys-keymap)
   (define-key xcm-keymap (kbd "<menu> e") xcm-single-keys-keymap)
