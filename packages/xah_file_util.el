@@ -111,7 +111,7 @@ Search string 「%s」
 Directory 「%s」
 Path Regex 「%s」
 
-" (current-date-time-string) φsearch-str1 φinput-dir φpath-regex))
+" (xah-current-date-time-string) φsearch-str1 φinput-dir φpath-regex))
       (mapc
        (lambda (ξfp)
          (setq ξcount 0)
@@ -159,7 +159,7 @@ Search regex 「%s」
 Directory 「%s」
 Path Regex 「%s」
 
-" (current-date-time-string) φsearch-regex φinput-dir φpath-regex))
+" (xah-current-date-time-string) φsearch-regex φinput-dir φpath-regex))
       (mapc
        (lambda (ξfp)
          (setq ξcount 0)
@@ -213,7 +213,7 @@ Search string 「%s」
 Replace string 『%s』
 Directory 〔%s〕
 
-" (current-date-time-string) φsearch-str φreplace-str φinput-dir))
+" (xah-current-date-time-string) φsearch-str φreplace-str φinput-dir))
       (mapc
        (lambda (ξf)
          (let ( (case-fold-search (not φfixed-case-search-p))
@@ -276,7 +276,7 @@ Search string 「%s」
 Replace with 『%s』
 Directory 〔%s〕
 
-" (current-date-time-string) φregex φreplace-str φinput-dir))
+" (xah-current-date-time-string) φregex φreplace-str φinput-dir))
       (mapc
        (lambda (ξfp)
          (let (
@@ -349,7 +349,7 @@ Count expression: 「%s %s」
 Input dir: 「%s」
 Path regex: 「%s」
 " 
-                     (current-date-time-string) φsearch-str φcount-expr φcount-number φinput-dir φpath-regex))
+                     (xah-current-date-time-string) φsearch-str φcount-expr φcount-number φinput-dir φpath-regex))
       (mapc
        (lambda (ξf)
          (let ((ξcount 0))
