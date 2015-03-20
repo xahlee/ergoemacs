@@ -60,6 +60,8 @@
 
 ;; the above is the sketch of the design. However, i realized that some exceptions is ok, or even optimal. One thing i learned is that a strict regularity or rule may not be optimal, as some exception or irregularity sometimes makes it more convenient, easier to remember, or make your fingers good because they don't always use the same keys. These reasoning may be fallacy, I don't have a solid analysis on it yet.
 
+(global-set-key (kbd "<end>") 'xah-user-keymap)
+
 (when (string-equal system-type "windows-nt")
   (define-key key-translation-map (kbd "<apps>") (kbd "<menu>")))
 
@@ -67,23 +69,37 @@
   ;; Mac OS X  doesn't have menu, even if using pc keyboard
   (define-key key-translation-map (kbd "C-p") (kbd "<menu>")))
 
-(global-set-key (kbd "<end>") 'xah-user-keymap)
-
 (define-prefix-command 'xah-menu-keymap)
 (global-set-key (kbd "<menu>") 'xah-menu-keymap)
 
 (global-set-key (kbd "<menu> <return>") 'smex) ; todo check if  bound, else execute-extended-command
 
-(progn
-  (define-prefix-command 'xah-menu-backspace-keymap)
-  (global-set-key (kbd "<menu> <backspace>") xah-menu-backspace-keymap)
-;; 'xah-delete-text-block
-  )
+(global-set-key (kbd "<menu> <backspace>") nil)
+(global-set-key (kbd "<menu> <delete>") nil)
+(global-set-key (kbd "<menu> SPC") nil)
 
-(progn
-  (define-prefix-command 'xah-menu-delete-keymap)
-  (global-set-key (kbd "<menu> <delete>") xah-menu-delete-keymap)
-  )
+(global-set-key (kbd "<menu> <menu>") 'exchange-point-and-mark)
+
+(global-set-key (kbd "<menu> .") 'universal-argument)
+(global-set-key (kbd "<menu> '") 'quoted-insert)
+(global-set-key (kbd "<menu> ,") nil)
+(global-set-key (kbd "<menu> -") nil)
+(global-set-key (kbd "<menu> /") nil)
+(global-set-key (kbd "<menu> ;") nil)
+(global-set-key (kbd "<menu> =") nil)
+(global-set-key (kbd "<menu> [") nil)
+(global-set-key (kbd "<menu> \\") nil)
+(global-set-key (kbd "<menu> `") nil)
+(global-set-key (kbd "<menu> 1") nil)
+(global-set-key (kbd "<menu> 2") 'delete-window)
+(global-set-key (kbd "<menu> 3") 'delete-other-windows)
+(global-set-key (kbd "<menu> 4") 'split-window-vertically)
+(global-set-key (kbd "<menu> 5") 'split-window-horizontally)
+(global-set-key (kbd "<menu> 6") nil)
+(global-set-key (kbd "<menu> 7") nil)
+(global-set-key (kbd "<menu> 8") nil)
+(global-set-key (kbd "<menu> 9") nil)
+(global-set-key (kbd "<menu> 0") 'ispell-word)
 
 (progn
   (define-prefix-command 'xah-menu-tab-keymap)
@@ -112,30 +128,7 @@
 
   )
 
-  (global-set-key (kbd "<menu> SPC") 'xah-insert-keymap)
-
-(global-set-key (kbd "<menu> <menu>") 'exchange-point-and-mark)
-
-(global-set-key (kbd "<menu> .") 'universal-argument)
-(global-set-key (kbd "<menu> '") 'quoted-insert)
-(global-set-key (kbd "<menu> ,") nil)
-(global-set-key (kbd "<menu> -") nil)
-(global-set-key (kbd "<menu> /") nil)
-(global-set-key (kbd "<menu> ;") nil)
-(global-set-key (kbd "<menu> =") nil)
-(global-set-key (kbd "<menu> [") nil)
-(global-set-key (kbd "<menu> \\") nil)
-(global-set-key (kbd "<menu> `") nil)
-(global-set-key (kbd "<menu> 1") nil)
-(global-set-key (kbd "<menu> 2") 'delete-window)
-(global-set-key (kbd "<menu> 3") 'delete-other-windows)
-(global-set-key (kbd "<menu> 4") 'split-window-vertically)
-(global-set-key (kbd "<menu> 5") 'split-window-horizontally)
-(global-set-key (kbd "<menu> 6") nil)
-(global-set-key (kbd "<menu> 7") nil)
-(global-set-key (kbd "<menu> 8") nil)
-(global-set-key (kbd "<menu> 9") nil)
-(global-set-key (kbd "<menu> 0") 'ispell-word)
+
 
 (global-set-key (kbd "<menu> a") 'mark-whole-buffer)
 
@@ -185,9 +178,9 @@
   (define-key xah-menu-i-keymap (kbd "p") 'previous-error)
   )
 
-(global-set-key (kbd "<menu> j") 'xah-copy-all)
+(global-set-key (kbd "<menu> j") 'xah-copy-line-or-region)
 
-(global-set-key (kbd "<menu> k") 'xah-clean-whitespace)
+(global-set-key (kbd "<menu> k") 'yank)
 
 (global-set-key (kbd "<menu> l") 'recenter-top-bottom)
 
@@ -251,7 +244,7 @@
   (define-key xah-harmless-keymap (kbd "j") nil)
   (define-key xah-harmless-keymap (kbd "k") 'menu-bar-open)
   (define-key xah-harmless-keymap (kbd "l") 'toggle-word-wrap)
-  (define-key xah-harmless-keymap (kbd "m") nil)
+  (define-key xah-harmless-keymap (kbd "m") 'global-linum-mode)
   (define-key xah-harmless-keymap (kbd "n") 'narrow-to-region)
   (define-key xah-harmless-keymap (kbd "o") nil)
   (define-key xah-harmless-keymap (kbd "p") nil)
@@ -260,7 +253,7 @@
   (define-key xah-harmless-keymap (kbd "s") 'flyspell-buffer)
   (define-key xah-harmless-keymap (kbd "t") 'narrow-to-defun)
   (define-key xah-harmless-keymap (kbd "u") 'toggle-input-method)
-  (define-key xah-harmless-keymap (kbd "v") nil)
+  (define-key xah-harmless-keymap (kbd "v") 'variable-pitch-mode)
   (define-key xah-harmless-keymap (kbd "w") 'eww)
   (define-key xah-harmless-keymap (kbd "x") 'nil)
   (define-key xah-harmless-keymap (kbd "y") 'nil)
@@ -294,7 +287,7 @@
 
 (global-set-key (kbd "<menu> p") 'query-replace)
 
-(global-set-key (kbd "<menu> q") 'xah-cut-all)
+(global-set-key (kbd "<menu> q") 'xah-cut-line-or-region)
 
 (progn
   ;; kinda replacement related
@@ -342,19 +335,19 @@
 
   (define-key xah-menu-t-keymap (kbd "e") 'copy-to-register)
   (define-key xah-menu-t-keymap (kbd "h") 'xah-close-current-buffer)
-  (define-key xah-menu-t-keymap (kbd "j") 'xah-copy-line-or-region)
-  (define-key xah-menu-t-keymap (kbd "k") 'yank)
+  (define-key xah-menu-t-keymap (kbd "j") 'xah-copy-all)
+  (define-key xah-menu-t-keymap (kbd "k") nil)
   (define-key xah-menu-t-keymap (kbd "n") 'repeat-complex-command)
   (define-key xah-menu-t-keymap (kbd "p") 'query-replace-regexp)
-  (define-key xah-menu-t-keymap (kbd "q") 'xah-cut-line-or-region)
+  (define-key xah-menu-t-keymap (kbd "q") 'xah-cut-all)
   (define-key xah-menu-t-keymap (kbd "r") 'copy-rectangle-to-register)
   (define-key xah-menu-t-keymap (kbd "s") 'write-file)
   (define-key xah-menu-t-keymap (kbd "t") 'repeat)
   (define-key xah-menu-t-keymap (kbd "u") 'insert-register)
-  
+
   )
 
-  (global-set-key (kbd "<menu> u") 'xah-dump-keymap)
+  (global-set-key (kbd "<menu> u") 'xah-insertion-keymap)
 
 (progn
   (define-prefix-command 'xah-menu-v-keymap)
@@ -394,10 +387,10 @@
   (define-key xah-danger-keymap (kbd "q") 'save-buffers-kill-terminal)
   (define-key xah-danger-keymap (kbd "u") 'eval-region)
   (define-key xah-danger-keymap (kbd "w") 'close-frame)
-  
+
   )
 
-(global-set-key (kbd "<menu> x") nil)
+(global-set-key (kbd "<menu> x") 'yank-pop)
 
 (global-set-key (kbd "<menu> y") nil)
 
@@ -469,7 +462,6 @@
 ;; C-x r	Prefix Command
 ;; C-x s	save-some-buffers
 
-;; C-x v	vc-prefix-map
 ;; C-x {	shrink-window-horizontally
 ;; C-x }	enlarge-window-horizontally
 ;; C-x DEL	backward-kill-sentence

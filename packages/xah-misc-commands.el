@@ -620,6 +620,8 @@ Version 2015-02-10"
          [
           [" are " " r "]
           [" you " " u "]
+          [" you," " u,"]
+          [" you." " u."]
           [" to " " 2 "]
           [" you." " u。"]
           [" your" " ur "]
@@ -642,7 +644,7 @@ Version 2015-02-10"
 
     (when (string= φto-direction "auto")
       (if
-          (or 
+          (or
               (string-match "。" ξinput-str)
               (string-match "，" ξinput-str)
               (string-match "？" ξinput-str)
@@ -743,12 +745,12 @@ WARNING: If region has comment or string, the code'd be fucked up."
                                    t)
       (indent-region p1 p2))))
 
-(defun xah-clean-whitespace (p1 p2)
+(defun xah-clean-whitespace-and-save (p1 p2)
   "Delete trailing whitespace, and replace repeated blank lines into just 2.
 This function works on whole buffer or text selection.
 
 URL `http://ergoemacs.org/emacs/elisp_compact_empty_lines.html'
-version 2015-02-06"
+Version 2015-03-03"
   (interactive
    (if (region-active-p)
        (list (region-beginning) (region-end))
@@ -763,6 +765,8 @@ version 2015-02-06"
       (progn
         (goto-char (point-min))
         (while (search-forward-regexp "\n\n\n+" nil "noerror")
-          (replace-match "\n\n"))))))
+          (replace-match "\n\n")))))
+  (when (buffer-file-name)
+    (save-buffer)))
 
 (provide 'xah-misc-commands)

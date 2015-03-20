@@ -65,8 +65,8 @@
 :group 'xah_file_util
 )
 
-(defun xah-backup-suffix (φs)
-  "Return a string of the form 「~‹s›~‹date-time-stamp›~」"
+(defun xah--backup-suffix (φs)
+  "Return a string of the form 「~‹φs›~‹date-time-stamp›~」"
   (concat "~" φs "~" (format-time-string "%Y%m%d_%H%M%S") "~"))
 
 (defun xah-print-text-block (φstring9462)
@@ -204,7 +204,7 @@ No regex."
 
   (let (
         (ξoutputBuffer "*xah-find-replace-text output*")
-        (ξbackupSuffix (xah-backup-suffix "t")))
+        (ξbackupSuffix (xah--backup-suffix "t")))
     (with-output-to-temp-buffer ξoutputBuffer
       (princ (format "-*- coding: utf-8 -*-
 %s
@@ -267,7 +267,7 @@ Directory 〔%s〕
 
   (let (
         (ξoutputBuffer "*xah-find-replace-text-regex output*")
-        (ξbackupSuffix (xah-backup-suffix "r")))
+        (ξbackupSuffix (xah--backup-suffix "r")))
     (with-output-to-temp-buffer ξoutputBuffer
       (princ (format "-*- coding: utf-8 -*-
 %s

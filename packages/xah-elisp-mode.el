@@ -26,7 +26,7 @@
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
-(defvar xem-elisp-lang-words nil "a list of elisp keyword more or less related to elisp the language.")
+(defvar xem-elisp-lang-words nil "List of elisp keyword more or less related to elisp the language.")
 (setq xem-elisp-lang-words '(
 
 "read"
@@ -165,8 +165,11 @@
 "print-length"
 ))
 
-(defvar xem-emacs-words nil "a list of keywords more or less related to emacs system.")
+(defvar xem-emacs-words nil "List of keywords more or less related to emacs system.")
 (setq xem-emacs-words '(
+
+"count-matches"
+"delete-and-extract-region"
 
 "define-abbrev-table"
 "current-word"
@@ -272,6 +275,7 @@
 "kill-ring-save"
 "kill-all-local-variables"
 "kill-buffer"
+"kill-new"
 "line-beginning-position"
 "line-end-position"
 "local-set-key"
@@ -446,10 +450,10 @@
 
   ))
 
-(defvar xem-keyword-builtin nil "a list of elisp names")
+(defvar xem-keyword-builtin nil "List of elisp names")
 (setq xem-keyword-builtin '( "&optional"))
 
-(defvar xem-elisp-vars-1 nil "a list elisp variables names")
+(defvar xem-elisp-vars-1 nil "List elisp variables names")
 (setq xem-elisp-vars-1 '(
 
 "current-prefix-arg"
@@ -857,7 +861,7 @@
 
 ))
 
-(defvar xem-elisp-vars-2 nil "a list elisp variables names")
+(defvar xem-elisp-vars-2 nil "List elisp variables names")
 (setq xem-elisp-vars-2 '(
 
 "multibyte-syntax-as-symbol"
@@ -1558,7 +1562,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("backward-char" "(backward-char ▮)" nil :system t)
     ("beginning-of-line" "(beginning-of-line)" nil :system t)
     ("boundp" "(boundp '▮)" nil :system t)
-    ("bounds-of-thing-at-point" "(bounds-of-thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page ...")
+    ("bounds-of-thing-at-point" "(bounds-of-thing-at-point 'symbol▮ 'filename 'word 'whitespace 'line)")
 
     ("buffer-file-name" "(buffer-file-name)" nil :system t)
     ("buffer-modified-p" "(buffer-modified-p ▮)" nil :system t)
@@ -1703,7 +1707,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("replace-regexp" "(replace-regexp \"REGEXP▮\" TO-STRING &optional DELIMITED START END)" nil :system t)
     ("require" "(require ▮)" nil :system t)
     ("reverse" "(reverse ▮)" nil :system t)
-    ("save-buffer" "(save-buffer ▮)" nil :system t)
+    ("save-buffer" "(save-buffer &optional ARG▮)" nil :system t)
     ("save-excursion" "(save-excursion ▮)" nil :system t)
     ("save-restriction" "(save-restriction ▮)" nil :system t)
     ("search-backward-regexp" "(search-backward-regexp \"▮\" &optional BOUND NOERROR COUNT)" nil :system t)
@@ -1727,7 +1731,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("stringp" "(stringp ▮)" nil :system t)
     ("substring-no-properties" "(substring-no-properties ▮ FROM TO)" nil :system t)
     ("substring" "(substring STRING▮ FROM &optional TO)" nil :system t)
-    ("thing-at-point" "(thing-at-point '▮) ; symbol, list, sexp, defun, filename, url, email, word, sentence, whitespace, line, page …")
+    ("thing-at-point" "(thing-at-point 'symbol▮ 'filename 'word 'whitespace 'line)")
     ("throw" "(throw TAG▮ VALUE)" nil :system t)
     ("unless" "(unless ▮)" nil :system t)
     ("use-region-p" "(use-region-p)" nil :system t)

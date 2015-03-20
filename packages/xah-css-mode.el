@@ -469,6 +469,13 @@ WARNING: not robust."
 (setq xcm-value-kwds
 '(
 
+"flex"
+"grid"
+
+"flex-wrap"
+"wrap"
+"flex-start"
+
 "!important"
 "absolute"
 "alpha"
@@ -912,7 +919,7 @@ This is called by emacs abbrev system."
 CSS keywords are colored. Basically that's it.
 
 \\{xcm-keymap}"
-
+  (interactive)
   (kill-all-local-variables)
 
   (setq mode-name "∑CSS")

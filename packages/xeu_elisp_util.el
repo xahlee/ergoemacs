@@ -37,7 +37,7 @@
 ;; version 1.4.15, 2012-08-23 added “file-relative-name-emacs24.1.1-fix”
 ;; version 1.4.14, 2012-08-14 added “hash-to-list”.
 ;; version 1.4.13, 2012-07-03 removed curly bracket for 'filepath in “unit-at-cursor”.
-;; version 1.4.12, 2012-06-30 added “current-date-time-string”. Added 'url, 'filepath to “unit-at-cursor”.
+;; version 1.4.12, 2012-06-30 added “xah-current-date-time-string”. Added 'url, 'filepath to “unit-at-cursor”.
 ;; version 1.4.11, 2012-05-05 added { “delete-subdirs-by-regex” “delete-files-by-regex”}
 ;; version 1.4.10, 2012-05-05 added “substract-path”.
 ;; version 1.4.9, 2012-03-15 more trivial improved implementation of “get-image-dimensions-imk”.
@@ -430,15 +430,16 @@ Version 2014-10-20"
 ;;     (call-process-region (point-min) (point-max) "iconv" t t nil "--to-code=ASCII//TRANSLIT")
 ;;     (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun title-case-string-region-or-line (φstring &optional φregion-boundary)
+(defun xah-title-case-string-region-or-line (φp1 φp2)
   "Capitalize the current line or text selection, following title conventions.
 
 Capitalize first letter of each word, except words like {to, of, the, a, in, or, and, …}. If a word already contains cap letters such as HTTP, URL, they are left as is.
 
-When called in a elisp program, if φregion-boundary is nil, returns the changed φstring, else, work on the region. φregion-boundary is a pair [from to], it can be a vector or list."
+When called in a elisp program, φp1 φp2 are region boundaries."
   (interactive
-   (let ((bds (get-selection-or-unit 'line)))
-     (list nil (vector (elt bds 1) (elt bds 2)))))
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (line-beginning-position) (line-end-position))))
 
   (let (
         (strPairs '(
@@ -463,44 +464,37 @@ When called in a elisp program, if φregion-boundary is nil, returns the changed
                     [" With " " with "]
                     [" From " " from "]
                     ["'S " "'s "]
-                    ))
-        (workOnStringP (if φregion-boundary nil t ))
-        (p1 (elt φregion-boundary 0))
-        (p2 (elt φregion-boundary 1)))
+                    )))
 
     (let ((case-fold-search nil))
-      (if workOnStringP
-          (progn
-            (replace-pairs-in-string-recursive (upcase-initials φstring) strPairs))
-        (progn
-          (save-restriction
-            (narrow-to-region p1 p2)
-            (upcase-initials-region (point-min) (point-max))
-            (replace-regexp-pairs-region (point-min) (point-max) strPairs t t)))))))
+      (save-restriction
+        (narrow-to-region φp1 φp2)
+        (upcase-initials-region (point-min) (point-max))
+        (replace-regexp-pairs-region (point-min) (point-max) strPairs t t)))))
 
 
 
-(defvar month-full-names '("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December") "list of English month full names.")
+(defvar xah-month-full-names '("January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December") "list of English month full names.")
 
-(defvar month-abbrev-names (mapcar (lambda (x) (substring x 0 3)) month-full-names) "list of English month 3-letter abbrev names.")
+(defvar xah-month-abbrev-names (mapcar (lambda (x) (substring x 0 3)) xah-month-full-names) "list of English month 3-letter abbrev names.")
 
-(defvar weekday-names '("Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday" "Sunday") "list of English weekday full names.")
+(defvar xah-weekday-names '("Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday" "Sunday") "list of English weekday full names.")
 
-(defun insert-date (&optional φadd-time-stamp-p)
+(defun xah-insert-date (&optional φadd-time-stamp-p)
   "Insert current date and or time.
 
 • In this format yyyy-mm-dd.
 • When called with `universal-argument', insert date and time, e.g. 2012-05-28T07:06:23-07:00
 • Replaces text selection.
 
-See also `current-date-time-string'."
+See also `xah-current-date-time-string'."
   (interactive "P")
   (when (use-region-p) (delete-region (region-beginning) (region-end) ) )
   (cond
    ((equal φadd-time-stamp-p nil ) (insert (format-time-string "%Y-%m-%d")))
-   (t (insert (current-date-time-string))) ) )
+   (t (insert (xah-current-date-time-string))) ) )
 
-(defun current-date-time-string ()
+(defun xah-current-date-time-string ()
   "Returns current date-time string in full ISO 8601 format.
 Example: 「2012-04-05T21:08:24-07:00」.
 
@@ -509,13 +503,13 @@ Note, for the time zone offset, both the formats 「hhmm」 and 「hh:mm」 are 
    (format-time-string "%Y-%m-%dT%T")
    ((lambda (ξx) (format "%s:%s" (substring ξx 0 3) (substring ξx 3 5))) (format-time-string "%z"))))
 
-(defun is-datetimestamp-p (φinput-string)
+(defun xah-is-datetimestamp-p (φinput-string)
   "Return t if φinput-string is a date/time stamp, else nil.
 This is based on heuristic, so it's not 100% correct.
 If the string contains any month names, weekday names, or of the form dddd-dd-dd, dddd-dd-dddd, dddd-dd-dd, or using slash, then it's considered a date.
 "
   (cond
-         ((string-match (regexp-opt (append month-full-names month-abbrev-names weekday-names) 'words) φinput-string) t)
+         ((string-match (regexp-opt (append xah-month-full-names xah-month-abbrev-names xah-weekday-names) 'words) φinput-string) t)
          ;; mm/dd/yyyy
          ((string-match "\\b[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]\\b" φinput-string) t)
          ;; yyyy/mm/dd

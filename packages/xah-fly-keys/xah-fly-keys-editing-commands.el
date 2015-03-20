@@ -11,31 +11,31 @@
   "Copy current line, or text selection.
 When `universal-argument' is called first, copy whole buffer (but respect `narrow-to-region')."
   (interactive)
-  (let (p1 p2)
+  (let (ξp1 ξp2)
     (if (null current-prefix-arg)
         (progn (if (use-region-p)
-                   (progn (setq p1 (region-beginning))
-                          (setq p2 (region-end)))
-                 (progn (setq p1 (line-beginning-position))
-                        (setq p2 (line-end-position)))))
-      (progn (setq p1 (point-min))
-             (setq p2 (point-max))))
-    (kill-ring-save p1 p2)))
+                   (progn (setq ξp1 (region-beginning))
+                          (setq ξp2 (region-end)))
+                 (progn (setq ξp1 (line-beginning-position))
+                        (setq ξp2 (line-end-position)))))
+      (progn (setq ξp1 (point-min))
+             (setq ξp2 (point-max))))
+    (kill-ring-save ξp1 ξp2)))
 
 (defun xah-cut-line-or-region ()
   "Cut current line, or text selection.
 When `universal-argument' is called first, cut whole buffer (but respect `narrow-to-region')."
   (interactive)
-  (let (p1 p2)
+  (let (ξp1 ξp2)
     (if (null current-prefix-arg)
         (progn (if (use-region-p)
-                   (progn (setq p1 (region-beginning))
-                          (setq p2 (region-end)))
-                 (progn (setq p1 (line-beginning-position))
-                        (setq p2 (line-beginning-position 2)))))
-      (progn (setq p1 (point-min))
-             (setq p2 (point-max))))
-    (kill-region p1 p2)))
+                   (progn (setq ξp1 (region-beginning))
+                          (setq ξp2 (region-end)))
+                 (progn (setq ξp1 (line-beginning-position))
+                        (setq ξp2 (line-beginning-position 2)))))
+      (progn (setq ξp1 (point-min))
+             (setq ξp2 (point-max))))
+    (kill-region ξp1 ξp2)))
 
 (defun xah-copy-all ()
   "Put the whole buffer content into the `kill-ring'.
@@ -58,15 +58,15 @@ If `narrow-to-region' is in effect, then cut that region only."
 Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
   (interactive)
 
-  (let (p1 p2 (deactivate-mark nil) (case-fold-search nil))
+  (let (ξp1 ξp2 (deactivate-mark nil) (case-fold-search nil))
     (if (use-region-p)
-        (setq p1 (region-beginning) p2 (region-end))
+        (setq ξp1 (region-beginning) ξp2 (region-end))
       (let ((bds (bounds-of-thing-at-point 'word)))
-        (setq p1 (car bds) p2 (cdr bds))))
+        (setq ξp1 (car bds) ξp2 (cdr bds))))
 
     (when (not (eq last-command this-command))
       (save-excursion
-        (goto-char p1)
+        (goto-char ξp1)
         (cond
          ((looking-at "[[:lower:]][[:lower:]]") (put this-command 'state "all lower"))
          ((looking-at "[[:upper:]][[:upper:]]") (put this-command 'state "all caps"))
@@ -77,11 +77,11 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
 
     (cond
      ((string= "all lower" (get this-command 'state))
-      (upcase-initials-region p1 p2) (put this-command 'state "init caps"))
+      (upcase-initials-region ξp1 ξp2) (put this-command 'state "init caps"))
      ((string= "init caps" (get this-command 'state))
-      (upcase-region p1 p2) (put this-command 'state "all caps"))
+      (upcase-region ξp1 ξp2) (put this-command 'state "all caps"))
      ((string= "all caps" (get this-command 'state))
-      (downcase-region p1 p2) (put this-command 'state "all lower")))))
+      (downcase-region ξp1 ξp2) (put this-command 'state "all lower")))))
 
 (defun xah-toggle-previous-letter-case ()
   "Toggle the letter case of the letter to the left of cursor."
@@ -95,24 +95,24 @@ Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
 
 
 
-(defun xah-shrink-whitespaces ()
+(defun xah-shrink-whitespaces-old-2015-03-03 ()
   "Remove whitespaces around cursor to just one or none.
 If current line does have visible characters: shrink whitespace around cursor to just one space.
 If current line does not have visible chars, then shrink all neighboring blank lines to just one.
 If current line is a single space, remove that space.
 URL `http://ergoemacs.org/emacs/emacs_shrink_whitespace.html'
-version 2014-10-21"
+Version 2015-03-03"
   (interactive)
   (let ((ξpos (point))
-        ξline-has-meat-p ; current line contains non-white space chars
-        ξspace-tab-neighbor-p
+        ξline-has-char-p ; current line contains non-white space chars
+        ξhas-space-tab-neighbor-p
         ξwhitespace-begin ξwhitespace-end
         ξspace-or-tab-begin ξspace-or-tab-end
         )
     (save-excursion
-      (setq ξspace-tab-neighbor-p (if (or (looking-at " \\|\t") (looking-back " \\|\t")) t nil))
+      (setq ξhas-space-tab-neighbor-p (if (or (looking-at " \\|\t") (looking-back " \\|\t")) t nil))
       (beginning-of-line)
-      (setq ξline-has-meat-p (search-forward-regexp "[[:graph:]]" (line-end-position) t))
+      (setq ξline-has-char-p (search-forward-regexp "[[:graph:]]" (line-end-position) t))
 
       (goto-char ξpos)
       (skip-chars-backward "\t ")
@@ -127,14 +127,59 @@ version 2014-10-21"
       (skip-chars-forward "\t \n")
       (setq ξwhitespace-end (point)))
 
-    (if ξline-has-meat-p
+    (if ξline-has-char-p
         (let (ξdeleted-text)
-          (when ξspace-tab-neighbor-p
+          (when ξhas-space-tab-neighbor-p
             ;; remove all whitespaces in the range
             (setq ξdeleted-text (delete-and-extract-region ξspace-or-tab-begin ξspace-or-tab-end))
             ;; insert a whitespace only if we have removed something different than a simple whitespace
             (if (not (string= ξdeleted-text " "))
                 (insert " "))))
+      (progn (delete-blank-lines)))))
+
+(defun xah-shrink-whitespaces ()
+  "Remove whitespaces around cursor to just one or none.
+Remove whitespaces around cursor to just one space, or remove neighboring blank lines to just one or none.
+URL `http://ergoemacs.org/emacs/emacs_shrink_whitespace.html'
+Version 2015-03-03"
+  (interactive)
+  (let ((ξpos (point))
+        ξline-has-char-p ; current line contains non-white space chars
+        ξhas-space-tab-neighbor-p
+        ξwhitespace-begin ξwhitespace-end
+        ξspace-or-tab-begin ξspace-or-tab-end
+        )
+    (save-excursion
+      (setq ξhas-space-tab-neighbor-p (if (or (looking-at " \\|\t") (looking-back " \\|\t")) t nil))
+      (beginning-of-line)
+      (setq ξline-has-char-p (search-forward-regexp "[[:graph:]]" (line-end-position) t))
+
+      (goto-char ξpos)
+      (skip-chars-backward "\t ")
+      (setq ξspace-or-tab-begin (point))
+
+      (skip-chars-backward "\t \n")
+      (setq ξwhitespace-begin (point))
+
+      (goto-char ξpos)
+      (skip-chars-forward "\t ")
+      (setq ξspace-or-tab-end (point))
+      (skip-chars-forward "\t \n")
+      (setq ξwhitespace-end (point)))
+
+    (if ξline-has-char-p
+        (if ξhas-space-tab-neighbor-p
+            (let (ξdeleted-text)
+              ;; remove all whitespaces in the range
+              (setq ξdeleted-text
+                    (delete-and-extract-region ξspace-or-tab-begin ξspace-or-tab-end))
+              ;; insert a whitespace only if we have removed something different than a simple whitespace
+              (when (not (string= ξdeleted-text " "))
+                (insert " ")))
+
+          (progn
+            (when (equal (char-before) 10) (delete-char -1))
+            (when (equal (char-after) 10) (delete-char 1))))
       (progn (delete-blank-lines)))))
 
 (defun xah-compact-uncompact-block ()
@@ -147,35 +192,35 @@ When there is a text selection, act on the the selection, else, act on a text bl
   (let ( currentStateIsCompact
          (deactivate-mark nil)
          (blanklinesRegex "\n[ \t]*\n")
-         p1 p2
+         ξp1 ξp2
          )
 
     (progn
-      ;; set region boundary p1 p2
+      ;; set region boundary ξp1 ξp2
       (if (use-region-p)
-          (progn (setq p1 (region-beginning))
-                 (setq p2 (region-end)))
+          (progn (setq ξp1 (region-beginning))
+                 (setq ξp2 (region-end)))
         (save-excursion
           (if (re-search-backward "\n[ \t]*\n" nil "NOERROR")
               (progn (re-search-forward "\n[ \t]*\n")
-                     (setq p1 (point)))
-            (setq p1 (point)))
+                     (setq ξp1 (point)))
+            (setq ξp1 (point)))
           (if (re-search-forward "\n[ \t]*\n" nil "NOERROR")
               (progn (re-search-backward "\n[ \t]*\n")
-                     (setq p2 (point)))
-            (setq p2 (point))))))
+                     (setq ξp2 (point)))
+            (setq ξp2 (point))))))
 
     (save-excursion
       (setq currentStateIsCompact
             (if (eq last-command this-command)
                 (get this-command 'stateIsCompact-p)
               (progn
-                (goto-char p1)
+                (goto-char ξp1)
                 (if (> (- (line-end-position) (line-beginning-position)) fill-column) t nil))))
 
       (if currentStateIsCompact
-          (fill-region p1 p2)
-        (xah-replace-newline-whitespaces-to-space p1 p2))
+          (fill-region ξp1 ξp2)
+        (xah-replace-newline-whitespaces-to-space ξp1 ξp2))
 
       (put this-command 'stateIsCompact-p (if currentStateIsCompact nil t)))))
 
@@ -193,7 +238,7 @@ This command does the inverse of `fill-region'."
   (let ((fill-column 90002000))
     (fill-region start end)))
 
-(defun xah-replace-newline-whitespaces-to-space (&optional p1 p2)
+(defun xah-replace-newline-whitespaces-to-space (&optional φp1 φp2)
   "Replace newline with surrounding {tab, space} characters to 1 space, in current text block or selection.
 This is similar to `fill-paragraph' or `fill-region' for making a text block into a single line, except that fill command does many other things. For example, if you have
 
@@ -217,7 +262,7 @@ it'll remove the second >."
          (list q1 q2)))))
   (save-excursion
     (save-restriction
-      (narrow-to-region p1 p2)
+      (narrow-to-region φp1 φp2)
       (goto-char (point-min))
       (while (search-forward-regexp "[ \t]*\n[ \t]*" nil t) (replace-match " ")))))
 
