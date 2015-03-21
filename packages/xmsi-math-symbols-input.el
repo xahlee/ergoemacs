@@ -994,7 +994,7 @@
     ;; operators
     (puthash "c+" "⊕" xmsi-abrvs)
     (puthash "c*" "⊗" xmsi-abrvs)
-    (puthash "*" "×" xmsi-abrvs)
+    (puthash "*" "•" "×" xmsi-abrvs)
     (puthash "'" "′" xmsi-abrvs)
     (puthash "''" "″" xmsi-abrvs)
     (puthash "'''" "‴" xmsi-abrvs)
