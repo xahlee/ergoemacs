@@ -121,7 +121,7 @@
 
 ;;; Code:
 
-(setq xmsi-version "v1.6.1")
+(setq xmsi-version "v1.6.2")
 
 (defvar xmsi-abrvs nil "A abbreviation hash table that maps a string to unicode char.")
 
