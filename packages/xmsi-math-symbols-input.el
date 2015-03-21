@@ -965,7 +965,7 @@
     (puthash "R3" "ℝ³" xmsi-abrvs)
     (puthash "fn" "ƒ" xmsi-abrvs))
 
-  (progn 
+  (progn
     ;; relations
     (puthash "<" "≺" xmsi-abrvs)
     (puthash ">" "≻" xmsi-abrvs)
@@ -994,7 +994,6 @@
     ;; operators
     (puthash "c+" "⊕" xmsi-abrvs)
     (puthash "c*" "⊗" xmsi-abrvs)
-    (puthash "*" "•" "×" xmsi-abrvs)
     (puthash "'" "′" xmsi-abrvs)
     (puthash "''" "″" xmsi-abrvs)
     (puthash "'''" "‴" xmsi-abrvs)
@@ -1194,6 +1193,8 @@
 (xmsi-add-cycle ["⌫" "⌦"])     ; delete
 (xmsi-add-cycle ["↶" "⎌"])     ; undo
 (xmsi-add-cycle ["✲" "⎈" "‸"])     ; control
+
+(xmsi-add-cycle ["*" "•" "×"]) ; bullet, multiply, times
 
 (xmsi-add-cycle ["," "，"])
 (xmsi-add-cycle ["·" "．" "。"])      ; MIDDLE DOT, FULLWIDTH FULL STOP, IDEOGRAPHIC FULL STOP
