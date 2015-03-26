@@ -48,14 +48,14 @@ in current buffer."
   (setq word-wrap t)
   )
 
-(defun close-frame ()
-  "Closes the current frame or kill emacs if there are just one
-frame. It simulates the same functionality of the Close button in
-the frame title bar."
-  (interactive)
-  (if multiple-frames
-      (delete-frame)
-    (save-buffers-kill-terminal)))
+;; (defun close-frame ()
+;;   "Closes the current frame or kill emacs if there are just one
+;; frame. It simulates the same functionality of the Close button in
+;; the frame title bar."
+;;   (interactive)
+;;   (if multiple-frames
+;;       (delete-frame)
+;;     (save-buffers-kill-terminal)))
 
 (defadvice elisp-index-search (before interactive-default activate)
   "Provide the symbol at point as the default when reading TOPIC interactively."
