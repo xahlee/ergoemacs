@@ -1147,6 +1147,7 @@
 (xmsi-add-cycle ["«»" "《》"])
 (xmsi-add-cycle ["‹›" "〈〉"])
 (xmsi-add-cycle ["【】" "〖〗"])
+(xmsi-add-cycle ["「」" "『』"])
 
 ;; cycle arrows
 (xmsi-add-cycle ["←" "⇐"])
