@@ -138,7 +138,7 @@ WARNING: this command is currently unstable."
 
 ;; ;; [["○" "0"] ["一" "1"] ["二" "2"] ["三" "3"] ["四" "4"] ["五" "5"] ["六" "6"] ["七" "7"] ["八" "8"] ["九" "9"] nil]
 
-;;     (replace-pairs-region p1 p2
+;;     (xah-replace-pairs-region p1 p2
 ;;                               (cond
 ;;                                ((string= φ-to-direction "chinese") ξenglish-chinese-punctuation-map)
 ;;                                ((string= φ-to-direction "english") (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξenglish-chinese-punctuation-map))
@@ -206,7 +206,7 @@ Version 2015-02-04
            "english"
          "chinese")))
 
-    (replace-pairs-region
+    (xah-replace-pairs-region
      p1 p2
      (cond
       ((string= φto-direction "chinese") ξenglish-chinese-punctuation-map)
@@ -321,7 +321,7 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
   ;(message "real-last-command %s" last-command)
 
     (let ((case-fold-search nil))
-      (replace-pairs-region
+      (xah-replace-pairs-region
        φp1 φp2
        (cond
         ((string= φto-direction "unicode") ξ-ascii-unicode-map)
@@ -336,34 +336,6 @@ See also: `xah-remove-punctuation-trailing-redundant-space'."
            ))
         (t (user-error "Your 3rd argument 「%s」 isn't valid" φto-direction)))))
     (put 'xah-convert-fullwidth-chars 'state stateAfter)))
-
-(defun xah-convert-latin-alphabet-gothic (φp1 φp2 φreverse-direction-p)
-  "Replace English alphabets to Unicode gothic characters.
-For example, A ⇒ 𝔄, a ⇒ 𝔞.
-
-When called interactively, work on current text block or text selection. (a “text block” is text between empty lines)
-
-If any `universal-argument' is given, reverse direction.
-
-When called in elisp, the φp1 and φp2 are region begin/end positions to work on."
-  (interactive
-   (let ((ξboundary (get-selection-or-unit 'block)))
-     (list (elt ξboundary 1) (elt ξboundary 2) current-prefix-arg )))
-
-  (let (
-        (latin-to-gothic [ ["A" "𝔄"] ["B" "𝔅"] ["C" "ℭ"] ["D" "𝔇"] ["E" "𝔈"] ["F" "𝔉"] ["G" "𝔊"] ["H" "ℌ"] ["I" "ℑ"] ["J" "𝔍"] ["K" "𝔎"] ["L" "𝔏"] ["M" "𝔐"] ["N" "𝔑"] ["O" "𝔒"] ["P" "𝔓"] ["Q" "𝔔"] ["R" "ℜ"] ["S" "𝔖"] ["T" "𝔗"] ["U" "𝔘"] ["V" "𝔙"] ["W" "𝔚"] ["X" "𝔛"] ["Y" "𝔜"] ["Z" "ℨ"] ["a" "𝔞"] ["b" "𝔟"] ["c" "𝔠"] ["d" "𝔡"] ["e" "𝔢"] ["f" "𝔣"] ["g" "𝔤"] ["h" "𝔥"] ["i" "𝔦"] ["j" "𝔧"] ["k" "𝔨"] ["l" "𝔩"] ["m" "𝔪"] ["n" "𝔫"] ["o" "𝔬"] ["p" "𝔭"] ["q" "𝔮"] ["r" "𝔯"] ["s" "𝔰"] ["t" "𝔱"] ["u" "𝔲"] ["v" "𝔳"] ["w" "𝔴"] ["x" "𝔵"] ["y" "𝔶"] ["z" "𝔷"] ])
-
-        (gothic-to-latin [ ["𝔄" "A"] ["𝔅" "B"] ["ℭ" "C"] ["𝔇" "D"] ["𝔈" "E"] ["𝔉" "F"] ["𝔊" "G"] ["ℌ" "H"] ["ℑ" "I"] ["𝔍" "J"] ["𝔎" "K"] ["𝔏" "L"] ["𝔐" "M"] ["𝔑" "N"] ["𝔒" "O"] ["𝔓" "P"] ["𝔔" "Q"] ["ℜ" "R"] ["𝔖" "S"] ["𝔗" "T"] ["𝔘" "U"] ["𝔙" "V"] ["𝔚" "W"] ["𝔛" "X"] ["𝔜" "Y"] ["ℨ" "Z"] ["𝔞" "a"] ["𝔟" "b"] ["𝔠" "c"] ["𝔡" "d"] ["𝔢" "e"] ["𝔣" "f"] ["𝔤" "g"] ["𝔥" "h"] ["𝔦" "i"] ["𝔧" "j"] ["𝔨" "k"] ["𝔩" "l"] ["𝔪" "m"] ["𝔫" "n"] ["𝔬" "o"] ["𝔭" "p"] ["𝔮" "q"] ["𝔯" "r"] ["𝔰" "s"] ["𝔱" "t"] ["𝔲" "u"] ["𝔳" "v"] ["𝔴" "w"] ["𝔵" "x"] ["𝔶" "y"] ["𝔷" "z"] ])
-
-        useMap
-        )
-
-    (if φreverse-direction-p
-        (progn (setq useMap gothic-to-latin))
-      (progn (setq useMap latin-to-gothic)))
-    (save-excursion
-      (let ((case-fold-search nil))
-        (replace-pairs-region φp1 φp2 useMap )))))
 
 (defvar xah-bracketsList nil "a list of bracket pairs. ⁖ () {} [] “” ‘’ ‹› «» 「」 『』 ….")
 (setq xah-bracketsList '( "()" "{}" "[]" "<>" "“”" "‘’" "‹›" "«»" "「」" "『』" "【】" "〖〗" "〈〉" "《》" "〔〕" "⦅⦆" "〚〛" "⦃⦄"
@@ -409,7 +381,7 @@ When called in lisp program, φfromType and φtoType is a string of a bracket pa
                  (vector (char-to-string (elt φfromType 1)) (char-to-string (elt φtoType 1)))
                  ))
          )
-    (replace-pairs-region p1 p2 changePairs) ) )
+    (xah-replace-pairs-region p1 p2 changePairs) ) )
 
 (defun xah-replace-slanted-apostrophe ()
   "Replace some single curly apostrophe to straight version,
@@ -419,7 +391,7 @@ Example: 「it’s」 ⇒ 「it's」."
 (let (ξboundary p1 p2)
     (setq ξboundary (get-selection-or-unit 'block))
     (setq p1 (elt ξboundary 1) p2 (elt ξboundary 2)  )
-    (replace-pairs-region p1 p2 '(
+    (xah-replace-pairs-region p1 p2 '(
 ["‘tis" "'tis"]
 ["’s" "'s"]
 ["’d" "'d"]
@@ -459,7 +431,7 @@ Examples of changes:
       (narrow-to-region p1 p2)
 
       ;; dash and ellipsis etc
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                             [
                              ["--" " — "]
                              ["—" " — "]
@@ -471,21 +443,21 @@ Examples of changes:
                              ["~=" "≈"]
                              ])
 
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                             [
                              ["  —  " " — "] ; rid of extra space in em-dash
                              [" , " ", "]
                              ])
 
       ;; fix GNU style ASCII quotes
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                             [
                              ["``" "“"]
                              ["''" "”"]
                              ])
 
       ;; "straight quote" ⇒ “double quotes”
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                             [
                              ["\n\"" "\n“"]
                              [">\"" ">“"]
@@ -516,7 +488,7 @@ Examples of changes:
                                     ])
 
       ;; fix single quotes to curly
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                             [
                              [">\'" ">‘"]
                              [" \'" " ‘"]
@@ -558,7 +530,7 @@ Examples of changes:
                                     ])
 
       ;; fix back escaped quotes in code
-      (replace-pairs-region (point-min) (point-max)
+      (xah-replace-pairs-region (point-min) (point-max)
                                    [
                                     ["\\”" "\\\""]
                                     ])
@@ -584,7 +556,7 @@ Examples of changes:
   (let* ((ξboundary (get-selection-or-unit 'line))
          (p1 (elt ξboundary 1))
          (p2 (elt ξboundary 2)))
-    (replace-pairs-region p1 p2 '(
+    (xah-replace-pairs-region p1 p2 '(
                                   ["fuck" "f��k"]
                                   ["shit" "sh�t"]
                                   ["motherfucker" "momf��ker"]
@@ -652,7 +624,7 @@ Version 2015-02-10"
               (string-match "！" ξinput-str))
           (setq φto-direction "untwitterfy")
         (setq φto-direction "twitterfy")))
-    (replace-pairs-region
+    (xah-replace-pairs-region
      p1 p2
      (cond
       ((string= φto-direction "twitterfy") ξtwitterfy-map)
