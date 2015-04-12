@@ -61,7 +61,7 @@
 (require 'find-lisp)
 (require 'xeu_elisp_util)
 
-(defcustom xah-context-char-number 50 "number of characters to print before and after a search string."
+(defcustom xah-context-char-number 100 "number of characters to print before and after a search string."
 :group 'xah_file_util
 )
 
@@ -79,7 +79,9 @@
   (princ (format "• %d %s\n" φcount8086 φfilepath4287 )))
 
 (defun xah-find-text (φsearch-str1 φinput-dir φpath-regex φfixed-case-search-p φprintContext-p)
-  "Report files that contain string, similar to Linux 「grep -F」."
+  "Report files that contain string, similar to Linux 「grep -F」.
+By default, not case sensitive, and print surrounding text.
+If `universal-argument' is called first, prompt to ask."
   (interactive
    (let (
          (ξdefault-input
@@ -90,8 +92,14 @@
       (read-string (format "Search string (default %s): " ξdefault-input) nil 'query-replace-history ξdefault-input)
       (ido-read-directory-name "Directory: " default-directory default-directory "MUSTMATCH")
       (read-from-minibuffer "Path regex: " nil nil nil 'dired-regexp-history)
-      (y-or-n-p "Fixed case in search?")
-      (y-or-n-p "Print surrounding Text?"))))
+      (if current-prefix-arg
+          (y-or-n-p "Fixed case in search?")
+        nil
+        )      
+      (if current-prefix-arg
+          (y-or-n-p "Print surrounding Text?")
+        t
+        ))))
 
   (let (
         (case-fold-search (not φfixed-case-search-p))

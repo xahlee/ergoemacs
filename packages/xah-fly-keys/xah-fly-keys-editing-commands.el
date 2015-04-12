@@ -53,35 +53,31 @@ If `narrow-to-region' is in effect, then cut that region only."
 
 
 
-(defun xah-toggle-letter-case ()
+(defun xah-toggle-letter-case (φp1 φp2)
   "Toggle the letter case of current word or text selection.
-Toggles between: “all lower”, “Init Caps”, “ALL CAPS”."
-  (interactive)
+Always cycle in this order: Init Caps, ALL CAPS, all lower.
 
-  (let (ξp1 ξp2 (deactivate-mark nil) (case-fold-search nil))
-    (if (use-region-p)
-        (setq ξp1 (region-beginning) ξp2 (region-end))
-      (let ((bds (bounds-of-thing-at-point 'word)))
-        (setq ξp1 (car bds) ξp2 (cdr bds))))
-
+In lisp code, φp1 φp2 are region boundary.
+URL `http://ergoemacs.org/emacs/modernization_upcase-word.html'
+Version 2015-04-09"
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let ((ξbds (bounds-of-thing-at-point 'word)))
+       (list (car ξbds) (cdr ξbds)))))
+  (let ((deactivate-mark nil))
     (when (not (eq last-command this-command))
-      (save-excursion
-        (goto-char ξp1)
-        (cond
-         ((looking-at "[[:lower:]][[:lower:]]") (put this-command 'state "all lower"))
-         ((looking-at "[[:upper:]][[:upper:]]") (put this-command 'state "all caps"))
-         ((looking-at "[[:upper:]][[:lower:]]") (put this-command 'state "init caps"))
-         ((looking-at "[[:lower:]]") (put this-command 'state "all lower"))
-         ((looking-at "[[:upper:]]") (put this-command 'state "all caps"))
-         (t (put this-command 'state "all lower")))))
-
+      (put this-command 'state 0))
     (cond
-     ((string= "all lower" (get this-command 'state))
-      (upcase-initials-region ξp1 ξp2) (put this-command 'state "init caps"))
-     ((string= "init caps" (get this-command 'state))
-      (upcase-region ξp1 ξp2) (put this-command 'state "all caps"))
-     ((string= "all caps" (get this-command 'state))
-      (downcase-region ξp1 ξp2) (put this-command 'state "all lower")))))
+     ((equal 0 (get this-command 'state))
+      (upcase-initials-region φp1 φp2)
+      (put this-command 'state 1))
+     ((equal 1  (get this-command 'state))
+      (upcase-region φp1 φp2)
+      (put this-command 'state 2))
+     ((equal 2 (get this-command 'state))
+      (downcase-region φp1 φp2)
+      (put this-command 'state 0)))))
 
 (defun xah-toggle-previous-letter-case ()
   "Toggle the letter case of the letter to the left of cursor."
@@ -271,14 +267,14 @@ it'll remove the second >."
 When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters."
   (interactive)
   ;; this function sets a property 「'state」. Possible values are 0 to length of charArray.
-  (let (inputText bds charArray p1 p2 currentState nextState changeFrom
+  (let (inputText ξbds charArray p1 p2 currentState nextState changeFrom
                   changeTo startedWithRegion-p )
     (if (region-active-p)
         (setq startedWithRegion-p t )
       (setq startedWithRegion-p nil ))
 
-    (setq bds (get-selection-or-unit 'glyphs))
-    (setq inputText (elt bds 0) p1 (elt bds 1) p2 (elt bds 2))
+    (setq ξbds (get-selection-or-unit 'glyphs))
+    (setq inputText (elt ξbds 0) p1 (elt ξbds 1) p2 (elt ξbds 2))
 
     (setq charArray [" " "_" "-"])
 
@@ -453,3 +449,59 @@ URL `http://ergoemacs.org/emacs/elisp_escape_quotes.html'
         (goto-char (point-min))
         (while (search-forward "\\\"" nil t)
           (replace-match "\"" 'FIXEDCASE 'LITERAL))))))
+
+(defun xah-title-case-region-or-line (φp1 φp2)
+  "Title case text between nearest brackets, or current line, or text selection.
+Capitalize first letter of each word, except words like {to, of, the, a, in, or, and, …}. If a word already contains cap letters such as HTTP, URL, they are left as is.
+
+When called in a elisp program, φp1 φp2 are region boundaries.
+URL `http://ergoemacs.org/emacs/elisp_title_case_text.html'
+Version 2015-04-08"
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let (
+           ξp1
+           ξp2
+           (ξskipChars "^\"<>(){}[]“”‘’‹›«»「」『』【】〖〗《》〈〉〔〕"))
+       (progn
+         (skip-chars-backward ξskipChars (line-beginning-position))
+         (setq ξp1 (point))
+         (skip-chars-forward ξskipChars (line-end-position))
+         (setq ξp2 (point)))
+       (list ξp1 ξp2))))
+  (let* (
+         (ξstrPairs [
+                     [" A " " a "]
+                     [" And " " and "]
+                     [" At " " at "]
+                     [" As " " as "]
+                     [" By " " by "]
+                     [" Be " " be "]
+                     [" Into " " into "]
+                     [" In " " in "]
+                     [" Is " " is "]
+                     [" It " " it "]
+                     [" For " " for "]
+                     [" Of " " of "]
+                     [" Or " " or "]
+                     [" On " " on "]
+                     [" The " " the "]
+                     [" That " " that "]
+                     [" To " " to "]
+                     [" Vs " " vs "]
+                     [" With " " with "]
+                     [" From " " from "]
+                     ["'S " "'s "]
+                     ]))
+    (save-restriction
+      (narrow-to-region φp1 φp2)
+      (upcase-initials-region (point-min) (point-max))
+      (let ((case-fold-search nil))
+        (mapc
+         (lambda (ξx)
+           (goto-char (point-min))
+           (while
+               (search-forward (aref ξx 0) nil t)
+             (replace-match (aref ξx 1) 'FIXEDCASE 'LITERAL)))
+         ξstrPairs)))))

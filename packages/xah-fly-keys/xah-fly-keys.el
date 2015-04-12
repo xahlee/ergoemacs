@@ -65,6 +65,7 @@ To solve this problem, when your code only knows the relative path of another fi
 (load (xah-get-fullpath "xah-fly-keys-user-keymap"))
 (load (xah-get-fullpath "xah-fly-keys-insertion-keymap"))
 (load (xah-get-fullpath "xah-fly-keys-control-key"))
+(load (xah-get-fullpath "xah-fly-keys-meta-key"))
 (load (xah-get-fullpath "xah-fly-keys-special-keys"))
 (load (xah-get-fullpath "xah-fly-keys-mode-specific"))
 
@@ -162,7 +163,7 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "0") 'xah-backward-punct)
 
     (global-set-key (kbd "a") 'open-line)
-    (global-set-key (kbd "b") 'xah-toggle-letter-case)
+    (global-set-key (kbd "b") nil)
     (global-set-key (kbd "c") 'previous-line)
     (global-set-key (kbd "d") 'xah-beginning-of-line-or-block)
     (global-set-key (kbd "e") 'delete-backward-char)

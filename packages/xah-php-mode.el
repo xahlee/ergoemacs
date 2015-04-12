@@ -2117,7 +2117,6 @@ Launches default browser and opens the doc's url."
 (defvar xpm-keymap nil "Keybinding for `xah-php-mode'")
 (progn
   (setq xpm-keymap (make-sparse-keymap))
-  (define-key xpm-keymap [remap comment-dwim] 'xpm-comment-dwim)
 )
 
 
@@ -2145,6 +2144,13 @@ PHP keywords are colored. Basically that's it.
 
   (set-syntax-table xpm-syntax-table)
   (use-local-map xpm-keymap)
+
+  (setq-local comment-start "# ")
+  (setq-local comment-end "")
+  (setq-local comment-start-skip "#+ *")
+  (setq-local comment-add 1)
+  (setq-local comment-column 1)
+
   (run-mode-hooks 'xah-php-mode-hook)
 )
 

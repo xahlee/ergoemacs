@@ -1,20 +1,18 @@
 ;;-*- coding: utf-8 -*-
 
 (progn
-  (define-key isearch-mode-map (kbd "<f11>") 'isearch-ring-retreat )
-  (define-key isearch-mode-map (kbd "<f12>") 'isearch-ring-advance )
-  (define-key isearch-mode-map (kbd "<prior>") 'isearch-repeat-backward)
-  (define-key isearch-mode-map (kbd "<next>") 'isearch-repeat-forward)
-
-  (define-key isearch-mode-map (kbd "<f4>") 'isearch-yank-pop)
-
-)
+  (define-key isearch-mode-map (kbd "<up>") 'isearch-ring-retreat )
+  (define-key isearch-mode-map (kbd "<down>") 'isearch-ring-advance )
+  (define-key isearch-mode-map (kbd "<left>") 'isearch-repeat-backward) ; single key, useful
+  (define-key isearch-mode-map (kbd "<right>") 'isearch-repeat-forward) ; single key, useful
+  (define-key isearch-mode-map (kbd "M-v") 'isearch-yank-pop)
+ )
 
 (progn
-  (define-key minibuffer-local-map (kbd "<f11>") 'previous-history-element)
-  (define-key minibuffer-local-map (kbd "<f12>") 'next-history-element)
-  (define-key minibuffer-local-map (kbd "S-<f11>") 'previous-matching-history-element)
-  (define-key minibuffer-local-map (kbd "S-<f12>") 'next-matching-history-element)
+  (define-key minibuffer-local-map (kbd "M-7") 'previous-history-element)
+  (define-key minibuffer-local-map (kbd "M-8") 'next-history-element)
+  (define-key minibuffer-local-map (kbd "M-S-7") 'previous-matching-history-element)
+  (define-key minibuffer-local-map (kbd "M-S-8") 'next-matching-history-element)
   )
 
 (progn
@@ -69,32 +67,42 @@
   (local-set-key (kbd "9") nil)
   (local-set-key (kbd "0") nil)
 
-;;   ;; default keys
-;; (local-set-key (kbd "TAB") 'shr-next-link)
-;; (local-set-key (kbd "SPC") 'scroll-up-command)
-;; (local-set-key (kbd "&") 'eww-browse-with-external-browser)
-;; (local-set-key (kbd "-") 'negative-argument)
-;; (local-set-key (kbd "B") 'eww-list-bookmarks)
-;; (local-set-key (kbd "C") 'url-cookie-list)
-;; (local-set-key (kbd "H") 'eww-list-histories)
-;; (local-set-key (kbd "b") 'eww-add-bookmark)
-;; (local-set-key (kbd "d") 'eww-download)
-;; (local-set-key (kbd "g") 'eww-reload)
-;; (local-set-key (kbd "l") 'eww-back-url)
-;; (local-set-key (kbd "n") 'eww-next-url)
-;; (local-set-key (kbd "p") 'eww-previous-url)
-;; (local-set-key (kbd "q") 'quit-window)
-;; (local-set-key (kbd "r") 'eww-forward-url)
-;; (local-set-key (kbd "t") 'eww-top-url)
-;; (local-set-key (kbd "u") 'eww-up-url)
-;; (local-set-key (kbd "v") 'eww-view-source)
-;; (local-set-key (kbd "w") 'eww-copy-page-url)
-;; (local-set-key (kbd "DEL") 'scroll-down-command)
-;; (local-set-key (kbd "S-SPC") 'scroll-down-command)
-;; (local-set-key (kbd "<delete>") 'scroll-down-command)
-;; (local-set-key (kbd "M-n") 'eww-next-bookmark)
-;; (local-set-key (kbd "M-p") 'eww-previous-bookmark)
-;; (local-set-key (kbd "C-M-i") 'shr-previous-link)
+(local-set-key (kbd "SPC") nil) ; 'scroll-up-command
+(local-set-key (kbd "DEL") nil) ; 'scroll-down-command
+(local-set-key (kbd "S-SPC") nil) ; 'scroll-down-command
+(local-set-key (kbd "<delete>") nil) ; 'scroll-down-command
+
+(local-set-key (kbd "b") nil)
+(local-set-key (kbd "d") nil)
+(local-set-key (kbd "g") nil)
+(local-set-key (kbd "l") nil)
+(local-set-key (kbd "r") nil)
+(local-set-key (kbd "n") nil) ; 'eww-next-url
+(local-set-key (kbd "p") nil) ; 'eww-previous-url
+(local-set-key (kbd "t") nil) ; 'eww-top-url
+(local-set-key (kbd "u") nil) ; 'eww-up-url
+
+  ;; default keys
+(local-set-key (kbd "TAB") 'shr-next-link)
+(local-set-key (kbd "C-M-i") 'shr-previous-link)
+
+(local-set-key (kbd "&") nil) ; 'eww-browse-with-external-browser
+(local-set-key (kbd "-") nil) ; 'negative-argument
+(local-set-key (kbd "<menu> e B") 'eww-list-bookmarks)
+(local-set-key (kbd "<menu> e C") 'url-cookie-list)
+(local-set-key (kbd "<menu> e H") 'eww-list-histories)
+
+(local-set-key (kbd "<menu> e b") 'eww-add-bookmark)
+(local-set-key (kbd "<menu> e d") 'eww-download)
+(local-set-key (kbd "<menu> e g") 'eww-reload)
+(local-set-key (kbd "<menu> e l") 'eww-back-url)
+(local-set-key (kbd "<menu> e q") 'quit-window)
+(local-set-key (kbd "<menu> e r") 'eww-forward-url)
+
+(local-set-key (kbd "<menu> e v") 'eww-view-source)
+(local-set-key (kbd "<menu> e w") 'eww-copy-page-url)
+(local-set-key (kbd "M-n") 'eww-next-bookmark)
+(local-set-key (kbd "M-p") 'eww-previous-bookmark)
 
 )
 (add-hook 'eww-mode-hook 'xah-eww-mode-setup)
@@ -134,3 +142,14 @@
   (define-key occur-mode-map (kbd "o") 'other-window)
   )
 (add-hook 'occur-mode-hook 'xah-occur-mode-keys)
+
+;; used by message buffer. override it
+(setq special-mode-map
+      (let ((myMap (make-sparse-keymap)))
+        (suppress-keymap myMap)
+        (define-key myMap "q" 'quit-window)
+        (define-key myMap " " 'scroll-up-command)
+        (define-key myMap [?\S-\ ] 'scroll-down-command)
+        (define-key myMap "\C-?" 'scroll-down-command)
+        myMap))
+

@@ -619,6 +619,7 @@ Version 2015-02-10"
         (ξtwitterfy-map
          [
           [" are " " r "]
+          [" are, " " r,"]
           [" you " " u "]
           [" you," " u,"]
           [" you." " u."]

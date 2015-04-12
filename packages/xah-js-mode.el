@@ -377,13 +377,22 @@
 
 ".target"
 
-
+".getFullYear"
+".getMonth"
+".getDate"
+".getDay"
 ".getHours"
 ".getMinutes"
 ".getSeconds"
+".getUTCMonth"
+".getUTCDate"
+".getUTCDay"
+".getUTCHours"
+".getUTCMinutes"
+".getUTCSeconds"
 
-".setTimeout"
-".setInterval"
+"setTimeout"
+"setInterval"
 
 ".innerHTML"
 ".innerText"
@@ -397,7 +406,6 @@
 "removeChild"
 "replaceChild"
 "document"
-
 
 "previousElementSibling"
 "nextElementSibling"

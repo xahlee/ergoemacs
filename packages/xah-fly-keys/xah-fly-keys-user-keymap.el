@@ -5,8 +5,10 @@
   (define-prefix-command 'xah-user-keymap)
 
   (define-key xah-user-keymap (kbd "SPC") 'xah-dump-keymap)
+  (define-key xah-user-keymap (kbd "RET") 'xah-shell-commands)
+
   (define-key xah-user-keymap (kbd "-") 'xah-insert-form-feed)
-  (define-key xah-user-keymap (kbd ".") 'xah-title-case-string-region-or-line)
+  (define-key xah-user-keymap (kbd ".") 'xah-title-case-region-or-line)
 
   (define-key xah-user-keymap (kbd "1") 'xah-copy-to-register-1)
   (define-key xah-user-keymap (kbd "2") 'xah-paste-from-register-1)
@@ -20,7 +22,7 @@
   (define-key xah-user-keymap (kbd "0") 'xah-find-text-regex)
 
   (define-key xah-user-keymap (kbd "a") 'xah-toggle-previous-letter-case)
-  (define-key xah-user-keymap (kbd "b") 'xah-shell-commands)
+  (define-key xah-user-keymap (kbd "b") nil)
   (define-key xah-user-keymap (kbd "c") 'xah-cite)
   (define-key xah-user-keymap (kbd "d") 'xah-insert-date)
   (define-key xah-user-keymap (kbd "e") 'xah-open-file-fast)

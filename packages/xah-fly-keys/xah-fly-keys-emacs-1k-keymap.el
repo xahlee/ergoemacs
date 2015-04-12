@@ -34,7 +34,7 @@
 
 ;; should be the most frequently used. Each is 3-keys sequence. ⁖ 【menu e 3】, 【menu u h】,
 
-;; of these 8 keys, the {. p g} are special. Each used for 2 key sequences, for 3 of the most frequently used commands. 【menu .】 is for universal-argument. 【menu p】 is for query-replace. 【menu g】 is isearch.
+;; of these 8 keys, the {. p g} are special. Each used for 2 key sequences, for 3 of the most frequently used commands. 【menu p】 is for query-replace. 【menu g】 is isearch.
 
 ;; basically, after the menu key, there are a total of 12 keys to start, 6 for each hand. These keys are on the home row or the row above, and are pressed by 2nd 3rd 4th fingers. (thumb is 1st finger) like this:
 
@@ -43,7 +43,6 @@
 ;; • the 【menu u …】 is for inserting brackets (){}[]""''“”‘’ and other brackets, and for inserting “=” “+” any unicode chars.
 ;; • the 【menu p】 is for query-replace
 ;; • the 【menu g】 is for isearch
-;; • the 【menu .】 is for universal-argument.
 ;; • 【menu enter】 is for execute-extended-command
 ;; • 【menu menu】  is undecided.
 
@@ -72,7 +71,7 @@
 (define-prefix-command 'xah-menu-keymap)
 (global-set-key (kbd "<menu>") 'xah-menu-keymap)
 
-(global-set-key (kbd "<menu> <return>") 'smex) ; todo check if  bound, else execute-extended-command
+(global-set-key (kbd "<menu> RET") 'smex) ; todo check if bound, else execute-extended-command
 
 (global-set-key (kbd "<menu> <backspace>") nil)
 (global-set-key (kbd "<menu> <delete>") nil)
@@ -80,7 +79,22 @@
 
 (global-set-key (kbd "<menu> <menu>") 'exchange-point-and-mark)
 
-(global-set-key (kbd "<menu> .") 'universal-argument)
+(progn
+  (define-prefix-command 'xah-highlight-keymap) ; commands in search-map
+  (global-set-key (kbd "<menu> .") xah-highlight-keymap)
+
+  (define-key xah-highlight-keymap (kbd ".") 'isearch-forward-symbol-at-point)
+  (define-key xah-highlight-keymap (kbd "s") 'isearch-forward-symbol)
+  (define-key xah-highlight-keymap (kbd "w") 'isearch-forward-word)
+  (define-key xah-highlight-keymap (kbd "h .") 'highlight-symbol-at-point)
+  (define-key xah-highlight-keymap (kbd "h f") 'hi-lock-find-patterns)
+  (define-key xah-highlight-keymap (kbd "h l") 'highlight-lines-matching-regexp)
+  (define-key xah-highlight-keymap (kbd "h p") 'highlight-phrase)
+  (define-key xah-highlight-keymap (kbd "h r") 'highlight-regexp)
+  (define-key xah-highlight-keymap (kbd "h u") 'unhighlight-regexp)
+  (define-key xah-highlight-keymap (kbd "h w") 'hi-lock-write-interactive-patterns)
+)
+
 (global-set-key (kbd "<menu> '") 'quoted-insert)
 (global-set-key (kbd "<menu> ,") nil)
 (global-set-key (kbd "<menu> -") nil)
@@ -178,27 +192,13 @@
   (define-key xah-menu-i-keymap (kbd "p") 'previous-error)
   )
 
-(global-set-key (kbd "<menu> j") 'xah-copy-line-or-region)
+(global-set-key (kbd "<menu> j") 'xah-copy-all)
 
 (global-set-key (kbd "<menu> k") 'yank)
 
 (global-set-key (kbd "<menu> l") 'recenter-top-bottom)
 
-(progn
-  (define-prefix-command 'xah-menu-m-keymap) ; commands in search-map
-  (global-set-key (kbd "<menu> m") xah-menu-m-keymap)
-
-  (define-key xah-menu-m-keymap (kbd ".") 'isearch-forward-symbol-at-point)
-  (define-key xah-menu-m-keymap (kbd "s") 'isearch-forward-symbol)
-  (define-key xah-menu-m-keymap (kbd "w") 'isearch-forward-word)
-  (define-key xah-menu-m-keymap (kbd "h .") 'highlight-symbol-at-point)
-  (define-key xah-menu-m-keymap (kbd "h f") 'hi-lock-find-patterns)
-  (define-key xah-menu-m-keymap (kbd "h l") 'highlight-lines-matching-regexp)
-  (define-key xah-menu-m-keymap (kbd "h p") 'highlight-phrase)
-  (define-key xah-menu-m-keymap (kbd "h r") 'highlight-regexp)
-  (define-key xah-menu-m-keymap (kbd "h u") 'unhighlight-regexp)
-  (define-key xah-menu-m-keymap (kbd "h w") 'hi-lock-write-interactive-patterns)
-)
+(global-set-key (kbd "<menu> m") 'universal-argument)
 
 (progn
   ;; commands here are harmless (safe). They don't modify text.
@@ -237,7 +237,7 @@
   (define-key xah-harmless-keymap (kbd "c") 'toggle-case-fold-search)
   (define-key xah-harmless-keymap (kbd "d") 'narrow-to-page)
   (define-key xah-harmless-keymap (kbd "e") 'eshell)
-  (define-key xah-harmless-keymap (kbd "f") ctl-x-5-map) ; frame
+  (define-key xah-harmless-keymap (kbd "f") nil)
   (define-key xah-harmless-keymap (kbd "g") 'toggle-frame-fullscreen)
   (define-key xah-harmless-keymap (kbd "h") 'widen)
   (define-key xah-harmless-keymap (kbd "i") 'make-frame-command)
@@ -265,19 +265,6 @@
     (define-key xah-harmless-keymap (kbd "SPC t") 'xah-toggle-margin-right)
     (define-key xah-harmless-keymap (kbd "SPC n") 'xah-toggle-line-spacing))
 
-  ;; <menu> n f C-f  find-file-other-frame
-  ;; <menu> n f C-o  display-buffer-other-frame
-  ;; <menu> n f .    find-tag-other-frame
-  ;; <menu> n f 0    delete-frame
-  ;; <menu> n f 1    delete-other-frames
-  ;; <menu> n f 2    make-frame-command
-  ;; <menu> n f b    switch-to-buffer-other-frame
-  ;; <menu> n f d    dired-other-frame
-  ;; <menu> n f f    find-file-other-frame
-  ;; <menu> n f m    compose-mail-other-frame
-  ;; <menu> n f o    other-frame
-  ;; <menu> n f r    find-file-read-only-other-frame
-
   )
 
 (progn
@@ -287,7 +274,7 @@
 
 (global-set-key (kbd "<menu> p") 'query-replace)
 
-(global-set-key (kbd "<menu> q") 'xah-cut-line-or-region)
+(global-set-key (kbd "<menu> q") 'xah-cut-all)
 
 (progn
   ;; kinda replacement related
@@ -325,7 +312,7 @@
   (define-prefix-command 'xah-menu-t-keymap)
   (global-set-key (kbd "<menu> t") xah-menu-t-keymap)
 
-  (define-key xah-menu-t-keymap (kbd "<return>") 'pop-global-mark)
+  (define-key xah-menu-t-keymap (kbd "RET") 'pop-global-mark)
   (define-key xah-menu-t-keymap (kbd ".") 'insert-char)
 
   (define-key xah-menu-t-keymap (kbd "3") 'point-to-register)
@@ -335,11 +322,11 @@
 
   (define-key xah-menu-t-keymap (kbd "e") 'copy-to-register)
   (define-key xah-menu-t-keymap (kbd "h") 'xah-close-current-buffer)
-  (define-key xah-menu-t-keymap (kbd "j") 'xah-copy-all)
+  (define-key xah-menu-t-keymap (kbd "j") nil)
   (define-key xah-menu-t-keymap (kbd "k") nil)
   (define-key xah-menu-t-keymap (kbd "n") 'repeat-complex-command)
   (define-key xah-menu-t-keymap (kbd "p") 'query-replace-regexp)
-  (define-key xah-menu-t-keymap (kbd "q") 'xah-cut-all)
+  (define-key xah-menu-t-keymap (kbd "q") nil)
   (define-key xah-menu-t-keymap (kbd "r") 'copy-rectangle-to-register)
   (define-key xah-menu-t-keymap (kbd "s") 'write-file)
   (define-key xah-menu-t-keymap (kbd "t") 'repeat)
@@ -386,11 +373,11 @@
   (define-key xah-danger-keymap (kbd "p") 'eval-expression)
   (define-key xah-danger-keymap (kbd "q") 'save-buffers-kill-terminal)
   (define-key xah-danger-keymap (kbd "u") 'eval-region)
-  (define-key xah-danger-keymap (kbd "w") 'close-frame)
+  (define-key xah-danger-keymap (kbd "w") 'delete-frame)
 
   )
 
-(global-set-key (kbd "<menu> x") 'yank-pop)
+(global-set-key (kbd "<menu> x") nil)
 
 (global-set-key (kbd "<menu> y") nil)
 
@@ -414,8 +401,19 @@
 
 
 
-;; C-x C-p	mark-page
+;; these commands has a key in emacs, but i decided not to have them.
 
+  ;; C-x 5 C-f  find-file-other-frame
+  ;; C-x 5 C-o  display-buffer-other-frame
+  ;; C-x 5 .    find-tag-other-frame
+  ;; C-x 5 1    delete-other-frames
+  ;; C-x 5 b    switch-to-buffer-other-frame
+  ;; C-x 5 d    dired-other-frame
+  ;; C-x 5 f    find-file-other-frame
+  ;; C-x 5 m    compose-mail-other-frame
+  ;; C-x 5 r    find-file-read-only-other-frame
+
+;; C-x C-p	mark-page
 ;; C-x C-l	downcase-region
 ;; C-x C-u	upcase-region
 
@@ -424,47 +422,63 @@
 
 ;; C-x C-r	find-file-read-only
 ;; C-x C-v	find-alternate-file
-;; C-x C-w	write-file
+
+;; C-x =	what-cursor-position, use describe-char instead
+;; C-x <	scroll-left
+;; C-x >	scroll-right
+;; C-x [	backward-page
+;; C-x ]	forward-page
+;; C-x ^	enlarge-window
+
+;; C-x {	shrink-window-horizontally
+;; C-x }	enlarge-window-horizontally
+;; C-x DEL	backward-kill-sentence
+
+;; C-x s	save-some-buffers
+
+;; M-o ESC         Prefix Command
+;; M-o b           facemenu-set-bold
+;; M-o d           facemenu-set-default
+;; M-o i           facemenu-set-italic
+;; M-o l           facemenu-set-bold-italic
+;; M-o o           facemenu-set-face
+;; M-o u           facemenu-set-underline
+;; M-o M-S         center-paragraph
+;; M-o M-o         font-lock-fontify-block
+;; M-o M-s         center-line
+
+;; C-x C-z	suspend-frame
+;; C-x +	balance-windows
+
+;; C-x k	kill-buffer , use xah-close-current-buffer
+;; C-x l	count-lines-page
+;; C-x m	compose-mail
+
+
+;; undecided yet
 
 ;; C-x e	kmacro-end-and-call-macro
 ;; C-x q	kbd-macro-query
 ;; C-x C-k	kmacro-keymap
 
-;; C-x C-c	save-buffers-kill-terminal
 ;; C-x C-d	list-directory
 ;; C-x C-n	set-goal-column
-;; C-x C-z	suspend-frame
 ;; C-x ESC	Prefix Command
 ;; C-x $	set-selective-display
 ;; C-x *	calc-dispatch
 ;; C-x -	shrink-window-if-larger-than-buffer
 ;; C-x .	set-fill-prefix
 
-;; C-x +	balance-windows
-
 ;; C-x 4	ctl-x-4-prefix
 ;; C-x 5	ctl-x-5-prefix
 ;; C-x 6	2C-command
 ;; C-x ;	comment-set-column
-;; C-x <	scroll-left
-;; C-x =	what-cursor-position
-;; C-x >	scroll-right
-;; C-x [	backward-page
-;; C-x ]	forward-page
-;; C-x ^	enlarge-window
+
 ;; C-x `	next-error
 ;; C-x f	set-fill-column
 ;; C-x i	insert-file
-;; C-x k	kill-buffer
-;; C-x l	count-lines-page
-;; C-x m	compose-mail
 ;; C-x n	Prefix Command
 ;; C-x r	Prefix Command
-;; C-x s	save-some-buffers
-
-;; C-x {	shrink-window-horizontally
-;; C-x }	enlarge-window-horizontally
-;; C-x DEL	backward-kill-sentence
 
 ;; C-x C-k C-a	kmacro-add-counter
 ;; C-x C-k C-c	kmacro-set-counter
@@ -507,18 +521,6 @@
 ;; C-x 6 b	2C-associate-buffer
 ;; C-x 6 s	2C-split
 ;; C-x 6 <f2>	2C-two-columns
-
-;; M-o ESC         Prefix Command
-;; M-o b           facemenu-set-bold
-;; M-o d           facemenu-set-default
-;; M-o i           facemenu-set-italic
-;; M-o l           facemenu-set-bold-italic
-;; M-o o           facemenu-set-face
-;; M-o u           facemenu-set-underline
-
-;; M-o M-S         center-paragraph
-;; M-o M-o         font-lock-fontify-block
-;; M-o M-s         center-line
 
 ;; ;; todo
 ;; select all, copy all, open, those standard keys

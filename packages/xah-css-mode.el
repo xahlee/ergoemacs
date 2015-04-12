@@ -462,6 +462,7 @@ WARNING: not robust."
 "mm"
 "in"
 "em"
+"rem"
 "ex"
 "%") )
 
@@ -769,7 +770,7 @@ This uses `ido-mode' user interface for completion."
       (let (
           (htmlTagNames (regexp-opt xcm-html-tag-names 'words) )
           (cssPropertieNames (regexp-opt xcm-property-names 'symbols ) )
-          (cssValueNames (regexp-opt xcm-value-kwds ) )
+          (cssValueNames (regexp-opt xcm-value-kwds 'symbols) )
           (cssColorNames (regexp-opt xcm-color-names 'symbols) )
           (cssUnitNames (regexp-opt xcm-unit-names 'symbols ) )
           (cssPseudoSelectorNames (regexp-opt xcm-pseudo-selector-names ) )
