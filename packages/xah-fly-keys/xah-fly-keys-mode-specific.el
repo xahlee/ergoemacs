@@ -35,7 +35,7 @@
     ;;    (define-key dired-mode-map (kbd "M-s") 'isearch-forward)
     ;;    (define-key dired-mode-map (kbd "M-S") 'isearch-backward)
     ;; (define-key dired-mode-map (kbd "<tab>") (make-keymap))
-    (define-key dired-mode-map (kbd "<menu> e t") 'wdired-change-to-wdired-mode) ; emacs 23 or later only
+    (define-key dired-mode-map (kbd "<delete> t") 'wdired-change-to-wdired-mode) ; emacs 23 or later only
     ))
 
 (progn
@@ -143,13 +143,106 @@
   )
 (add-hook 'occur-mode-hook 'xah-occur-mode-keys)
 
-;; used by message buffer. override it
 (setq special-mode-map
       (let ((myMap (make-sparse-keymap)))
         (suppress-keymap myMap)
+        (define-key myMap "2" 'delete-window)
+        (define-key myMap "3" 'delete-other-windows)
         (define-key myMap "q" 'quit-window)
         (define-key myMap " " 'scroll-up-command)
         (define-key myMap [?\S-\ ] 'scroll-down-command)
         (define-key myMap "\C-?" 'scroll-down-command)
         myMap))
 
+;; used by message buffer. override it
+(progn
+  (define-key messages-buffer-mode-map "2" nil)
+  (define-key messages-buffer-mode-map "3" nil))
+
+(defun xah-magit-mode-keys ()
+  "keys for `magit-mode'."
+  (define-key magit-mode-map (kbd "1") nil)
+  (define-key magit-mode-map (kbd "2") nil)
+  (define-key magit-mode-map (kbd "3") nil)
+  (define-key magit-mode-map (kbd "4") nil)
+  (define-key magit-mode-map (kbd "o") nil)
+
+  (define-key magit-mode-map (kbd "<menu> e o") 'magit-key-mode-popup-submodule)
+  (define-key magit-mode-map (kbd "<menu> e 1") 'magit-show-level-1)
+  (define-key magit-mode-map (kbd "<menu> e 2") 'magit-show-level-2)
+  (define-key magit-mode-map (kbd "<menu> e 3") 'magit-show-level-3)
+  (define-key magit-mode-map (kbd "<menu> e 4") 'magit-show-level-4))
+(add-hook 'magit-mode-hook 'xah-magit-mode-keys)
+
+(defun xah-Info-mode-keys ()
+  "Modify keybindings for `Info-mode'.
+For `Info-mode-hook'."
+  (local-set-key (kbd "<menu> e g") 'xah-view-emacs-manual-in-browser)
+
+  ;; (let ((ξkmap (make-keymap)))
+  ;;         (define-key ξkmap (kbd "<menu> e") nil)
+  ;;         (define-key ξkmap (kbd "<menu> e .") 'beginning-of-buffer)
+  ;;         (define-key ξkmap (kbd "<menu> e  ") 'Info-scroll-up)
+  ;;         (define-key ξkmap [?\S-\ ] 'Info-scroll-down)
+  ;;         (define-key ξkmap "\C-m" 'Info-follow-nearest-node)
+  ;;         (define-key ξkmap "\t" 'Info-next-reference)
+  ;;         (define-key ξkmap "\e\t" 'Info-prev-reference)
+  ;;         (define-key ξkmap [backtab] 'Info-prev-reference)
+  ;;         (define-key ξkmap (kbd "<menu> e 1") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 2") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 3") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 4") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 5") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 6") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 7") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 8") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 9") 'Info-nth-menu-item)
+  ;;         (define-key ξkmap (kbd "<menu> e 0") 'undefined)
+  ;;         (define-key ξkmap (kbd "<menu> e ?") 'Info-summary)
+  ;;         (define-key ξkmap (kbd "<menu> e ]") 'Info-forward-node)
+  ;;         (define-key ξkmap (kbd "<menu> e [") 'Info-backward-node)
+  ;;         (define-key ξkmap (kbd "<menu> e <") 'Info-top-node)
+  ;;         (define-key ξkmap (kbd "<menu> e >") 'Info-final-node)
+  ;;         (define-key ξkmap (kbd "<menu> e b") 'beginning-of-buffer)
+  ;;         (put 'beginning-of-buffer :advertised-binding "b")
+  ;;         (define-key ξkmap (kbd "<menu> e d") 'Info-directory)
+  ;;         (define-key ξkmap (kbd "<menu> e e") 'end-of-buffer)
+  ;;         (define-key ξkmap (kbd "<menu> e f") 'Info-follow-reference)
+  ;;         (define-key ξkmap (kbd "<menu> e g") 'Info-goto-node)
+  ;;         (define-key ξkmap (kbd "<menu> e h") 'Info-help)
+  ;;         ;; This is for compatibility with standalone info (>~ version 5.2).
+  ;;         ;; Though for some time, standalone info had H and h reversed.
+  ;;         ;; See <http://debbugs.gnu.org/16455>.
+  ;;         (define-key ξkmap (kbd "<menu> e H") 'describe-mode)
+  ;;         (define-key ξkmap (kbd "<menu> e i") 'Info-index)
+  ;;         (define-key ξkmap (kbd "<menu> e I") 'Info-virtual-index)
+  ;;         (define-key ξkmap (kbd "<menu> e l") 'Info-history-back)
+  ;;         (define-key ξkmap (kbd "<menu> e L") 'Info-history)
+  ;;         (define-key ξkmap (kbd "<menu> e m") 'Info-menu)
+  ;;         (define-key ξkmap (kbd "<menu> e n") 'Info-next)
+  ;;         (define-key ξkmap (kbd "<menu> e p") 'Info-prev)
+  ;;         (define-key ξkmap (kbd "<menu> e q") 'Info-exit)
+  ;;         (define-key ξkmap (kbd "<menu> e r") 'Info-history-forward)
+  ;;         (define-key ξkmap (kbd "<menu> e s") 'Info-search)
+  ;;         (define-key ξkmap (kbd "<menu> e S") 'Info-search-case-sensitively)
+  ;;         (define-key ξkmap "\M-n" 'clone-buffer)
+  ;;         (define-key ξkmap (kbd "<menu> e t") 'Info-top-node)
+  ;;         (define-key ξkmap (kbd "<menu> e T") 'Info-toc)
+  ;;         (define-key ξkmap (kbd "<menu> e u") 'Info-up)
+  ;;         ;; `w' for consistency with `dired-copy-filename-as-kill'.
+  ;;         (define-key ξkmap (kbd "<menu> e w") 'Info-copy-current-node-name)
+  ;;         (define-key ξkmap (kbd "<menu> e c") 'Info-copy-current-node-name)
+  ;;         ;; `^' for consistency with `dired-up-directory'.
+  ;;         (define-key ξkmap (kbd "<menu> e ^") 'Info-up)
+  ;;         (define-key ξkmap (kbd "<menu> e ,") 'Info-index-next)
+  ;;         (define-key ξkmap "\177" 'Info-scroll-down)
+  ;;         (define-key ξkmap [mouse-2] 'Info-mouse-follow-nearest-node)
+  ;;         (define-key ξkmap [down-mouse-2] 'ignore) ;Override potential global binding.
+  ;;         (define-key ξkmap [follow-link] 'mouse-face)
+  ;;         (define-key ξkmap [XF86Back] 'Info-history-back)
+  ;;         (define-key ξkmap [XF86Forward] 'Info-history-forward)
+  ;;         ξkmap)
+
+  )
+(add-hook 'Info-mode-hook 'xah-Info-mode-keys)
+ 

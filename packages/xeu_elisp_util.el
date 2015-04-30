@@ -16,13 +16,9 @@
 
 ;; The most used two are “unit-at-cursor” and “get-selection-or-unit”. They are intended as improvemnt of “thing-at-point”. For detailed discussion, see:〈Emacs Lisp: get-selection-or-unit〉 @ http://ergoemacs.org/emacs/elisp_get-selection-or-unit.html
 
-;; This package requires 〔xfrp_find_replace_pairs.el〕
-;; donate $3 please. Paypal to xah@xahlee.org , thanks.
-
 ;;; INSTALL
 
 ;; Place the file in your emacs load path. Then
-;; (require 'xfrp_find_replace_pairs)
 ;; (require 'xeu_elisp_util)
 
 ;;; HISTORY
@@ -352,18 +348,23 @@ This is the roughly the same as emacs 24.4's `string-remove-prefix'.
         (substring φpath1 p2length)
       (error "error 34689: beginning doesn't match: 「%s」 「%s」" φpath1 φpath2))))
 
-(defun hash-to-list (φhashtable)
-  "Return a list that represent the φhashtable.
+(defun xah-hash-to-list (hash-table)
+  "Return a list that represent the HASH-TABLE
 Each element is a list: (list key value).
 
 See also, emacs 24.4's new functions.
  (require 'subr-x)
  `hash-table-keys'
  `hash-table-values'
-"
-  (let (mylist)
-    (maphash (lambda (kk vv) (setq mylist (cons (list kk vv) mylist))) φhashtable)
-    mylist))
+
+http://ergoemacs.org/emacs/elisp_hash_table.html
+Version 2015-04-25"
+  (let (result)
+    (maphash
+     (lambda (k v)
+       (push (list k v) result))
+     hash-table)
+    result))
 
 
 
@@ -482,7 +483,7 @@ If the string contains any month names, weekday names, or of the form dddd-dd-dd
          ((string-match "\\b[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\\b" φinput-string) t)
          (t nil) ))
 
-(defun fix-datetimestamp (φinput-string &optional φfrom-to)
+(defun xah-fix-datetime-stamp (φinput-string &optional φfrom-to)
   "Change timestamp under cursor into a yyyy-mm-dd format.
 If there's a text selection, use that as input, else use current line.
 
@@ -497,15 +498,15 @@ For example:
 When called in lisp program, the optional second argument “φfrom-to” is a vector [from to] of region boundary. (it can also be a list)
 If “φfrom-to” is non-nil, the region is taken as input (and “φinput-string” is ignored).
 
-Code detail: URL `http://ergoemacs.org/emacs/elisp_parse_time.html'"
-  (interactive
-   (progn
-     (require 'xeu_elisp_util)
-     (let ((bds (get-selection-or-unit 'line)))
-       (list nil (vector (elt bds 1) (elt bds 2))))))
+URL `http://ergoemacs.org/emacs/elisp_parse_time.html'
+Version 2015-04-14"
+
+(interactive
+   (list nil (vector (line-beginning-position) (line-end-position))))
+
   (let (
         (ξstr (if φfrom-to (buffer-substring-no-properties (elt φfrom-to 0) (elt φfrom-to 1)) φinput-string))
-        (workOnRegionP (if φfrom-to t nil)))
+        (ξwork-on-region-p (if φfrom-to t nil)))
     (require 'parse-time)
 
     (setq ξstr (replace-regexp-in-string "^ *\\(.+\\) *$" "\\1" ξstr)) ; remove white spaces
@@ -572,7 +573,7 @@ Code detail: URL `http://ergoemacs.org/emacs/elisp_parse_time.html'"
                 (setq ξdd (if ξdate (format "%02d" ξdate) "" ))
                 (concat ξyyyy "-" ξmm "-" ξdd))))))
 
-    (if workOnRegionP
+    (if ξwork-on-region-p
         (progn (delete-region  (elt φfrom-to 0) (elt φfrom-to 1))
                (insert ξstr))
       ξstr )))

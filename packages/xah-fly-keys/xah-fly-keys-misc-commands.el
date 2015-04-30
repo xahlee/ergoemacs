@@ -522,15 +522,15 @@ Call again to toggle back."
   (interactive)
   (describe-function major-mode))
 
-(defun xah-convert-latin-alphabet-gothic (φp1 φp2 φreverse-direction-p)
+(defun xah-convert-latin-alphabet-gothic (φbegin φend φreverse-direction-p)
   "Replace English alphabets to Unicode gothic characters.
 For example, A ⇒ 𝔄, a ⇒ 𝔞.
 
-When called interactively, work on current line or text selection. 
+When called interactively, work on current line or text selection.
 
 If any `universal-argument' is called first, reverse direction.
 
-When called in elisp, the φp1 and φp2 are region begin/end positions to work on.
+When called in elisp, the φbegin and φend are region begin/end positions to work on.
 
 URL `http://ergoemacs.org/misc/thou_shalt_use_emacs_lisp.html'
 Version 2015-04-12"
@@ -552,7 +552,7 @@ Version 2015-04-12"
       (progn (setq ξuseMap ξlatin-to-gothic)))
     (save-excursion
       (save-restriction
-        (narrow-to-region φp1 φp2)
+        (narrow-to-region φbegin φend)
         (let ( (case-fold-search nil))
           (mapc
            (lambda (ξx)
@@ -560,3 +560,277 @@ Version 2015-04-12"
              (while (search-forward (elt ξx 0) nil t)
                (replace-match (elt ξx 1) 'FIXEDCASE 'LITERAL)))
            ξuseMap))))))
+
+(defun xah-remove-quotes-or-brackets (φbegin φend φbracketType)
+  "Remove quotes/brackets in current line or text selection.
+
+When called in lisp program, φbegin φend are region begin/end position, φbracketType is a string of a bracket pair. ⁖ \"()\",  \"[]\", etc.
+URL `http://ergoemacs.org/emacs/elisp_change_brackets.html'
+Version 2015-04-12"
+  (interactive
+   (let ((ξbracketsList
+          '("()" "{}" "[]" "<>" "“”" "‘’" "‹›" "«»" "「」" "『』" "【】" "〖〗" "〈〉" "《》" "〔〕" "⦅⦆" "〚〛" "⦃⦄" "〈〉" "⦑⦒" "⧼⧽" "⟦⟧" "⟨⟩" "⟪⟫" "⟮⟯" "⟬⟭" "❛❜" "❝❞" "❨❩" "❪❫" "❴❵" "❬❭" "❮❯" "❰❱")))
+     (if (use-region-p)
+         (progn (list
+                 (region-beginning)
+                 (region-end)
+                 (ido-completing-read "Remove:" ξbracketsList )))
+       (progn
+         (list
+          (line-beginning-position)
+          (line-end-position)
+          (ido-completing-read "Remove:" ξbracketsList ))))))
+  (let* (
+         (ξfindReplaceMap
+          (vector
+           (vector (char-to-string (elt φbracketType 0)) (char-to-string (elt φbracketType 0)))
+           (vector (char-to-string (elt φbracketType 1)) (char-to-string (elt φbracketType 1))))))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region φbegin φend)
+        (let ( (case-fold-search nil))
+          (mapc
+           (lambda (ξx)
+             (goto-char (point-min))
+             (while (search-forward (elt ξx 0) nil t)
+               (replace-match "" 'FIXEDCASE 'LITERAL)))
+           ξfindReplaceMap))))))
+
+(defun xah-change-bracket-pairs (φbegin φend φfromType φtoType)
+  "Change bracket pairs from one type to another on current line or selection.
+For example, change all parenthesis () to square brackets [].
+
+When called in lisp program, φbegin φend are region begin/end position, φfromType or φtoType is a string of a bracket pair. ⁖ \"()\",  \"[]\", etc.
+URL `http://ergoemacs.org/emacs/elisp_change_brackets.html'
+Version 2015-04-12"
+  (interactive
+   (let ((ξbracketsList
+          '("()" "{}" "[]" "<>" "“”" "‘’" "‹›" "«»" "「」" "『』" "【】" "〖〗" "〈〉" "《》" "〔〕" "⦅⦆" "〚〛" "⦃⦄" "〈〉" "⦑⦒" "⧼⧽" "⟦⟧" "⟨⟩" "⟪⟫" "⟮⟯" "⟬⟭" "❛❜" "❝❞" "❨❩" "❪❫" "❴❵" "❬❭" "❮❯" "❰❱")))
+     (if (use-region-p)
+         (progn (list
+                 (region-beginning)
+                 (region-end)
+                 (ido-completing-read "Replace this:" ξbracketsList )
+                 (ido-completing-read "To:" ξbracketsList )))
+       (progn
+         (list
+          (line-beginning-position)
+          (line-end-position)
+          (ido-completing-read "Replace this:" ξbracketsList )
+          (ido-completing-read "To:" ξbracketsList ))))))
+  (let ((ξfindReplaceMap
+          (vector
+           (vector (char-to-string (elt φfromType 0)) (char-to-string (elt φtoType 0)))
+           (vector (char-to-string (elt φfromType 1)) (char-to-string (elt φtoType 1))))))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region φbegin φend)
+        (let ( (case-fold-search nil))
+          (mapc
+           (lambda (ξx)
+             (goto-char (point-min))
+             (while (search-forward (elt ξx 0) nil t)
+               (replace-match (elt ξx 1) 'FIXEDCASE 'LITERAL)))
+           ξfindReplaceMap))))))
+
+(defun xah-twitterfy (φbegin φend &optional φto-direction)
+  "Shorten words for Twitter 140 char limit on current line or selection.
+The conversion direction is automatically determined.
+
+If `universal-argument' is called, ask for conversion direction.
+
+When called in lisp code, φbegin φend are region begin/end positions. φto-direction must be one of the following values: 「\"auto\"」, 「\"twitterfy\"」, 「\"untwitterfy\"」.
+
+URL `http://ergoemacs.org/emacs/elisp_twitterfy.html'
+Version 2015-04-12"
+  (interactive
+   (list
+    (if (use-region-p) (region-beginning) (line-beginning-position))
+    (if (use-region-p) (region-end) (line-end-position))
+    (if current-prefix-arg
+        (ido-completing-read
+         "Direction: "
+         '( "twitterfy"  "untwitterfy")
+         "PREDICATE"
+         "REQUIRE-MATCH")
+      "auto"
+      )))
+
+  (let ((ξtwitterfy-map
+         [
+          [" are " " r "]
+          [" are, " " r,"]
+          [" you " " u "]
+          [" you," " u,"]
+          [" you." " u."]
+          [" to " " 2 "]
+          [" you." " u。"]
+          [" your" " ur "]
+          [" and " "＆"]
+          ["because" "cuz"]
+          [" at " " @ "]
+          [" love " " ♥ "]
+          [" one " " 1 "]
+          [" two " " 2 "]
+          [" three " " 3 "]
+          [" four " " 4 "]
+          [" zero " " 0 "]
+          [", " "，"]
+          ["..." "…"]
+          [". " "。"]
+          ["? " "？"]
+          [": " "："]
+          ["! " "！"]]
+         ))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region φbegin φend)
+        (when (string= φto-direction "auto")
+          (goto-char (point-min))
+          (if
+              (re-search-forward "。\\|，\\|？\\|！" nil 'NOERROR)
+              (setq φto-direction "untwitterfy")
+            (setq φto-direction "twitterfy")))
+
+        (let ( (case-fold-search nil))
+          (mapc
+           (lambda (ξx)
+             (goto-char (point-min))
+             (while (search-forward (elt ξx 0) nil t)
+               (replace-match (elt ξx 1) 'FIXEDCASE 'LITERAL)))
+           (if (string= φto-direction "twitterfy")
+               ξtwitterfy-map
+             (mapcar (lambda (ξpair) (vector (elt ξpair 1) (elt ξpair 0))) ξtwitterfy-map))))))))
+
+(defun xah-replace-straight-quotes (φbegin φend)
+  "Replace straight double quotes to curly ones, and others.
+Works on current text selection, else the current text block between empty lines.
+
+Examples of changes:
+ 「\"…\"」 ⇒ 「“…”」
+ 「...」 ⇒ 「…」
+ 「I’m」 => 「I'm」
+ 「--」 ⇒ 「—」
+ 「~=」 ⇒ 「≈」
+
+When called in lisp code, φbegin and φend are region begin/end positions.
+
+Version 2015-04-29"
+  ;; some examples for debug
+  ;; do "‘em all -- done..."
+  ;; I’am not
+  ;; said "can’t have it, can’t, just can’t"
+  ;; ‘I’ve can’t’
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (line-beginning-position) (line-end-position))))
+
+  (let ( (case-fold-search nil))
+    ;; Note: order is important since this is huristic.
+    (xah-replace-pairs-region
+     φbegin
+     φend
+     [
+      ;; dash and ellipsis etc
+      ["--" " — "]
+      ["—" " — "]
+      ["..." "…"]
+      [" :)" " ☺"]
+      [" :(" " ☹"]
+      [" ;)" " 😉"]
+      ["e.g. " "⁖ "]
+      ["~=" "≈"]
+      ["  —  " " — "] ; rid of extra space in em-dash
+      [" , " ", "]
+      ;; fix GNU style ASCII quotes
+      ["``" "“"]
+      ["''" "”"]
+      ;; "straight quote" ⇒ “double quotes”
+      ["\n\"" "\n“"]
+      [">\"" ">“"]
+      ["(\"" "(“"]
+      [" \"" " “"]
+      ["\" " "” "]
+      ["\"," "”,"]
+      ["\"." "”."]
+      ["\"?" "”?"]
+      ["\";" "”;"]
+      ["\":" "”:"]
+      ["\")" "”)"]
+      ["\"]" "”]"]
+      [".\"" ".”"]
+      [",\"" ",”"]
+      ["!\"" "!”"]
+      ["?\"" "?”"]
+      ["\"<" "”<"]
+      ["\"\n" "”\n"]
+      ] )
+
+    ;; fix straight double quotes by regex
+    (xah-replace-regexp-pairs-region
+     φbegin φend
+     [
+      ["\\`\"" "“"]
+      ])
+
+    ;; fix single quotes to curly
+    (xah-replace-pairs-region
+     φbegin φend
+     [
+      [">\'" ">‘"]
+      [" \'" " ‘"]
+      ["\' " "’ "]
+      ["\'," "’,"]
+      [".\'" ".’"]
+      ["!\'" "!’"]
+      ["?\'" "?’"]
+      ["(\'" "(‘"]
+      ["\')" "’)"]
+      ["\']" "’]"]
+      ])
+
+    (xah-replace-regexp-pairs-region
+     φbegin φend
+     [
+      ["\\bcan’t\\b" "can't"]
+      ["\\bdon’t\\b" "don't"]
+      ["\\bdoesn’t\\b" "doesn't"]
+      ["\\bain’t\\b" "ain't"]
+      ["\\bdidn’t\\b" "didn't"]
+      ["\\baren’t\\b" "aren't"]
+      ["\\bwasn’t\\b" "wasn't"]
+      ["\\bweren’t\\b" "weren't"]
+      ["\\bcouldn’t\\b" "couldn't"]
+      ["\\bshouldn’t\\b" "shouldn't"]
+
+      ["\\b’ve\\b" "'ve"]
+      ["\\b’re\\b" "'re"]
+      ["\\b‘em\\b" "'em"]
+      ["\\b’ll\\b" "'ll"]
+      ["\\b’m\\b" "'m"]
+      ["\\b’d\\b" "'d"]
+      ["\\b’s\\b" "'s"]
+      ["s’ " "s' "]
+      ["s’\n" "s'\n"]
+
+      ["\"$" "”"]
+      ])
+
+    ;; fix back escaped quotes in code
+    (xah-replace-pairs-region
+     φbegin φend
+     [
+      ["\\”" "\\\""]
+      ])
+
+    ;; fix back. quotes in HTML code
+    (xah-replace-regexp-pairs-region
+     φbegin φend
+     [
+      ["” \\([-a-z]+\\)="       "\" \\1="] ; any 「” some-thing=」
+      ["=\”" "=\""]
+      ["/” " "/\" "]
+      ["\"\\([0-9]+\\)” "     "\"\\1\" "]
+      ]
+     )))

@@ -16,11 +16,11 @@
 
 ;; version history no longer kept here.
 ;; version 2015-01-30 fix a problem with emacs 24.3.1, Debugger entered--Lisp error: (file-error "Cannot open load file" "prog-mode")
-;; version 0.3, 2013-05-02 added xcm-hex-color-to-hsl, and other improvements.
-;; version 0.2, 2013-04-22 added xcm-compact-css-region
+;; version 0.3, 2013-05-02 added xah-css-hex-color-to-hsl, and other improvements.
+;; version 0.2, 2013-04-22 added xah-css-compact-css-region
 ;; version 0.1, 2013-04-18 first version
 
-(require 'xfrp_find_replace_pairs)
+(require 'xah-replace-pairs)
 ;(require 'xeu_elisp_util)
 (require 'color) ; part of emacs 24.3
 
@@ -28,13 +28,13 @@
 
 
 
-(defun xcm-insert-random-color-hsl ()
+(defun xah-css-insert-random-color-hsl ()
   "Insert a random color string of CSS HSL format.
 Example output: hsl(100,24%,82%);"
   (interactive)
   (insert (format "hsl(%d,%d%%,%d%%);" (random 360) (random 100) (random 100))) )
 
-(defun xcm-hex-color-to-hsl ()
+(defun xah-css-hex-color-to-hsl ()
   "Convert color spec under cursor from “#rrggbb” to CSS HSL format.
  ⁖ #ffefd5 ⇒ hsl(37,100%,91%)
 "
@@ -49,18 +49,18 @@ Example output: hsl(100,24%,82%);"
         (progn
           (delete-region p1 p2 )
           (if (looking-back "#") (delete-char -1))
-          (insert (xcm-hex-to-hsl-color currentWord )))
+          (insert (xah-css-hex-to-hsl-color currentWord )))
       (progn
         (error "The current word 「%s」 is not of the form #rrggbb." currentWord)))))
 
-(defun xcm-hex-to-hsl-color (φhex-str)
+(defun xah-css-hex-to-hsl-color (φhex-str)
   "Convert φhex-str color to CSS HSL format.
 Return a string.
  ⁖
   \"#ffefd5\" ⇒ \"hsl(37,100%,91%)\"
 "
   (let* (
-         (colorVec (xcm-convert-color-hex-to-vec φhex-str))
+         (colorVec (xah-css-convert-color-hex-to-vec φhex-str))
          (xR (elt colorVec 0))
          (xG (elt colorVec 1))
          (xB (elt colorVec 2))
@@ -70,19 +70,19 @@ Return a string.
          (xL (elt hsl 2)))
     (format "hsl(%d,%d%%,%d%%)" (* xH 360) (* xS 100) (* xL 100))))
 
-(defun xcm-convert-color-hex-to-vec (φhexcolor)
+(defun xah-css-convert-color-hex-to-vec (φhexcolor)
   "Convert φhexcolor from “\"rrggbb\"” string to a elisp vector [r g b], where the values are from 0 to 1.
 Example:
- (xcm-convert-color-hex-to-vec \"00ffcc\") ⇒ [0.0 1.0 0.8]
+ (xah-css-convert-color-hex-to-vec \"00ffcc\") ⇒ [0.0 1.0 0.8]
 
 Note: The input string must NOT start with “#”. If so, the return value is nil."
   (vector
-   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 0 2) 16) 255)
-   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 2 4) 16) 255)
-   (xcm-normalize-number-scale (string-to-number (substring φhexcolor 4) 16) 255)
+   (xah-css-normalize-number-scale (string-to-number (substring φhexcolor 0 2) 16) 255)
+   (xah-css-normalize-number-scale (string-to-number (substring φhexcolor 2 4) 16) 255)
+   (xah-css-normalize-number-scale (string-to-number (substring φhexcolor 4) 16) 255)
    ))
 
-(defun xcm-normalize-number-scale (φval φrange-max)
+(defun xah-css-normalize-number-scale (φval φrange-max)
   "scale φval from range [0, φrange-max] to [0, 1]
 The arguments can be int or float.
 Return value is float."
@@ -91,29 +91,36 @@ Return value is float."
 
 ;;; functions
 
-(defun xcm-compact-css-region (p1 p2)
+(defun xah-css-compact-css-region (φbegin φend)
   "Remove unnecessary whitespaces of CSS source code in region.
-WARNING: not robust."
+WARNING: not robust.
+URL `http://ergoemacs.org/emacs/elisp_css_compressor.html'
+Version 2015-04-29"
   (interactive "r")
   (save-restriction
-    (narrow-to-region p1 p2)
-    (replace-regexp-pairs-region (point-min) (point-max) '(["  +" " "]))
-    (replace-pairs-region (point-min) (point-max)
-                          '(
-                            ["\n" ""]
-                            [" /* " "/*"]
-                            [" */ " "*/"]
-                            [" {" "{"]
-                            ["{ " "{"]
-                            ["; " ";"]
-                            [": " ":"]
-                            [";}" "}"]
-                            ["}" "}\n"]
-                            )) ) )
+    (narrow-to-region φbegin φend)
+    (xah-replace-regexp-pairs-region
+     (point-min)
+     (point-max)
+     '(["  +" " "]))
+    (xah-replace-pairs-region
+     (point-min)
+     (point-max)
+     '(
+       ["\n" ""]
+       [" /* " "/*"]
+       [" */ " "*/"]
+       [" {" "{"]
+       ["{ " "{"]
+       ["; " ";"]
+       [": " ":"]
+       [";}" "}"]
+       ["}" "}\n"]
+       ))))
 
 
-(defvar xcm-html-tag-names nil "a list of HTML5 tag names.")
-(setq xcm-html-tag-names
+(defvar xah-css-html-tag-names nil "a list of HTML5 tag names.")
+(setq xah-css-html-tag-names
 '("a"
 "abbr"
 "address"
@@ -226,8 +233,8 @@ WARNING: not robust."
 "wbr")
  )
 
-(defvar xcm-property-names nil "a list of CSS property names.")
-(setq xcm-property-names
+(defvar xah-css-property-names nil "a list of CSS property names.")
+(setq xah-css-property-names
 '(
 
 "align-content"
@@ -379,8 +386,8 @@ WARNING: not robust."
 
 ) )
 
-(defvar xcm-pseudo-selector-names nil "a list of CSS pseudo selector names.")
-(setq xcm-pseudo-selector-names '(
+(defvar xah-css-pseudo-selector-names nil "a list of CSS pseudo selector names.")
+(setq xah-css-pseudo-selector-names '(
 "::after"
 "::before"
 "::choices"
@@ -436,8 +443,8 @@ WARNING: not robust."
 
 ) )
 
-(defvar xcm-media-keywords nil "a list of CSS xxxxx todo.")
-(setq xcm-media-keywords '(
+(defvar xah-css-media-keywords nil "a list of CSS xxxxx todo.")
+(setq xah-css-media-keywords '(
 "@charset"
 "@document"
 "@font-face"
@@ -454,8 +461,8 @@ WARNING: not robust."
 "speech"
 ) ) ; todo
 
-(defvar xcm-unit-names nil "a list of CSS unite names.")
-(setq xcm-unit-names '("px"
+(defvar xah-css-unit-names nil "a list of CSS unite names.")
+(setq xah-css-unit-names '("px"
 "pt"
 "pc"
 "cm"
@@ -466,8 +473,8 @@ WARNING: not robust."
 "ex"
 "%") )
 
-(defvar xcm-value-kwds nil "a list of CSS value names")
-(setq xcm-value-kwds
+(defvar xah-css-value-kwds nil "a list of CSS value names")
+(setq xah-css-value-kwds
 '(
 
 "flex"
@@ -553,8 +560,8 @@ WARNING: not robust."
 
 ) )
 
-(defvar xcm-color-names nil "a list of CSS color names.")
-(setq xcm-color-names
+(defvar xah-css-color-names nil "a list of CSS color names.")
+(setq xah-css-color-names
 '("aliceblue"
 "antiquewhite"
 "aqua"
@@ -704,20 +711,20 @@ WARNING: not robust."
 "yellowgreen")
  )
 
-(defvar xcm-all-keywords nil "list of all elisp keywords")
-(setq xcm-all-keywords (append xcm-html-tag-names
-                                     xcm-color-names
-                                     xcm-property-names
-                                     xcm-pseudo-selector-names
-                                     xcm-media-keywords
-                                     xcm-unit-names
-                                     xcm-value-kwds
+(defvar xah-css-all-keywords nil "list of all elisp keywords")
+(setq xah-css-all-keywords (append xah-css-html-tag-names
+                                     xah-css-color-names
+                                     xah-css-property-names
+                                     xah-css-pseudo-selector-names
+                                     xah-css-media-keywords
+                                     xah-css-unit-names
+                                     xah-css-value-kwds
                                      ))
 
 
 ;; completion
 
-(defun xcm-complete-symbol ()
+(defun xah-css-complete-symbol ()
   "Perform keyword completion on current word.
 This uses `ido-mode' user interface for completion."
   (interactive)
@@ -732,7 +739,7 @@ This uses `ido-mode' user interface for completion."
          ξresult-sym)
     (when (not ξcurrent-sym) (setq ξcurrent-sym ""))
     (setq ξresult-sym
-          (ido-completing-read "" xcm-all-keywords nil nil ξcurrent-sym ))
+          (ido-completing-read "" xah-css-all-keywords nil nil ξcurrent-sym ))
     (delete-region ξp1 ξp2)
     (insert ξresult-sym)
 
@@ -740,8 +747,8 @@ This uses `ido-mode' user interface for completion."
 
 
 ;; syntax table
-(defvar xcm-syntax-table nil "Syntax table for `xah-css-mode'.")
-(setq xcm-syntax-table
+(defvar xah-css-syntax-table nil "Syntax table for `xah-css-mode'.")
+(setq xah-css-syntax-table
       (let ((synTable (make-syntax-table)))
 
 ;        (modify-syntax-entry ?0  "." synTable)
@@ -766,15 +773,15 @@ This uses `ido-mode' user interface for completion."
 
 ;; syntax coloring related
 
-(setq xcm-font-lock-keywords
+(setq xah-css-font-lock-keywords
       (let (
-          (htmlTagNames (regexp-opt xcm-html-tag-names 'words) )
-          (cssPropertieNames (regexp-opt xcm-property-names 'symbols ) )
-          (cssValueNames (regexp-opt xcm-value-kwds 'symbols) )
-          (cssColorNames (regexp-opt xcm-color-names 'symbols) )
-          (cssUnitNames (regexp-opt xcm-unit-names 'symbols ) )
-          (cssPseudoSelectorNames (regexp-opt xcm-pseudo-selector-names ) )
-          (cssMedia (regexp-opt xcm-media-keywords ) )
+          (htmlTagNames (regexp-opt xah-css-html-tag-names 'words) )
+          (cssPropertieNames (regexp-opt xah-css-property-names 'symbols ) )
+          (cssValueNames (regexp-opt xah-css-value-kwds 'symbols) )
+          (cssColorNames (regexp-opt xah-css-color-names 'symbols) )
+          (cssUnitNames (regexp-opt xah-css-unit-names 'symbols ) )
+          (cssPseudoSelectorNames (regexp-opt xah-css-pseudo-selector-names ) )
+          (cssMedia (regexp-opt xah-css-media-keywords ) )
           )
         `(
           (,cssPropertieNames . font-lock-type-face)
@@ -813,10 +820,10 @@ This uses `ido-mode' user interface for completion."
 
 ;; indent/reformat related
 
-(defun xcm-complete-or-indent ()
+(defun xah-css-complete-or-indent ()
   "Do keyword completion or indent/prettify-format.
 
-If char before point is letters and char after point is whitespace or punctuation, then do completion, except when in string or comment. In these cases, do `xcm-prettify-root-sexp'."
+If char before point is letters and char after point is whitespace or punctuation, then do completion, except when in string or comment. In these cases, do `xah-css-prettify-root-sexp'."
   (interactive)
   ;; consider the char to the left or right of cursor. Each side is either empty or char.
   ;; there are 4 cases:
@@ -827,21 +834,21 @@ If char before point is letters and char after point is whitespace or punctuatio
   (let ( (ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         (progn
-          (xcm-prettify-root-sexp))
+          (xah-css-prettify-root-sexp))
       (progn (if
                  (and (looking-back "[-_a-zA-Z]")
                       (or (eobp) (looking-at "[\n[:blank:][:punct:]]")))
-                 (xcm-complete-symbol)
-               (xcm-indent-line))))))
+                 (xah-css-complete-symbol)
+               (xah-css-indent-line))))))
 
-(defun xcm-indent-line ()
+(defun xah-css-indent-line ()
   "i do nothing."
   (let ()
     nil))
 
 
 
-(defun xcm-abbrev-enable-function ()
+(defun xah-css-abbrev-enable-function ()
   "Determine whether to expand abbrev.
 This is called by emacs abbrev system."
   (let ((ξsyntax-state (syntax-ppss)))
@@ -849,9 +856,9 @@ This is called by emacs abbrev system."
         (progn nil)
       t)))
 
-(setq xcm-abbrev-table nil)
+(setq xah-css-abbrev-table nil)
 
-(define-abbrev-table 'xcm-abbrev-table
+(define-abbrev-table 'xah-css-abbrev-table
   '(
 
     ("bgc" "background-color" nil :system t)
@@ -884,7 +891,7 @@ This is called by emacs abbrev system."
   ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  ;; :enable-function 'xcm-abbrev-enable-function
+  ;; :enable-function 'xah-css-abbrev-enable-function
   )
 
 
@@ -893,22 +900,21 @@ This is called by emacs abbrev system."
 (when (string-equal system-type "windows-nt")
   (define-key key-translation-map (kbd "<apps>") (kbd "<menu>")))
 
-(defvar xcm-keymap nil "Keybinding for `xah-css-mode'")
+(defvar xah-css-keymap nil "Keybinding for `xah-css-mode'")
 
 (progn
-  (setq xcm-keymap (make-sparse-keymap))
-  (define-key xcm-keymap (kbd "TAB") 'xcm-complete-or-indent)
+  (setq xah-css-keymap (make-sparse-keymap))
+  (define-key xah-css-keymap (kbd "TAB") 'xah-css-complete-or-indent)
 
-  (define-prefix-command 'xcm-single-keys-keymap)
-  (define-key xcm-keymap (kbd "<menu> e") xcm-single-keys-keymap)
+  (define-prefix-command 'xah-css-single-keys-keymap)
 
-  (define-key xcm-single-keys-keymap (kbd "r") 'xcm-insert-random-color-hsl)
-  (define-key xcm-single-keys-keymap (kbd "c") 'xcm-hex-color-to-hsl)
-  (define-key xcm-single-keys-keymap (kbd "p") 'xcm-compact-css-region)
-  (define-key xcm-single-keys-keymap (kbd "u") 'xcm-complete-symbol)
-  (define-key xcm-single-keys-keymap (kbd "i") 'xcm-indent-line)
+  (define-key xah-css-single-keys-keymap (kbd "r") 'xah-css-insert-random-color-hsl)
+  (define-key xah-css-single-keys-keymap (kbd "c") 'xah-css-hex-color-to-hsl)
+  (define-key xah-css-single-keys-keymap (kbd "p") 'xah-css-compact-css-region)
+  (define-key xah-css-single-keys-keymap (kbd "u") 'xah-css-complete-symbol)
+  (define-key xah-css-single-keys-keymap (kbd "i") 'xah-css-indent-line)
 
-  ;  (define-key xcm-keymap [remap comment-dwim] 'xcm-comment-dwim)
+  ;  (define-key xah-css-keymap [remap comment-dwim] 'xah-css-comment-dwim)
   )
 
 
@@ -919,18 +925,24 @@ This is called by emacs abbrev system."
 
 CSS keywords are colored. Basically that's it.
 
-\\{xcm-keymap}"
+\\{xah-css-keymap}"
   (interactive)
   (kill-all-local-variables)
 
   (setq mode-name "∑CSS")
   (setq major-mode 'xah-css-mode)
 
-  (set-syntax-table xcm-syntax-table)
-  (setq font-lock-defaults '((xcm-font-lock-keywords)))
-  (use-local-map xcm-keymap)
+  (set-syntax-table xah-css-syntax-table)
+  (setq font-lock-defaults '((xah-css-font-lock-keywords)))
 
-  (setq local-abbrev-table xcm-abbrev-table)
+  (if (or
+       (not (boundp 'xfk-major-mode-lead-key))
+       (null 'xfk-major-mode-lead-key))
+      (define-key xah-css-keymap (kbd "<menu> e") xah-css-single-keys-keymap)
+    (define-key xah-css-keymap xfk-major-mode-lead-key xah-css-single-keys-keymap))
+  (use-local-map xah-css-keymap)
+
+  (setq local-abbrev-table xah-css-abbrev-table)
   (setq-local comment-start "/*")
   (setq-local comment-start-skip "/\\*+[ \t]*")
   (setq-local comment-end "*/")

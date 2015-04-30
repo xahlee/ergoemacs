@@ -33,9 +33,21 @@
 
 
 
-(setq xjs-abbrev-table nil)
+(defface xah-js-function-param-face
+  '(
+    (t :foreground "black" :background "LightYellow"))
+  "face for function parameters."
+  :group 'xah-js-mode )
 
-(define-abbrev-table 'xjs-abbrev-table
+(defface xah-js-user-variable-face
+  '(
+    (t :foreground "magenta"))
+  "face for user variables."
+  :group 'xah-js-mode )
+
+(defvar xah-js-abbrev-table nil "abbrev table for `xah-js-mode'")
+(setq xah-js-abbrev-table nil)
+(define-abbrev-table 'xah-js-abbrev-table
   '(
     ("f" "function" nil :system t)
     ("pt" "prototype" nil :system t)
@@ -47,7 +59,7 @@
 
     ("do" "do { ▮; x++;} while (x != 5)" nil :system t)
 
-    ("function" "function () { ▮; }" nil :system t)
+    ("function" "function ff▮ () { 3; }" nil :system t)
     ("for" "for (var i = 0; i < ▮.length; i++) { ▮; }" nil :system t)
     ("while" "while (i<10) { ▮; i++; }" nil :system t)
     ("if" "if ( ▮ ) {
@@ -81,6 +93,7 @@
     ("v" "var ▮ = ▮;" nil :system t)
     ("addEventListener" "addEventListener(\"click\", FUNCTION , false);" nil :system t)
     ("forEach" "forEach(FUNCTION▮ , contexObject);" nil :system t)
+    ("getElementById" "getElementById(\"▮\")" nil :system t)
 
     )
 
@@ -89,8 +102,8 @@
   )
 
 
-(defvar xjs-keyword-builtin nil "List of js  names")
-(setq xjs-keyword-builtin '(
+(defvar xah-js-keyword-builtin nil "List of js  names")
+(setq xah-js-keyword-builtin '(
 "break"
 "case"
 "catch"
@@ -118,8 +131,8 @@
 "while"
 "with") )
 
-(defvar xjs-js-lang-words nil "List of JavaScript keywords.")
-(setq xjs-js-lang-words '(
+(defvar xah-js-js-lang-words nil "List of JavaScript keywords.")
+(setq xah-js-js-lang-words '(
 
 "call"
 "isExtensible"
@@ -227,8 +240,8 @@
 
 ) )
 
-(defvar xjs-js-array-methods nil "List of JavaScript array methods.")
-(setq xjs-js-array-methods '(
+(defvar xah-js-js-array-methods nil "List of JavaScript array methods.")
+(setq xah-js-js-array-methods '(
 "concat"
 "every"
 "filter"
@@ -253,8 +266,8 @@
 "unshift"
 ) )
 
-(defvar xjs-js-str-methods nil "List of JavaScript string methods.")
-(setq xjs-js-str-methods '(
+(defvar xah-js-js-str-methods nil "List of JavaScript string methods.")
+(setq xah-js-js-str-methods '(
 "length"
 "concat"
 "trim"
@@ -278,8 +291,8 @@
 "localeCompare"
 ) )
 
-(defvar xjs-js-math-methods nil "List of JavaScript Math methods.")
-(setq xjs-js-math-methods '(
+(defvar xah-js-js-math-methods nil "List of JavaScript Math methods.")
+(setq xah-js-js-math-methods '(
 "Math.abs"
 "Math.acos"
 "Math.acosh"
@@ -318,8 +331,8 @@
 "Math.trunc"
 ) )
 
-(defvar xjs-dom-words nil "List of keywords from DOM or browser.")
-(setq xjs-dom-words '(
+(defvar xah-js-dom-words nil "List of keywords from DOM or browser.")
+(setq xah-js-dom-words '(
 
 "location"
 
@@ -331,7 +344,6 @@
 "tagName"
 "querySelectorAll"
 "style"
-"setAttribute"
 "createTextNode"
 
 "addEventListener"
@@ -340,6 +352,12 @@
 "getElementsByTagName"
 "getElementsByClassName"
 "getElementsByName"
+
+"getAttribute"
+"setAttribute"
+"hasAttribute"
+"removeAttribute"
+".attributes"
 
 "textContent"
 
@@ -377,19 +395,52 @@
 
 ".target"
 
+".getTime"
 ".getFullYear"
+".getYear"
 ".getMonth"
 ".getDate"
 ".getDay"
 ".getHours"
 ".getMinutes"
 ".getSeconds"
+".getMilliseconds"
+
 ".getUTCMonth"
 ".getUTCDate"
 ".getUTCDay"
 ".getUTCHours"
 ".getUTCMinutes"
 ".getUTCSeconds"
+".getUTCMilliseconds"
+
+".setTime"
+".setFullYear"
+".setYear"
+".setMonth"
+".setDate"
+".setHours"
+".setMinutes"
+".setSeconds"
+".setMilliseconds"
+
+".setUTCFullYear"
+".setUTCMonth"
+".setUTCDate"
+".setUTCHours"
+".setUTCMinutes"
+".setUTCSeconds"
+".setUTCMilliseconds"
+
+".toLocaleString"
+".toLocaleDateString"
+".toLocaleTimeString"
+".toDateString"
+".toTimeString"
+".toISOString"
+".toUTCString"
+".toGMTString"
+".toJSON"
 
 "setTimeout"
 "setInterval"
@@ -431,8 +482,8 @@
 
 ) )
 
-(defvar xjs-dom-style-obj-words nil "List of constants")
-(setq xjs-dom-style-obj-words '(
+(defvar xah-js-dom-style-obj-words nil "List of constants")
+(setq xah-js-dom-style-obj-words '(
 
 "style.alignContent"
 "style.alignItems"
@@ -617,8 +668,8 @@
 
 ) )
 
-(defvar xjs-constants nil "List of constants")
-(setq xjs-constants '(
+(defvar xah-js-constants nil "List of constants")
+(setq xah-js-constants '(
 "NaN"
 "Infinity"
 "null"
@@ -635,38 +686,37 @@
 "Math.SQRT2"
 ) )
 
-(defvar xjs-js-vars-1 nil "List js variables names")
-(setq xjs-js-vars-1 '(
+(defvar xah-js-js-vars-1 nil "List js variables names")
+(setq xah-js-js-vars-1 '(
 ) )
 
-(defvar xjs-all-js-keywords nil "List all js words.")
-(setq xjs-all-js-keywords
-      (append xjs-keyword-builtin
-              xjs-js-lang-words
-              xjs-js-array-methods
-              xjs-js-str-methods
-              xjs-js-math-methods
-              xjs-dom-words
-              xjs-constants
-              xjs-js-vars-1
+(defvar xah-js-all-js-keywords nil "List all js words.")
+(setq xah-js-all-js-keywords
+      (append xah-js-keyword-builtin
+              xah-js-js-lang-words
+              xah-js-js-array-methods
+              xah-js-js-str-methods
+              xah-js-js-math-methods
+              xah-js-dom-words
+              xah-js-constants
+              xah-js-js-vars-1
               )
       )
 
 
 ;; syntax coloring related
 
-(setq xjs-font-lock-keywords
+(setq xah-js-font-lock-keywords
       (let (
-          (jsMathMethods (regexp-opt xjs-js-math-methods 'symbols) )
-          (domStyle (regexp-opt xjs-dom-style-obj-words) )
-          (domWords (regexp-opt xjs-dom-words) )
-          (jsBuildins (regexp-opt xjs-keyword-builtin 'symbols) )
-          (jsLangWords (regexp-opt xjs-js-lang-words 'symbols) )
-          (jsVars1 (regexp-opt xjs-js-vars-1 'symbols) )
-          (jsArrayMethods (regexp-opt xjs-js-array-methods 'symbols) )
-          (jsStrMethods (regexp-opt xjs-js-str-methods 'symbols) )
-          (jsConstants (regexp-opt xjs-constants 'symbols) )
-          )
+            (jsMathMethods (regexp-opt xah-js-js-math-methods 'symbols))
+            (domStyle (regexp-opt xah-js-dom-style-obj-words))
+            (domWords (regexp-opt xah-js-dom-words))
+            (jsBuildins (regexp-opt xah-js-keyword-builtin 'symbols))
+            (jsLangWords (regexp-opt xah-js-js-lang-words 'symbols))
+            (jsVars1 (regexp-opt xah-js-js-vars-1 'symbols))
+            (jsArrayMethods (regexp-opt xah-js-js-array-methods 'symbols))
+            (jsStrMethods (regexp-opt xah-js-js-str-methods 'symbols))
+            (jsConstants (regexp-opt xah-js-constants 'symbols)))
         `(
           ("\\(\\.replace\\|\\.search\\|\\.match\\)[ ]*([ ]*\\(/[^/]+/\\)" . (2 font-lock-string-face t)) ; regex
           (,jsMathMethods . font-lock-type-face)
@@ -678,6 +728,8 @@
           (,jsArrayMethods . font-lock-keyword-face)
           (,jsStrMethods . font-lock-keyword-face)
           (,jsVars1 . font-lock-variable-name-face)
+          ("φ[$_0-9A-Za-z]+" . 'xah-js-function-param-face)
+          ("ξ[$_0-9A-Za-z]+" . 'xah-js-user-variable-face)
           ) ) )
 
 ;; fontfont-lock-builtin-face
@@ -699,39 +751,30 @@
 
 ;; keybinding
 
-(defvar xjs-keymap nil "Keybinding for `xah-js-mode'")
+(defvar xah-js-keymap nil "Keybinding for `xah-js-mode'")
 (progn
-  (setq xjs-keymap (make-sparse-keymap))
-  (define-key xjs-keymap (kbd "<menu> e TAB") 'xjs-complete-symbol-ido)
+  (setq xah-js-keymap (make-sparse-keymap))
+  (define-key xah-js-keymap (kbd "<menu> e TAB") 'xah-js-complete-symbol-ido)
   )
 
 
 ;; syntax table
 
-(defvar xjs-syntax-table nil "Syntax table for `xah-js-mode'.")
+(defvar xah-js-syntax-table nil "Syntax table for `xah-js-mode'.")
 
-(setq xjs-syntax-table
+(setq xah-js-syntax-table
       (let ((synTable (make-syntax-table)))
 
-        (modify-syntax-entry ?\/ "< 124b" synTable)
-        (modify-syntax-entry ?* "< 23" synTable)
-        (modify-syntax-entry ?\n "> b" synTable)
-
         (modify-syntax-entry ?\! "." synTable)
-        (modify-syntax-entry ?\" "\"" synTable)
         (modify-syntax-entry ?\# "." synTable)
         (modify-syntax-entry ?\$ "." synTable)
         (modify-syntax-entry ?\% "." synTable)
         (modify-syntax-entry ?\& "." synTable)
-        (modify-syntax-entry ?\' "\"" synTable)
-        (modify-syntax-entry ?\( "()" synTable)
-        (modify-syntax-entry ?\) ")(" synTable)
         (modify-syntax-entry ?\* "." synTable)
         (modify-syntax-entry ?\+ "." synTable)
         (modify-syntax-entry ?\, "." synTable)
         (modify-syntax-entry ?\- "." synTable)
         (modify-syntax-entry ?\. "." synTable)
-        (modify-syntax-entry '(?0 . ?9) "w" synTable)
         (modify-syntax-entry ?\: "." synTable)
         (modify-syntax-entry ?\; "." synTable)
         (modify-syntax-entry ?\< "." synTable)
@@ -739,35 +782,43 @@
         (modify-syntax-entry ?\> "." synTable)
         (modify-syntax-entry ?\? "." synTable)
         (modify-syntax-entry ?\@ "." synTable)
-        (modify-syntax-entry '(?A . ?Z) "w" synTable)
-        (modify-syntax-entry ?\[ "(]" synTable)
-        (modify-syntax-entry ?\\ "\\" synTable)
-        (modify-syntax-entry ?\] ")[" synTable)
         (modify-syntax-entry ?^ "." synTable) ; can't use blackslash, because it became control
         (modify-syntax-entry ?\_ "_" synTable)
         (modify-syntax-entry ?\` "." synTable)
-        (modify-syntax-entry '(?a . ?z) "w" synTable)
-        (modify-syntax-entry ?\{ "(}" synTable)
         (modify-syntax-entry ?\| "." synTable)
-        (modify-syntax-entry ?\} "){" synTable)
         (modify-syntax-entry ?\~ "." synTable)
+        (modify-syntax-entry ?\\ "\\" synTable)
+
+        (modify-syntax-entry ?\/ ". 124" synTable)
+        (modify-syntax-entry ?* ". 23b" synTable)
+        (modify-syntax-entry ?\n ">" synTable)
+
+        (modify-syntax-entry ?\" "\"" synTable)
+        (modify-syntax-entry ?\' "." synTable)
+
+        (modify-syntax-entry ?\( "()" synTable)
+        (modify-syntax-entry ?\) ")(" synTable)
+        (modify-syntax-entry ?\[ "(]" synTable)
+        (modify-syntax-entry ?\] ")[" synTable)
+        (modify-syntax-entry ?\{ "(}" synTable)
+        (modify-syntax-entry ?\} "){" synTable)
+
+        (modify-syntax-entry '(?0 . ?9) "w" synTable)
+        (modify-syntax-entry '(?A . ?Z) "w" synTable)
+        (modify-syntax-entry '(?a . ?z) "w" synTable)
 
         synTable))
-
-;; tired of syntax table. major steal
-  (require 'cc-mode)     ; (only) for `c-populate-syntax-table'
-(setq xjs-syntax-table (let ((table (make-syntax-table))) (c-populate-syntax-table table) table))
 
 
 ;; indent
 
-(defun xjs-complete-or-indent ()
+(defun xah-js-complete-or-indent ()
   ""
   (interactive)
   (js-indent-line)
 )
 
-(defun xjs-complete-symbol-ido ()
+(defun xah-js-complete-symbol-ido ()
   "Perform keyword completion on current word.
 
 This uses `ido-mode' user interface style for completion."
@@ -781,7 +832,7 @@ This uses `ido-mode' user interface style for completion."
          finalResult)
     (when (not currentWord) (setq currentWord ""))
     (setq finalResult
-          (ido-completing-read "" xjs-all-js-keywords nil nil currentWord )
+          (ido-completing-read "" xah-js-all-js-keywords nil nil currentWord )
           )
     (delete-region p1 p2)
     (insert finalResult)
@@ -793,34 +844,34 @@ This uses `ido-mode' user interface style for completion."
 (defun xah-js-mode ()
   "A major mode for JavaScript.
 
-\\{xjs-keymap}"
+\\{xah-js-keymap}"
   (interactive)
   (kill-all-local-variables)
 
   (setq mode-name "∑js")
   (setq major-mode 'xah-js-mode)
 
-  (setq font-lock-defaults '((xjs-font-lock-keywords)))
+  (setq font-lock-defaults '((xah-js-font-lock-keywords)))
 
-  (set-syntax-table xjs-syntax-table)
-  (use-local-map xjs-keymap)
+  (set-syntax-table xah-js-syntax-table)
+  (use-local-map xah-js-keymap)
 
   (setq-local comment-start "// ")
   (setq-local comment-end "")
   (setq-local comment-column 2)
 
-  (setq-local indent-line-function 'xjs-complete-or-indent)
+  (setq-local indent-line-function 'xah-js-complete-or-indent)
   (setq-local tab-always-indent 'complete)
-  (add-hook 'completion-at-point-functions 'xjs-complete-symbol-ido nil 'local)
+  (add-hook 'completion-at-point-functions 'xah-js-complete-symbol-ido nil 'local)
 
   (setq indent-tabs-mode nil) ; don't mix space and tab
   (setq tab-width 1)
 
-  (setq local-abbrev-table xjs-abbrev-table)
+  (setq local-abbrev-table xah-js-abbrev-table)
 
   (run-mode-hooks 'xah-js-mode-hook)
 
-  :syntax-table xjs-syntax-table
+  :syntax-table xah-js-syntax-table
 
   )
 

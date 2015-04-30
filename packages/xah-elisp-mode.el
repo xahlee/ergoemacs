@@ -26,11 +26,12 @@
 
 (defvar xah-elisp-mode-hook nil "Standard hook for `xah-elisp-mode'")
 
-(defvar xem-elisp-lang-words nil "List of elisp keyword more or less related to elisp the language.")
-(setq xem-elisp-lang-words '(
+(defvar xah-elisp-elisp-lang-words nil "List of elisp keyword more or less related to elisp the language.")
+(setq xah-elisp-elisp-lang-words '(
 
 "read"
 "eval"
+"intern"
 
 "zerop"
 "listp"
@@ -39,7 +40,7 @@
 "char-equal"
 
 "delete"
-
+"make-list"
 "memq"
 "delq"
 "remq"
@@ -165,8 +166,8 @@
 "print-length"
 ))
 
-(defvar xem-emacs-words nil "List of keywords more or less related to emacs system.")
-(setq xem-emacs-words '(
+(defvar xah-elisp-emacs-words nil "List of keywords more or less related to emacs system.")
+(setq xah-elisp-emacs-words '(
 
 "count-matches"
 "delete-and-extract-region"
@@ -413,8 +414,8 @@
 
 ))
 
-(defvar xem-emacs-user-commands nil "list of keywords related to user's needs.")
-(setq xem-emacs-user-commands '(
+(defvar xah-elisp-emacs-user-commands nil "list of keywords related to user's needs.")
+(setq xah-elisp-emacs-user-commands '(
 
 "repeat-complex-command"
 
@@ -450,16 +451,17 @@
 
   ))
 
-(defvar xem-keyword-builtin nil "List of elisp names")
-(setq xem-keyword-builtin '( "&optional"))
+(defvar xah-elisp-keyword-builtin nil "List of elisp names")
+(setq xah-elisp-keyword-builtin '( "&optional"))
 
-(defvar xem-elisp-vars-1 nil "List elisp variables names")
-(setq xem-elisp-vars-1 '(
+(defvar xah-elisp-elisp-vars-1 nil "List elisp variables names")
+(setq xah-elisp-elisp-vars-1 '(
 
 "current-prefix-arg"
 "deactivate-mark"
 "load-file-name"
 "buffer-file-name"
+"load-path"
 
 "Buffer-menu-buffer+size-width"
 "Buffer-menu-mode-width"
@@ -861,8 +863,8 @@
 
 ))
 
-(defvar xem-elisp-vars-2 nil "List elisp variables names")
-(setq xem-elisp-vars-2 '(
+(defvar xah-elisp-elisp-vars-2 nil "List elisp variables names")
+(setq xah-elisp-elisp-vars-2 '(
 
 "multibyte-syntax-as-symbol"
 
@@ -1220,14 +1222,14 @@
 
 ))
 
-(defvar xem-elisp-all-keywords nil "list of all elisp keywords")
-(setq xem-elisp-all-keywords (append xem-elisp-lang-words xem-emacs-words xem-emacs-user-commands xem-keyword-builtin xem-elisp-vars-1 xem-elisp-vars-2))
+(defvar xah-elisp-elisp-all-keywords nil "list of all elisp keywords")
+(setq xah-elisp-elisp-all-keywords (append xah-elisp-elisp-lang-words xah-elisp-emacs-words xah-elisp-emacs-user-commands xah-elisp-keyword-builtin xah-elisp-elisp-vars-1 xah-elisp-elisp-vars-2))
 
 
 
 ;; emacs 24.4 or 24.3 change fix
 
-(defun xem-up-list (arg1 &optional arg2 arg3)
+(defun xah-elisp-up-list (arg1 &optional arg2 arg3)
   "Backward compatibility fix for emacs 24.4's up-list.
 emacs 24.4 changed up-list to take up to 3 args. Before, only 1.
 See
@@ -1241,7 +1243,7 @@ See
 
 ;; completion
 
-(defun xem-complete-symbol ()
+(defun xah-elisp-complete-symbol ()
   "Perform keyword completion on current word.
 This uses `ido-mode' user interface for completion."
   (interactive)
@@ -1256,18 +1258,18 @@ This uses `ido-mode' user interface for completion."
          ξresult-sym)
     (when (not ξcurrent-sym) (setq ξcurrent-sym ""))
     (setq ξresult-sym
-          (ido-completing-read "" xem-elisp-all-keywords nil nil ξcurrent-sym ))
+          (ido-completing-read "" xah-elisp-elisp-all-keywords nil nil ξcurrent-sym ))
     (delete-region ξp1 ξp2)
     (insert ξresult-sym)
 
     ;; use case of completion
 
-    (when (not (xem-start-with-left-paren-p))
-      (let ( (ξabbrev-expanded-p (xem-expand-abbrev)))
-        ;; (when (not (xem-start-with-left-paren-p)) (xem-add-paren-around-symbol))
+    (when (not (xah-elisp-start-with-left-paren-p))
+      (let ( (ξabbrev-expanded-p (xah-elisp-expand-abbrev)))
+        ;; (when (not (xah-elisp-start-with-left-paren-p)) (xah-elisp-add-paren-around-symbol))
 ))))
 
-(defun xem-start-with-left-paren-p ()
+(defun xah-elisp-start-with-left-paren-p ()
   "true or false"
   (interactive)
   (save-excursion
@@ -1276,7 +1278,7 @@ This uses `ido-mode' user interface for completion."
       t
       nil)))
 
-(defun xem-add-paren-around-symbol ()
+(defun xah-elisp-add-paren-around-symbol ()
   "add paren around symbol before cursor and add a space before closing paren, place cursor ther.
  ⁖
  do-something▮
@@ -1287,7 +1289,7 @@ becomes
   (forward-symbol -1) (insert "(") (forward-symbol 1) (insert " )")
   (backward-char 1))
 
-(defun xem-remove-paren-pair ()
+(defun xah-elisp-remove-paren-pair ()
   "Remove closest outer paren around cursor or remove string quote and activate the region.
 Cursor is moved to the left deleted paren spot, mark is set to the right deleted paren spot.
 Call `exchange-point-and-mark' to highlight them.
@@ -1298,9 +1300,9 @@ Call `exchange-point-and-mark' to highlight them.
         p1 p2
         )
     (atomic-change-group
-      (xem-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
+      (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING")
       (while (not (char-equal (char-after) ?\( ))
-        (xem-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
+        (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
       (setq p1 (point))
       (forward-sexp)
       (setq p2 (point))
@@ -1309,7 +1311,7 @@ Call `exchange-point-and-mark' to highlight them.
       (goto-char p1)
       (delete-char 1))))
 
-(defun xem-expand-abbrev-maybe (&optional φexpand-func)
+(defun xah-elisp-expand-abbrev-maybe (&optional φexpand-func)
   "Expand emacs lisp function name before cursor into template.
 Returns true if there's a expansion, else false."
   (interactive)
@@ -1319,13 +1321,13 @@ Returns true if there's a expansion, else false."
         (ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         nil
-      (xem-expand-abbrev))
-    ;; (xem-expand-abbrev)
+      (xah-elisp-expand-abbrev))
+    ;; (xah-elisp-expand-abbrev)
     ))
 
-(put 'xem-expand-abbrev-maybe 'no-self-insert t)
+(put 'xah-elisp-expand-abbrev-maybe 'no-self-insert t)
 
-(defun xem-expand-abbrev ()
+(defun xah-elisp-expand-abbrev ()
   "Expand the symbol before cursor.
 Returns true if there's a expansion, else false."
   (interactive)
@@ -1342,11 +1344,11 @@ Returns true if there's a expansion, else false."
     (if (abbrev-symbol ξab-str)
         (progn
           (abbrev-insert (abbrev-symbol ξab-str) ξab-str ξp1 ξp2 )
-          (xem--abbrev-position-cursor ξp1)
+          (xah-elisp--abbrev-position-cursor ξp1)
           t)
       nil)))
 
-(defun xem-abbrev-enable-function ()
+(defun xah-elisp-abbrev-enable-function ()
   "Determine whether to expand abbrev.
 This is called by emacs abbrev system."
   (let ((ξsyntax-state (syntax-ppss)))
@@ -1354,7 +1356,7 @@ This is called by emacs abbrev system."
         nil
       t)))
 
-(defun xem--abbrev-position-cursor (&optional φpos)
+(defun xah-elisp--abbrev-position-cursor (&optional φpos)
   "Move cursor back to ▮.
 but limit backward search to at φpos or at beginning of line.
 return true if found, else false."
@@ -1364,10 +1366,10 @@ return true if found, else false."
 
 ;; indent/reformat related
 
-(defun xem-complete-or-indent ()
+(defun xah-elisp-complete-or-indent ()
   "Do keyword completion or indent/prettify-format.
 
-If char before point is letters and char after point is whitespace or punctuation, then do completion, except when in string or comment. In these cases, do `xem-prettify-root-sexp'."
+If char before point is letters and char after point is whitespace or punctuation, then do completion, except when in string or comment. In these cases, do `xah-elisp-prettify-root-sexp'."
   (interactive)
   ;; consider the char to the left or right of cursor. Each side is either empty or char.
   ;; there are 4 cases:
@@ -1378,28 +1380,28 @@ If char before point is letters and char after point is whitespace or punctuatio
   (let ( (ξsyntax-state (syntax-ppss)))
     (if (or (nth 3 ξsyntax-state) (nth 4 ξsyntax-state))
         (progn
-          (xem-prettify-root-sexp))
+          (xah-elisp-prettify-root-sexp))
       (progn (if
                  (and (looking-back "[-_a-zA-Z]")
                       (or (eobp) (looking-at "[\n[:blank:][:punct:]]")))
-                 (xem-complete-symbol)
-               (xem-prettify-root-sexp))))))
+                 (xah-elisp-complete-symbol)
+               (xah-elisp-prettify-root-sexp))))))
 
-(defun xem-prettify-root-sexp ()
+(defun xah-elisp-prettify-root-sexp ()
   "Prettify format current root sexp group.
 Root sexp group is the outmost sexp unit."
   (interactive)
   (save-excursion
     (let (ξp1 ξp2)
-      (xem-goto-outmost-bracket)
+      (xah-elisp-goto-outmost-bracket)
       (setq ξp1 (point))
       (setq ξp2 (scan-sexps (point) 1))
       (progn
         (goto-char ξp1)
         (indent-sexp)
-        (xem-compact-parens-region ξp1 ξp2)))))
+        (xah-elisp-compact-parens-region ξp1 ξp2)))))
 
-(defun xem-goto-outmost-bracket (&optional φpos)
+(defun xah-elisp-goto-outmost-bracket (&optional φpos)
   "Move cursor to the beginning of outer-most bracket, with respect to φpos.
 Returns true if point is moved, else false."
   (interactive)
@@ -1411,35 +1413,35 @@ Returns true if point is moved, else false."
     (while
         (and (< (setq ξi (1+ ξi)) 20)
              (not (eq (nth 0 (syntax-ppss (point))) 0)))
-      (xem-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
+      (xah-elisp-up-list -1 "ESCAPE-STRINGS" "NO-SYNTAX-CROSSING"))
     (if (equal ξp0 (point))
         nil
       t
       )))
 
-(defun xem-compact-parens (&optional φp1 φp2)
+(defun xah-elisp-compact-parens (&optional φbegin φend)
   "Remove whitespaces in ending repetition of parenthesises.
 If there's a text selection, act on the region, else, on defun block."
   (interactive
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (save-excursion
-       (xem-goto-outmost-bracket)
+       (xah-elisp-goto-outmost-bracket)
        (list (point) (scan-sexps (point) 1)))))
-  (let ((ξp1 φp1) (ξp2 φp2))
-    (when (null φp1)
+  (let ((ξp1 φbegin) (ξp2 φend))
+    (when (null φbegin)
       (save-excursion
-        (xem-goto-outmost-bracket)
+        (xah-elisp-goto-outmost-bracket)
         (setq ξp1 (point))
         (setq ξp2 (scan-sexps (point) 1))))
-    (xem-compact-parens-region ξp1 ξp2)))
+    (xah-elisp-compact-parens-region ξp1 ξp2)))
 
-(defun xem-compact-parens-region (φp1 φp2)
+(defun xah-elisp-compact-parens-region (φbegin φend)
   "Remove whitespaces in ending repetition of parenthesises in region."
   (interactive "r")
   (let (ξsyntax-state)
     (save-restriction
-      (narrow-to-region φp1 φp2)
+      (narrow-to-region φbegin φend)
       (goto-char (point-min))
       (while (search-forward-regexp ")[ \t\n]+)" nil t)
         (setq ξsyntax-state (syntax-ppss (match-beginning 0)))
@@ -1451,9 +1453,9 @@ If there's a text selection, act on the region, else, on defun block."
 
 ;; abbrev
 
-(setq xem-abbrev-table nil)
+(setq xah-elisp-abbrev-table nil)
 
-(define-abbrev-table 'xem-abbrev-table
+(define-abbrev-table 'xah-elisp-abbrev-table
   '(
     ("3t" "(when ▮)" nil :system t) ;test
 
@@ -1515,6 +1517,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("ms" "match-string" nil :system t)
     ("nts" "number-to-string" nil :system t)
     ("ntr" "narrow-to-region" nil :system t)
+    ("pmi" "point-min" nil :system t)
     ("pm" "point-max" nil :system t)
     ("rap" "region-active-p" nil :system t)
     ("urp" "use-region-p" nil :system t)
@@ -1570,16 +1573,16 @@ If there's a text selection, act on the region, else, on defun block."
     ("buffer-substring" "(buffer-substring START▮ END)" nil :system t)
     ("call-interactively" "(call-interactively 'FUNCTION▮ &optional RECORD-FLAG KEYS)" nil :system t)
     ("called-interactively-p" "(called-interactively-p 'interactive▮)" nil :system t)
-    ("car" "(car ▮)" nil :system t)
+    ("car" "(car LIST▮)" nil :system t)
     ("catch" "(catch TAG▮ BODY)" nil :system t)
-    ("cdr" "(cdr ▮)" nil :system t)
-    ("concat" "(concat ▮)" nil :system t)
+    ("cdr" "(cdr LIST▮)" nil :system t)
+    ("concat" "(concat \"▮\" \"▮\")" nil :system t)
     ("cond" "(cond
 (CONDITION▮ BODY)
 (CONDITION BODY)
 )" nil :system t)
     ("condition-case" "(condition-case ▮)" nil :system t)
-    ("cons" "(cons ▮)" nil :system t)
+    ("cons" "(cons CAR▮ CDR)" nil :system t)
     ("consp" "(consp ▮)" nil :system t)
     ("copy-directory" "(copy-directory ▮ NEWNAME &optional KEEP-TIME PARENTS)" nil :system t)
     ("copy-file" "(copy-file FILE▮ NEWNAME &optional OK-IF-ALREADY-EXISTS KEEP-TIME PRESERVE-UID-GID)" nil :system t)
@@ -1602,7 +1605,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("delete-file" "(delete-file ▮)" nil :system t)
     ("delete-region" "(delete-region pos1▮ pos2)" nil :system t)
     ("directory-files" "(directory-files ▮ &optional FULL MATCH NOSORT)" nil :system t)
-    ("dolist" "(dolist ▮)" nil :system t)
+    ("dolist" "(dolist (VAR▮ LIST [RESULT]) BODY)" nil :system t)
     ("dotimes" "(dotimes (VAR▮ COUNT [RESULT]) BODY)" nil :system t)
     ("elt" "(elt SEQUENCE▮ N)" nil :system t)
     ("end-of-line" "(end-of-line ▮&optional N)" nil :system t)
@@ -1651,6 +1654,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("looking-at" "(looking-at \"REGEXP▮\")" nil :system t)
     ("make-directory" "(make-directory ▮ &optional PARENTS)" nil :system t)
     ("make-local-variable" "(make-local-variable ▮)" nil :system t)
+    ("make-list" "(make-list LENGTH▮ INIT)" nil :system t)
     ("mapc" "(mapc '▮ SEQUENCE)" nil :system t)
     ("mapcar" "(mapcar '▮ SEQUENCE)" nil :system t)
     ("mapconcat" "(mapconcat FUNCTION▮ SEQUENCE SEPARATOR)" nil :system t)
@@ -1660,22 +1664,23 @@ If there's a text selection, act on the region, else, on defun block."
     ("match-string" "(match-string NUM▮ &optional STRING)" nil :system t)
     ("member" "(member ELT▮ LIST)" nil :system t)
     ("memq" "(memq ELT▮ LIST)" nil :system t)
-
+    ("not" "(not ▮)" nil :system t)
     ("delq" "(delq ELT▮ LIST)" nil :system t)
+    ("delete" "(delete OBJECT▮ SEQUENCE)" nil :system t)
+    ("delete-dups" "(delete-dups LIST▮)" nil :system t)
 
     ("remq" "(remq OBJECT▮ LIST)" nil :system t)
     ("memql" "(memql OBJECT▮ LIST)" nil :system t)
     ("member" "(member OBJECT▮ LIST)" nil :system t)
-    ("delete" "(delete OBJECT▮ SEQUENCE)" nil :system t)
     ("remove" "(remove OBJECT▮ SEQUENCE)" nil :system t)
     ("member-ignore-case" "(member-ignore-case OBJECT▮ LIST)" nil :system t)
-    ("delete-dups" "(delete-dups LIST▮)" nil :system t)
 
     ("message" "(message \"%s▮\" ARGS)" nil :system t)
     ("narrow-to-region" "(narrow-to-region START▮ END)" nil :system t)
     ("nth" "(nth N▮ LIST)" nil :system t)
     ("null" "(null ▮)" nil :system t)
     ("number-to-string" "(number-to-string ▮)" nil :system t)
+    ("number-sequence" "(number-sequence FROM▮ &optional TO INC)" nil :system t)
     ("or" "(or ▮)" nil :system t)
     ("point-max" "(point-max)" nil :system t)
     ("point-min" "(point-min)" nil :system t)
@@ -1684,7 +1689,7 @@ If there's a text selection, act on the region, else, on defun block."
     ("princ" "(princ ▮)" nil :system t)
     ("print" "(print ▮)" nil :system t)
     ("progn" "(progn ▮)" nil :system t)
-    ("push" "(push ▮)" nil :system t)
+    ("push" "(push NEWELT▮ PLACE)" nil :system t)
     ("push-mark" "(push-mark ▮&optional LOCATION NOMSG ACTIVATE)" nil :system t)
     ("put" "(put 'SYMBOL▮ PROPNAME VALUE)" nil :system t)
     ("random" "(random ▮)" nil :system t)
@@ -1821,32 +1826,32 @@ If there's a text selection, act on the region, else, on defun block."
 ;; :regexp "\\_<\\([_-0-9A-Za-z]+\\)"
   :regexp "\\([_-0-9A-Za-z]+\\)"
   :case-fixed t
-  :enable-function 'xem-abbrev-enable-function
+  :enable-function 'xah-elisp-abbrev-enable-function
   )
 
 
 ;; syntax coloring related
 
-(defface xem-function-param
+(defface xah-elisp-function-param
   '(
     (t :foreground "black" :background "LightYellow"))
   "face for function parameters."
   :group 'xah-elisp-mode )
 
-(defface xem-user-variable
+(defface xah-elisp-user-variable
   '(
     (t :foreground "magenta"))
   "face for user variables."
   :group 'xah-elisp-mode )
 
-(setq xem-font-lock-keywords
+(setq xah-elisp-font-lock-keywords
       (let (
-            (emacsWords (regexp-opt xem-emacs-words 'symbols))
-            (emacsUserWords (regexp-opt xem-emacs-user-commands 'symbols))
-            (emacsBuiltins (regexp-opt xem-keyword-builtin 'symbols))
-            (elispLangWords (regexp-opt xem-elisp-lang-words 'symbols))
-            (elispVars1 (regexp-opt xem-elisp-vars-1 'symbols))
-            (elispVars2 (regexp-opt xem-elisp-vars-2 'symbols))
+            (emacsWords (regexp-opt xah-elisp-emacs-words 'symbols))
+            (emacsUserWords (regexp-opt xah-elisp-emacs-user-commands 'symbols))
+            (emacsBuiltins (regexp-opt xah-elisp-keyword-builtin 'symbols))
+            (elispLangWords (regexp-opt xah-elisp-elisp-lang-words 'symbols))
+            (elispVars1 (regexp-opt xah-elisp-elisp-vars-1 'symbols))
+            (elispVars2 (regexp-opt xah-elisp-elisp-vars-2 'symbols))
             (functionParameters "φ[-_?0-9A-Za-z]+" )
             (userVars "ξ[-_?0-9A-Za-z]+" ))
         `(
@@ -1856,8 +1861,8 @@ If there's a text selection, act on the region, else, on defun block."
           (,elispLangWords . font-lock-keyword-face)
           (,elispVars1 . font-lock-variable-name-face)
           (,elispVars2 . font-lock-variable-name-face)
-          (,functionParameters . 'xem-function-param)
-          (,userVars . 'xem-user-variable))))
+          (,functionParameters . 'xah-elisp-function-param)
+          (,userVars . 'xah-elisp-user-variable))))
 
 ;; font-lock-builtin-face
 ;; font-lock-comment-delimiter-face
@@ -1876,8 +1881,8 @@ If there's a text selection, act on the region, else, on defun block."
 
 
 ;; ;; syntax table
-;; (defvar xem-syntax-table nil "Syntax table for `xah-elisp-mode'.")
-;; (setq xem-syntax-table
+;; (defvar xah-elisp-syntax-table nil "Syntax table for `xah-elisp-mode'.")
+;; (setq xah-elisp-syntax-table
 ;;       (let ((synTable (make-syntax-table)))
 ;;         (modify-syntax-entry ?\; "<" synTable)
 ;;         (modify-syntax-entry ?\n ">" synTable)
@@ -1894,23 +1899,22 @@ If there's a text selection, act on the region, else, on defun block."
 (when (string-equal system-type "windows-nt")
   (define-key key-translation-map (kbd "<apps>") (kbd "<menu>")))
 
-(defvar xem-keymap nil "Keybinding for `xah-elisp-mode'")
+(defvar xah-elisp-keymap nil "Keybinding for `xah-elisp-mode'")
 (progn
-  (setq xem-keymap (make-sparse-keymap))
-  (define-key xem-keymap (kbd "TAB") 'xem-complete-or-indent)
+  (setq xah-elisp-keymap (make-sparse-keymap))
+  (define-key xah-elisp-keymap (kbd "TAB") 'xah-elisp-complete-or-indent)
 
-  (define-prefix-command 'xem-single-keys-keymap)
-  (define-key xem-keymap (kbd "<menu> e") xem-single-keys-keymap)
+  (define-prefix-command 'xah-elisp-single-keys-keymap)
 
-  (define-key xem-single-keys-keymap (kbd "u") 'xem-add-paren-around-symbol)
+  (define-key xah-elisp-single-keys-keymap (kbd "u") 'xah-elisp-add-paren-around-symbol)
 
-  (define-key xem-single-keys-keymap (kbd "t") 'xem-prettify-root-sexp)
-  (define-key xem-single-keys-keymap (kbd "h") 'xem-remove-paren-pair)
+  (define-key xah-elisp-single-keys-keymap (kbd "t") 'xah-elisp-prettify-root-sexp)
+  (define-key xah-elisp-single-keys-keymap (kbd "h") 'xah-elisp-remove-paren-pair)
 
-  (define-key xem-single-keys-keymap (kbd "p") 'xem-compact-parens)
-  (define-key xem-single-keys-keymap (kbd "c") 'xem-complete-symbol)
+  (define-key xah-elisp-single-keys-keymap (kbd "p") 'xah-elisp-compact-parens)
+  (define-key xah-elisp-single-keys-keymap (kbd "c") 'xah-elisp-complete-symbol)
 
-  (define-key xem-single-keys-keymap (kbd "e") 'xem-expand-abbrev-maybe))
+  (define-key xah-elisp-single-keys-keymap (kbd "e") 'xah-elisp-expand-abbrev-maybe))
 
 
 
@@ -1918,7 +1922,7 @@ If there's a text selection, act on the region, else, on defun block."
 (defun xah-elisp-mode ()
   "A major mode for emacs lisp.
 
-Most useful command is `xem-complete-or-indent'.
+Most useful command is `xah-elisp-complete-or-indent'.
 
 Press TAB before word to pretty format (indent).
 
@@ -1932,7 +1936,7 @@ URL `http://ergoemacs.org/emacs/modernization_mark-word.html'
 or
 URL `http://ergoemacs.github.io/ergoemacs-mode/'
 
-\\{xem-keymap}"
+\\{xah-elisp-keymap}"
   (interactive)
 
   (kill-all-local-variables)
@@ -1940,10 +1944,16 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
   (setq mode-name "∑lisp")
   (setq major-mode 'xah-elisp-mode)
   (set-syntax-table emacs-lisp-mode-syntax-table)
-  (setq font-lock-defaults '((xem-font-lock-keywords)))
-  
-  (use-local-map xem-keymap)
-  (setq local-abbrev-table xem-abbrev-table)
+  (setq font-lock-defaults '((xah-elisp-font-lock-keywords)))
+
+  (setq local-abbrev-table xah-elisp-abbrev-table)
+
+  (if (or
+       (not (boundp 'xfk-major-mode-lead-key))
+       (null 'xfk-major-mode-lead-key))
+      (define-key xah-elisp-keymap (kbd "<menu> e") xah-elisp-single-keys-keymap)
+    (define-key xah-elisp-keymap xfk-major-mode-lead-key xah-elisp-single-keys-keymap))
+  (use-local-map xah-elisp-keymap)
 
   (setq-local comment-start "; ")
   (setq-local comment-end "")
@@ -1954,7 +1964,7 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
   (setq-local indent-line-function 'lisp-indent-line)
   (setq-local tab-always-indent 'complete)
 
-  (add-hook 'completion-at-point-functions 'xem-complete-symbol nil 'local)
+  (add-hook 'completion-at-point-functions 'xah-elisp-complete-symbol nil 'local)
 
   (abbrev-mode 1)
 
@@ -1970,8 +1980,8 @@ URL `http://ergoemacs.github.io/ergoemacs-mode/'
             (>= emacs-minor-version 4))
        (>= emacs-major-version 25))
       (progn
-        (setq abbrev-expand-function 'xem-expand-abbrev-maybe))
-    (progn (add-hook 'abbrev-expand-functions 'xem-expand-abbrev-maybe nil t)))
+        (setq abbrev-expand-function 'xah-elisp-expand-abbrev-maybe))
+    (progn (add-hook 'abbrev-expand-functions 'xah-elisp-expand-abbrev-maybe nil t)))
 
   (setq prettify-symbols-alist '(("lambda" . 955)))
 

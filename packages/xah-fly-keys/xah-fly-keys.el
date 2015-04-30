@@ -29,6 +29,14 @@
 
 (global-set-key (kbd "<home>") 'xfk-command-mode-activate)
 
+(defvar xfk-major-mode-lead-key nil "Lead key for all major mode's key sequence. By default, it's (kbd \"<menu> e\"). Only supported by xah's modes.")
+(setq xfk-major-mode-lead-key (kbd "<menu> e"))
+
+(defvar xfk-use-xah-keys-p nil "If true, use xah lee's personal keys, that may not be suitable for other keyboard or workflow.")
+(setq xfk-use-xah-keys-p t)
+
+
+
 (defun xah-get-fullpath (φfile-relative-path)
   "Return the full path of ΦFILE-RELATIVE-PATH, relative to caller's file location.
 
@@ -60,14 +68,15 @@ To solve this problem, when your code only knows the relative path of another fi
 (load (xah-get-fullpath "xah-fly-keys-replace-commands"))
 (load (xah-get-fullpath "xah-fly-keys-dired-commands"))
 (load (xah-get-fullpath "xah-fly-keys-misc-commands"))
+(load (xah-get-fullpath "xah-fly-keys-misc-commands2"))
 (load (xah-get-fullpath "xah-fly-keys-emacs-1k-keymap"))
 (load (xah-get-fullpath "xah-fly-keys-help-keymap"))
-(load (xah-get-fullpath "xah-fly-keys-user-keymap"))
 (load (xah-get-fullpath "xah-fly-keys-insertion-keymap"))
 (load (xah-get-fullpath "xah-fly-keys-control-key"))
 (load (xah-get-fullpath "xah-fly-keys-meta-key"))
 (load (xah-get-fullpath "xah-fly-keys-special-keys"))
 (load (xah-get-fullpath "xah-fly-keys-mode-specific"))
+(load (xah-get-fullpath "xah-fly-keys-user-keymap"))
 
 
 
@@ -149,9 +158,9 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "[") 'xah-backward-quote)
     (global-set-key (kbd "\\") nil)
     (global-set-key (kbd "]") 'xah-forward-quote)
-    (global-set-key (kbd "`") nil)
+    (global-set-key (kbd "`") 'xfk-insert-mode-activate)
 
-    (global-set-key (kbd "1") 'xfk-insert-mode-activate)
+    (global-set-key (kbd "1") nil)
     (global-set-key (kbd "2") 'delete-window)
     (global-set-key (kbd "3") 'delete-other-windows)
     (global-set-key (kbd "4") 'split-window-vertically)
@@ -163,7 +172,7 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "0") 'xah-backward-punct)
 
     (global-set-key (kbd "a") 'open-line)
-    (global-set-key (kbd "b") nil)
+    (global-set-key (kbd "b") 'save-buffer)
     (global-set-key (kbd "c") 'previous-line)
     (global-set-key (kbd "d") 'xah-beginning-of-line-or-block)
     (global-set-key (kbd "e") 'delete-backward-char)
@@ -185,11 +194,9 @@ To solve this problem, when your code only knows the relative path of another fi
     (global-set-key (kbd "u") 'delete-char)
     (global-set-key (kbd "v") 'xah-forward-right-bracket)
     (global-set-key (kbd "w") 'xah-insert-space-after)
-    (global-set-key (kbd "x") nil)
+    (global-set-key (kbd "x") (if (fboundp 'smex) 'smex 'execute-extended-command ))
     (global-set-key (kbd "y") 'set-mark-command)
-    (global-set-key (kbd "z") 'comment-dwim)
-
-))
+    (global-set-key (kbd "z") 'comment-dwim)))
 
 ;; 67890
 ;; fgcrl
@@ -230,3 +237,4 @@ To solve this problem, when your code only knows the relative path of another fi
 
 
 (provide 'xah-fly-keys)
+

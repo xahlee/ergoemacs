@@ -9,55 +9,53 @@
 
 (defun xah-copy-line-or-region ()
   "Copy current line, or text selection.
-When `universal-argument' is called first, copy whole buffer (but respect `narrow-to-region')."
+When `universal-argument' is called first, copy whole buffer (respects `narrow-to-region')."
   (interactive)
   (let (ξp1 ξp2)
-    (if (null current-prefix-arg)
-        (progn (if (use-region-p)
-                   (progn (setq ξp1 (region-beginning))
-                          (setq ξp2 (region-end)))
-                 (progn (setq ξp1 (line-beginning-position))
-                        (setq ξp2 (line-end-position)))))
-      (progn (setq ξp1 (point-min))
-             (setq ξp2 (point-max))))
+    (if current-prefix-arg
+        (progn (setq ξp1 (point-min))
+               (setq ξp2 (point-max)))
+      (progn (if (use-region-p)
+                 (progn (setq ξp1 (region-beginning))
+                        (setq ξp2 (region-end)))
+               (progn (setq ξp1 (line-beginning-position))
+                      (setq ξp2 (line-end-position))))))
     (kill-ring-save ξp1 ξp2)))
 
 (defun xah-cut-line-or-region ()
   "Cut current line, or text selection.
-When `universal-argument' is called first, cut whole buffer (but respect `narrow-to-region')."
+When `universal-argument' is called first, cut whole buffer (respects `narrow-to-region')."
   (interactive)
   (let (ξp1 ξp2)
-    (if (null current-prefix-arg)
-        (progn (if (use-region-p)
-                   (progn (setq ξp1 (region-beginning))
-                          (setq ξp2 (region-end)))
-                 (progn (setq ξp1 (line-beginning-position))
-                        (setq ξp2 (line-beginning-position 2)))))
-      (progn (setq ξp1 (point-min))
-             (setq ξp2 (point-max))))
+    (if current-prefix-arg        
+        (progn (setq ξp1 (point-min))
+               (setq ξp2 (point-max)))
+      (progn (if (use-region-p)
+                 (progn (setq ξp1 (region-beginning))
+                        (setq ξp2 (region-end)))
+               (progn (setq ξp1 (line-beginning-position))
+                      (setq ξp2 (line-beginning-position 2))))))
     (kill-region ξp1 ξp2)))
 
 (defun xah-copy-all ()
-  "Put the whole buffer content into the `kill-ring'.
-If `narrow-to-region' is in effect, then copy that region only."
+  "Put the whole buffer content into the `kill-ring'. (respects `narrow-to-region')"
   (interactive)
   (kill-new (buffer-string))
   (message "Buffer content copied."))
 
 (defun xah-cut-all ()
-  "Cut the whole buffer content into the `kill-ring'.
-If `narrow-to-region' is in effect, then cut that region only."
+  "Cut the whole buffer content into the `kill-ring'. (respects `narrow-to-region')"
   (interactive)
   (kill-new (buffer-string))
   (delete-region (point-min) (point-max)))
 
 
 
-(defun xah-toggle-letter-case (φp1 φp2)
+(defun xah-toggle-letter-case (φbegin φend)
   "Toggle the letter case of current word or text selection.
 Always cycle in this order: Init Caps, ALL CAPS, all lower.
 
-In lisp code, φp1 φp2 are region boundary.
+In lisp code, φbegin φend are region boundary.
 URL `http://ergoemacs.org/emacs/modernization_upcase-word.html'
 Version 2015-04-09"
   (interactive
@@ -70,13 +68,13 @@ Version 2015-04-09"
       (put this-command 'state 0))
     (cond
      ((equal 0 (get this-command 'state))
-      (upcase-initials-region φp1 φp2)
+      (upcase-initials-region φbegin φend)
       (put this-command 'state 1))
      ((equal 1  (get this-command 'state))
-      (upcase-region φp1 φp2)
+      (upcase-region φbegin φend)
       (put this-command 'state 2))
      ((equal 2 (get this-command 'state))
-      (downcase-region φp1 φp2)
+      (downcase-region φbegin φend)
       (put this-command 'state 0)))))
 
 (defun xah-toggle-previous-letter-case ()
@@ -99,7 +97,7 @@ If current line is a single space, remove that space.
 URL `http://ergoemacs.org/emacs/emacs_shrink_whitespace.html'
 Version 2015-03-03"
   (interactive)
-  (let ((ξpos (point))
+  (let ((pos0 (point))
         ξline-has-char-p ; current line contains non-white space chars
         ξhas-space-tab-neighbor-p
         ξwhitespace-begin ξwhitespace-end
@@ -110,14 +108,14 @@ Version 2015-03-03"
       (beginning-of-line)
       (setq ξline-has-char-p (search-forward-regexp "[[:graph:]]" (line-end-position) t))
 
-      (goto-char ξpos)
+      (goto-char pos0)
       (skip-chars-backward "\t ")
       (setq ξspace-or-tab-begin (point))
 
       (skip-chars-backward "\t \n")
       (setq ξwhitespace-begin (point))
 
-      (goto-char ξpos)
+      (goto-char pos0)
       (skip-chars-forward "\t ")
       (setq ξspace-or-tab-end (point))
       (skip-chars-forward "\t \n")
@@ -139,7 +137,7 @@ Remove whitespaces around cursor to just one space, or remove neighboring blank 
 URL `http://ergoemacs.org/emacs/emacs_shrink_whitespace.html'
 Version 2015-03-03"
   (interactive)
-  (let ((ξpos (point))
+  (let ((pos0 (point))
         ξline-has-char-p ; current line contains non-white space chars
         ξhas-space-tab-neighbor-p
         ξwhitespace-begin ξwhitespace-end
@@ -150,14 +148,14 @@ Version 2015-03-03"
       (beginning-of-line)
       (setq ξline-has-char-p (search-forward-regexp "[[:graph:]]" (line-end-position) t))
 
-      (goto-char ξpos)
+      (goto-char pos0)
       (skip-chars-backward "\t ")
       (setq ξspace-or-tab-begin (point))
 
       (skip-chars-backward "\t \n")
       (setq ξwhitespace-begin (point))
 
-      (goto-char ξpos)
+      (goto-char pos0)
       (skip-chars-forward "\t ")
       (setq ξspace-or-tab-end (point))
       (skip-chars-forward "\t \n")
@@ -234,7 +232,7 @@ This command does the inverse of `fill-region'."
   (let ((fill-column 90002000))
     (fill-region start end)))
 
-(defun xah-replace-newline-whitespaces-to-space (&optional φp1 φp2)
+(defun xah-replace-newline-whitespaces-to-space (&optional φbegin φend)
   "Replace newline with surrounding {tab, space} characters to 1 space, in current text block or selection.
 This is similar to `fill-paragraph' or `fill-region' for making a text block into a single line, except that fill command does many other things. For example, if you have
 
@@ -258,46 +256,50 @@ it'll remove the second >."
          (list q1 q2)))))
   (save-excursion
     (save-restriction
-      (narrow-to-region φp1 φp2)
+      (narrow-to-region φbegin φend)
       (goto-char (point-min))
       (while (search-forward-regexp "[ \t]*\n[ \t]*" nil t) (replace-match " ")))))
 
-(defun xah-cycle-hyphen-underscore-space ()
-  "Cyclically replace {underscore, space, hypen} chars on current word or text selection.
-When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters."
-  (interactive)
-  ;; this function sets a property 「'state」. Possible values are 0 to length of charArray.
-  (let (inputText ξbds charArray p1 p2 currentState nextState changeFrom
-                  changeTo startedWithRegion-p )
-    (if (region-active-p)
-        (setq startedWithRegion-p t )
-      (setq startedWithRegion-p nil ))
+(defun xah-cycle-hyphen-underscore-space (φbegin φend)
+  "Cycle {underscore, space, hypen} chars of current word or text selection.
+When called repeatedly, this command cycles the {“_”, “-”, “ ”} characters, in that order.
 
-    (setq ξbds (get-selection-or-unit 'glyphs))
-    (setq inputText (elt ξbds 0) p1 (elt ξbds 1) p2 (elt ξbds 2))
-
-    (setq charArray [" " "_" "-"])
-
-    ;; when called first time, set state to 0
-    (setq currentState
+When called in elisp code, φbegin φend are region begin/end positions.
+URL `http://ergoemacs.org/emacs/elisp_change_space-hyphen_underscore.html'
+Version 2015-04-13"
+  (interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (let ((ξbounds (bounds-of-thing-at-point 'symbol)))
+       (list (car ξbounds) (cdr ξbounds)))))
+  ;; this function sets a property 「'state」. Possible values are 0 to length of ξcharArray.
+  (let* ((ξinputText (buffer-substring-no-properties φbegin φend))
+         (ξcharArray ["_" "-" " "])
+         (ξlength (length ξcharArray))
+         (ξregionWasActive-p (region-active-p))
+         (ξnowState
           (if (equal last-command this-command )
               (get 'xah-cycle-hyphen-underscore-space 'state)
             0 ))
-
-    (setq nextState (% (+ currentState 1) (length charArray)))
-    (setq changeFrom (elt charArray currentState ))
-    (setq changeTo (elt charArray nextState ))
-
-    (setq inputText (replace-regexp-in-string changeFrom changeTo (buffer-substring-no-properties p1 p2)))
-    (delete-region p1 p2)
-    (insert inputText)
-
-    (when (or (string= changeTo " ") startedWithRegion-p)
-      (goto-char p2)
-      (set-mark p1)
+         (ξchangeTo (elt ξcharArray ξnowState)))
+    (save-excursion
+      (save-restriction
+        (narrow-to-region φbegin φend)
+        (goto-char (point-min))
+        (while
+            (search-forward-regexp
+             (concat
+              (elt ξcharArray (% (+ ξnowState 1) ξlength))
+              "\\|"
+              (elt ξcharArray (% (+ ξnowState 2) ξlength)))
+             (point-max)
+             'NOERROR)
+          (replace-match ξchangeTo 'FIXEDCASE 'LITERAL))))
+    (when (or (string= ξchangeTo " ") ξregionWasActive-p)
+      (goto-char φend)
+      (set-mark φbegin)
       (setq deactivate-mark nil))
-
-    (put 'xah-cycle-hyphen-underscore-space 'state nextState)))
+    (put 'xah-cycle-hyphen-underscore-space 'state (% (+ ξnowState 1) ξlength))))
 
 
 
@@ -357,14 +359,14 @@ See also: `xah-copy-to-register-1', `insert-register'."
 
 
 
-(defun xah-copy-rectangle-to-clipboard (φp1 φp2)
+(defun xah-copy-rectangle-to-clipboard (φbegin φend)
   "Copy region as column (rectangle) to operating system's clipboard.
 This command will also put the text in register 0.
 
 See also: `kill-rectangle', `copy-to-register'."
   (interactive "r")
   (let ((x-select-enable-clipboard t))
-    (copy-rectangle-to-register ?0 φp1 φp2)
+    (copy-rectangle-to-register ?0 φbegin φend)
     (kill-new
      (with-temp-buffer
        (insert-register ?0)
@@ -411,9 +413,8 @@ nil
 That is, add 1 backslash in front of double quote (Unicode codepoint 34).
 See also: `xah-unescape-quotes'
 
-Version 2015-01-24
 URL `http://ergoemacs.org/emacs/elisp_escape_quotes.html'
-"
+Version 2015-04-29"
   (interactive)
   (let (p1 p2)
     (if (use-region-p)
@@ -433,9 +434,8 @@ URL `http://ergoemacs.org/emacs/elisp_escape_quotes.html'
 That is, remove 1 backslash in front of double quote (Unicode codepoint 34), if exist.
 See also: `xah-escape-quotes'
 
-Version 2015-01-24
 URL `http://ergoemacs.org/emacs/elisp_escape_quotes.html'
-"
+Version 2015-04-29"
   (interactive)
   (let (p1 p2)
     (if (use-region-p)
@@ -450,11 +450,11 @@ URL `http://ergoemacs.org/emacs/elisp_escape_quotes.html'
         (while (search-forward "\\\"" nil t)
           (replace-match "\"" 'FIXEDCASE 'LITERAL))))))
 
-(defun xah-title-case-region-or-line (φp1 φp2)
+(defun xah-title-case-region-or-line (φbegin φend)
   "Title case text between nearest brackets, or current line, or text selection.
 Capitalize first letter of each word, except words like {to, of, the, a, in, or, and, …}. If a word already contains cap letters such as HTTP, URL, they are left as is.
 
-When called in a elisp program, φp1 φp2 are region boundaries.
+When called in a elisp program, φbegin φend are region boundaries.
 URL `http://ergoemacs.org/emacs/elisp_title_case_text.html'
 Version 2015-04-08"
   (interactive
@@ -486,6 +486,7 @@ Version 2015-04-08"
                      [" Of " " of "]
                      [" Or " " or "]
                      [" On " " on "]
+                     [" Via " " via "]
                      [" The " " the "]
                      [" That " " that "]
                      [" To " " to "]
@@ -495,7 +496,7 @@ Version 2015-04-08"
                      ["'S " "'s "]
                      ]))
     (save-restriction
-      (narrow-to-region φp1 φp2)
+      (narrow-to-region φbegin φend)
       (upcase-initials-region (point-min) (point-max))
       (let ((case-fold-search nil))
         (mapc
