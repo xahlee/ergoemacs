@@ -340,6 +340,7 @@
 "yes-or-no-p"
 
 "setenv"
+"getenv"
 "modify-syntax-entry"
 "make-sparse-keymap"
 "standard-syntax-table"

@@ -26,7 +26,7 @@
 ;; 2014-08-20 changes are no longer logged here. See git log instead. This is a hobby code, don't have time to write details.
 ;; version 1.4.21, 2014-04-24 modified some inline doc to reflect emacs 24.4's new functions
 ;; version 1.4.20, 2014-01-21 “unit-at-cursor” with 'filepath argument now also consider single quote as delimiter
-;; version 1.4.19, 2013-05-10 “get-html-file-title” moved to xah-html-mode.el and name is now “xhm-get-html-file-title”
+;; version 1.4.19, 2013-05-10 “get-html-file-title” moved to xah-html-mode.el and name is now “xah-html-get-html-file-title”
 ;; version 1.4.18, 2013-02-22 removed delete-subdirs-by-regex and delete-files-by-regex . These are either buggy or very inefficient. Pending work.
 ;; version 1.4.17, 2013-01-27 for unit-at-cursor for arg 'filepath, added no-break space as delimiter.
 ;; version 1.4.16, 2012-12-29 changed implementation for unit-at-cursor for arg 'filepath
@@ -43,7 +43,7 @@
 ;; version 1.4.5, 2011-11-14 corrected a critical error in “asciify-text”.
 ;; version 1.4.4, 2011-11-14 added function “asciify-text”.
 ;; version 1.4.3, 2011-11-06 unit-at-cursor with 「'block」 argument will work when the text block is at beginning/end of buffer. Also, lines with just space or tab is also considered a empty line.
-;; version 1.4.2, 2011-10-30 trivial implementation change on “xhm-get-html-file-title”. No user visible effect.
+;; version 1.4.2, 2011-10-30 trivial implementation change on “xah-html-get-html-file-title”. No user visible effect.
 ;; version 1.4.1, 2011-09-29 fixed a error in “trim-string”.
 ;; version 1.4, 2011-09-16 added “trim-string”.
 ;; version 1.3, 2011-08-27 fixed a bug in “unit-at-cursor” when argument is 「'block」. Now it doesn't grab a extra line ending.
