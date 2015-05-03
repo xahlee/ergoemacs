@@ -131,8 +131,11 @@
 ;; load emacs 24's package system. Add MELPA repository.
 (when (>= emacs-major-version 24)
   (require 'package)
-  (add-to-list 'package-archives '("melpa" . "http://stable.melpa.org/packages/") t)
-  )
+  (add-to-list
+   'package-archives 
+   ;; '("melpa" . "http://stable.melpa.org/packages/")
+   '("melpa" . "http://melpa.milkbox.net/packages/")
+   t))
 
 
 ;; make buffer names unique when files of the same name in different dirs are opened
