@@ -166,7 +166,7 @@
 "print-length"
 ))
 
-(defvar xah-elisp-emacs-words nil "List of keywords more or less related to emacs system.")
+(defvar xah-elisp-emacs-words nil "List of keywords that are not related to emacs lisp the language.")
 (setq xah-elisp-emacs-words '(
 
 "count-matches"
@@ -242,6 +242,7 @@
 "defalias"
 "defconst"
 "defcustom"
+"defgroup"
 "define-derived-mode"
 "define-key"
 "defsubst"

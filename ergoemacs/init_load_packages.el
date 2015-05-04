@@ -48,10 +48,6 @@
   (autoload 'powershell "powershell" "Interactive shell for Microsoft PowerShell." t)
 )
 
-;;; AutoHotKey (ahk) mode (a keyboard macro for Windows)
-(autoload 'xahk-mode "xahk-mode" "AutoHotKey mode" t)
-(add-to-list 'auto-mode-alist '("\\.ahk\\'" . xahk-mode))
-
 ;;; tuareg mode for ML/Caml/OCaml lang
 ;; (add-to-list 'load-path (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/tuareg-2.0.4/"))
 ;; (add-to-list 'auto-mode-alist '("\\.ml[iylp]?" . tuareg-mode))
