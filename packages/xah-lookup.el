@@ -1,4 +1,4 @@
-;;; xah-lookup-word-on-internet.el --- look up word on internet
+;;; xah-lookup.el --- look up word on internet
 
 ;; Copyright © 2011-2015 by Xah Lee
 
@@ -17,10 +17,10 @@
 ;; This package provide commands for looking up the web.
 
 ;; xah-lookup-word-on-internet
-;; xah-lookup-google
-;; xah-lookup-wikipedia
+;; xah-lookup-google           ; (C-h 7)
+;; xah-lookup-wikipedia        ; (C-h 8)
+;; xah-lookup-word-definition  ; (C-h 9)
 ;; xah-lookup-word-dict-org
-;; xah-lookup-word-definition
 ;; xah-lookup-answers.com
 ;; xah-lookup-wiktionary
 
@@ -32,19 +32,20 @@
 
 ;;; INSTALL:
 
-;; To install manually, place this file 〔xah-lookup-word-on-internet.el〕 in the directory 〔~/.emacs.d/lisp/〕.
+;; To install manually, place this file 〔xah-lookup.el〕 in the directory 〔~/.emacs.d/lisp/〕.
 
 ;; Then, place the following code in your emacs init file
 
 ;; (add-to-list 'load-path "~/.emacs.d/lisp/")
-;; (autoload 'xah-lookup-google "xah-lookup-word-on-internet" "Lookup in browser" t)
-;; (autoload 'xah-lookup-wikipedia "xah-lookup-word-on-internet" "Lookup in browser" t)
-;; (autoload 'xah-lookup-word-dict-org "xah-lookup-word-on-internet" "Lookup in browser" t)
-;; (autoload 'xah-lookup-word-definition "xah-lookup-word-on-internet" "Lookup in browser" t)
-;; (autoload 'xah-lookup-wiktionary "xah-lookup-word-on-internet" "Lookup word in browser" t)
+;; (autoload 'xah-lookup-google "xah-lookup" "Lookup in browser" t)
+;; (autoload 'xah-lookup-wikipedia "xah-lookup" "Lookup in browser" t)
+;; (autoload 'xah-lookup-word-dict-org "xah-lookup" "Lookup in browser" t)
+;; (autoload 'xah-lookup-word-definition "xah-lookup" "Lookup in browser" t)
+;; (autoload 'xah-lookup-wiktionary "xah-lookup" "Lookup in browser" t)
 
-;; if you prefer to use emacs's eww browser, add the following
-;; (setq xah-lookup-use-browser 'eww)
+;; If you prefer to use emacs's eww browser, add the following
+;; (require 'eww)
+;; (setq xah-lookup-browser-function 'eww)
 
 ;;; HISTORY:
 
@@ -60,10 +61,9 @@
 ;;; Code:
 
 (require 'browse-url) ; in emacs
-(require 'eww "eww.el" 'NOERROR)
 
-(defvar xah-lookup-use-browser nil "Specify which function to call to launch browser. Default is 'browse-url. You can also use 'eww.")
-(setq xah-lookup-use-browser 'browse-url)
+(defvar xah-lookup-browser-function nil "Specify which function to call to launch browser. Default is 'browse-url. You can also use 'eww.")
+(setq xah-lookup-browser-function 'browse-url)
 
 (defvar xah-lookup-dictionary-list nil "A vector of dictionaries. Used by `xah-lookup-all-dictionaries'. http://wordyenglish.com/words/dictionary_tools.html ")
 (setq
@@ -153,55 +153,52 @@ For a list of online reference sites, see:
 
     (cond
      ((string-equal system-type "windows-nt") ; any flavor of Windows
-      (funcall xah-lookup-use-browser ξmyUrl))
+      (funcall xah-lookup-browser-function ξmyUrl))
      ((string-equal system-type "gnu/linux")
-      (funcall xah-lookup-use-browser ξmyUrl))
+      (funcall xah-lookup-browser-function ξmyUrl))
      ((string-equal system-type "darwin") ; Mac
-      (funcall xah-lookup-use-browser ξmyUrl)))))
+      (funcall xah-lookup-browser-function ξmyUrl)))))
 
+;;;###autoload
 (defun xah-lookup-google (&optional φword)
-  "Lookup current word or text selection in Google Search.
-See also `xah-lookup-word-on-internet'."
+  "Lookup current word or text selection in Google Search."
   (interactive)
   (xah-lookup-word-on-internet
    φword
    "http://www.google.com/search?q=�") )
 
+;;;###autoload
 (defun xah-lookup-wikipedia (&optional φword)
-  "Lookup current word or text selection in Wikipedia.
-See also `xah-lookup-word-on-internet'."
+  "Lookup current word or text selection in Wikipedia."
   (interactive)
   (xah-lookup-word-on-internet
    φword
    "http://en.wikipedia.org/wiki/�") )
 
-(defun xah-lookup-word-dict-org (&optional φword)
-  "Lookup definition of current word or text selection in URL `http://dict.org/'.
-See also `xah-lookup-word-on-internet'."
-  (interactive)
-  (xah-lookup-word-on-internet
-   φword
-   "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�"))
-
+;;;###autoload
 (defun xah-lookup-word-definition (&optional φword)
-  "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'.
-See also `xah-lookup-word-on-internet'."
+  "Lookup definition of current word or text selection in URL `http://thefreedictionary.com/'."
   (interactive)
   (xah-lookup-word-on-internet
    φword
    "http://www.thefreedictionary.com/�") )
 
+(defun xah-lookup-word-dict-org (&optional φword)
+  "Lookup definition of current word or text selection in URL `http://dict.org/'."
+  (interactive)
+  (xah-lookup-word-on-internet
+   φword
+   "http://www.dict.org/bin/Dict?Form=Dict2&Database=*&Query=�"))
+
 (defun xah-lookup-answers.com (&optional φword)
-  "Lookup current word or text selection in URL `http://answers.com/'.
-See also `xah-lookup-word-on-internet'."
+  "Lookup current word or text selection in URL `http://answers.com/'."
   (interactive)
   (xah-lookup-word-on-internet
    φword
    "http://www.answers.com/main/ntquery?s=�"))
 
 (defun xah-lookup-wiktionary (&optional φword)
-  "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'
-See also `xah-lookup-word-on-internet'."
+  "Lookup definition of current word or text selection in URL `http://en.wiktionary.org/'"
   (interactive)
   (xah-lookup-word-on-internet
    φword
@@ -210,9 +207,7 @@ See also `xah-lookup-word-on-internet'."
 (defun xah-lookup-all-dictionaries (&optional φword)
   "Lookup definition in many dictionaries.
 Current word or text selection is used as input.
-The dictionaries used are in `xah-lookup-dictionary-list'.
-
-See also `xah-lookup-word-on-internet'."
+The dictionaries used are in `xah-lookup-dictionary-list'."
   (interactive)
   (mapc
    (lambda
@@ -224,6 +219,6 @@ See also `xah-lookup-word-on-internet'."
 (define-key help-map (kbd "8") 'xah-lookup-wikipedia)
 (define-key help-map (kbd "9") 'xah-lookup-word-definition)
 
-(provide 'xah-lookup-word-on-internet)
+(provide 'xah-lookup)
 
-;;; xah-lookup-word-on-internet.el ends here
+;;; xah-lookup.el ends here

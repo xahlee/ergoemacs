@@ -373,35 +373,35 @@ Version 2015-04-25"
 When called interactively, work on current line or text selection.
 
 URL `http://ergoemacs.org/emacs/emacs_zap_gremlins.html'
-Version 2015-01-20"
+Version 2015-05-01"
   (interactive
    (if (use-region-p)
        (list (region-beginning) (region-end))
      (list (line-beginning-position) (line-end-position))))
-  (let ((ξcharMap [
-
-                         ["á\\|à\\|â\\|ä\\|ã\\|å\\|ā" "a"]
-                         ["é\\|è\\|ê\\|ë\\|ē" "e"]
-                         ["í\\|ì\\|î\\|ï\\|ī" "i"]
-                         ["ó\\|ò\\|ô\\|ö\\|õ\\|ø\\|ō" "o"]
-                         ["ú\\|ù\\|û\\|ü\\|ū"     "u"]
-                         ["Ý\\|ý\\|ÿ"     "y"]
-                         ["ñ" "n"]
-                         ["ç" "c"]
-                         ["ð" "d"]
-                         ["þ" "th"]
-                         ["ß" "ss"]
-                         ["æ" "ae"]
-                         ]))
+  (let ((ξcharMap 
+         [
+          ["á\\|à\\|â\\|ä\\|ā\\|ǎ\\|ã\\|å" "a"]
+          ["é\\|è\\|ê\\|ë\\|ē\\|ě" "e"]
+          ["í\\|ì\\|î\\|ï\\|ī\\|ǐ" "i"]
+          ["ó\\|ò\\|ô\\|ö\\|õ\\|ǒ\\|ø\\|ō" "o"]
+          ["ú\\|ù\\|û\\|ü\\|ū"     "u"]
+          ["Ý\\|ý\\|ÿ"     "y"]
+          ["ñ" "n"]
+          ["ç" "c"]
+          ["ð" "d"]
+          ["þ" "th"]
+          ["ß" "ss"]
+          ["æ" "ae"]
+          ]))
     (let ((case-fold-search t))
-        (save-restriction
-          (narrow-to-region φfrom φto)
-          (mapc
-           (lambda (ξpair)
-             (goto-char (point-min))
-             (while (search-forward-regexp (elt ξpair 0) (point-max) t)
-               (replace-match (elt ξpair 1))))
-           ξcharMap)))))
+      (save-restriction
+        (narrow-to-region φfrom φto)
+        (mapc
+         (lambda (ξpair)
+           (goto-char (point-min))
+           (while (search-forward-regexp (elt ξpair 0) (point-max) t)
+             (replace-match (elt ξpair 1))))
+         ξcharMap)))))
 
 (defun xah-asciify-string (φstring)
   "Returns a new string. European language chars are changed ot ASCII ones ⁖ “café” ⇒ “cafe”.
