@@ -15,9 +15,6 @@
 
 ;;;; language modes
 
-(autoload 'xah-elisp-mode "xah-elisp-mode" "load xah-elisp-mode for elisp file" t)
-(add-to-list 'auto-mode-alist '("\\.el\\'" . xah-elisp-mode))
-
 ;;; php mode
 (autoload 'php-mode "php-mode" "php mode by Aaron S Hawley." t)
 (add-to-list 'auto-mode-alist '("\\.php\\'" . php-mode))
@@ -48,12 +45,6 @@
   (autoload 'powershell "powershell" "Interactive shell for Microsoft PowerShell." t)
 )
 
-;;; tuareg mode for ML/Caml/OCaml lang
-;; (add-to-list 'load-path (concat (file-name-directory (or load-file-name buffer-file-name)) "../packages/tuareg-2.0.4/"))
-;; (add-to-list 'auto-mode-alist '("\\.ml[iylp]?" . tuareg-mode))
-;; (autoload 'tuareg-mode "tuareg" "Major mode for editing Caml code" t)
-;; (autoload 'camldebug "camldebug" "Run the Caml debugger" t)
-
 
 ;;;; productivity, enhancement, or minor modes
 
@@ -79,15 +70,13 @@
 ;    )
 ;  )
 
+;; display horizontal line for the Form Feed char (ASCII 12, ^L)
+;; The Form Feed char is often used in elisp source code for marking sections. The command forward-page (and backward-page) moves to the next form feed char.
+;; (require 'pp-c-l)
+
 ;;; make the formfeed char (^L) display as a line
 (require 'page-break-lines)
 (global-page-break-lines-mode 1)
-
-;;; xub-mode for browsing Unicode characters
-(autoload 'xub-mode "xub-mode" "Load Unicode browsing mode." t)
-
-;;; xmsi-mode 〔xmsi-math-symbols-input.el〕 for inputting math (Unicode) symbols.
-(autoload 'xmsi-mode "xmsi-math-symbols-input" "Load xmsi minor mode for inputting math (Unicode) symbols." t)
 
 ;; record command call statistics
 (require 'keyfreq)
@@ -96,21 +85,6 @@
 (setq keyfreq-autosave-timeout 600)
 (keyfreq-mode 1)
 (keyfreq-autosave-mode 1)
-
-;; display horizontal line for the Form Feed char (ASCII 12, ^L)
-;; The Form Feed char is often used in elisp source code for marking sections. The command forward-page (and backward-page) moves to the next form feed char.
-;; (require 'pp-c-l)
-
-;; some convenient commands to lookup reference sites on web
-(require 'xah-replace-pairs)
-(require 'xeu_elisp_util)
-
-(require 'xah-lookup)
-(autoload 'xah-lookup-google "xah-lookup" "Lookup in browser" t)
-(autoload 'xah-lookup-wikipedia "xah-lookup" "Lookup in browser" t)
-(autoload 'xah-lookup-word-dict-org "xah-lookup" "Lookup in browser" t)
-(autoload 'xah-lookup-word-definition "xah-lookup" "Lookup in browser" t)
-(autoload 'xah-lookup-wiktionary "xah-lookup" "Lookup in browser" t)
 
 ;; ;; loads tramp. This is to fix a dired recursive load bug, see: http://ergoemacs.org/emacs/emacs_on_ubuntu_linux.html
 ;; (require 'tramp)

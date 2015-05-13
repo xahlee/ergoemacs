@@ -28,9 +28,6 @@
 ;; 2010-06-03 espresso-mode is now js-mode, part of GNU emacs 23.2. It is removed from ErgoEmacs.
 
 (defalias 'cmd-mode 'dos-mode)
-(defalias 'lsl-mode 'xlsl-mode)
-(defalias 'ocaml-mode 'tuareg-mode)
-(defalias 'math-symbol-input-mode 'xmsi-mode)
 
 ;; (defalias 'spell-check 'speck-mode)
 

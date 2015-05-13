@@ -86,10 +86,8 @@ in current buffer."
                 (space-mark 3616 [3620] [95])
                 (space-mark 3872 [3876] [95])
                 (newline-mark 10 [36 10])
-                (tab-mark 9 [187 9] [92 9]))
-              )
-        (message "whitespace-setting set to default.")
-))
+                (tab-mark 9 [187 9] [92 9])))
+        (message "whitespace-setting set to default.")))
      ((equal stateAfter 1)
       (progn
         ;; Make whitespace-mode with very basic background coloring for whitespaces
@@ -104,14 +102,10 @@ in current buffer."
                 (space-mark 2336 [2340] [95])
                 (space-mark 3616 [3620] [95])
                 (space-mark 3872 [3876] [95])
-                (newline-mark 10 [182 10]) ; newlne
+                (newline-mark 10 [182 10])   ; newlne
                 (tab-mark 9 [9655 9] [92 9]) ; tab
                 )) 
-        (message "whitespace-setting set to using ▷ for tab and ¶ for newline.")
-))
-     )
+        (message "whitespace-setting set to using ▷ for tab and ¶ for newline."))))
 
     (when global-whitespace-mode (global-whitespace-mode 0) (global-whitespace-mode 1))
-    (when whitespace-mode (whitespace-mode 0) (whitespace-mode 1))
-
-    ))
+    (when whitespace-mode (whitespace-mode 0) (whitespace-mode 1))))

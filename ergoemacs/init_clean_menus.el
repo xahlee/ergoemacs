@@ -315,11 +315,9 @@
       ;; Look if this item already has a :keys property
       (if (position :keys item)
 	  nil
-	(ergoemacs-shortcut-for-command (cadddr item))
-	)
+	(ergoemacs-shortcut-for-command (cadddr item)))
     nil
-    )
-  )
+    ))
 
 (defun ergoemacs-preprocess-menu-keybindings (menu)
   (unless (keymapp menu)
@@ -334,11 +332,8 @@
 		    (let ((key (ergoemacs-shortcut-for-menu-item item)))
 		      (if key
 			  (append item (cons :keys (cons key nil)))
-			item))
-		    )
-		  (cdr menu)
-		  )
-	  )
+			item)))
+		  (cdr menu)))
 
   ;; Recurse sub menu items
   (mapc (lambda (x)
@@ -348,13 +343,9 @@
 		     (consp (cdr (cdr (cdr x))))
 		     (eq (car (cdr x)) 'menu-item)
 		     (keymapp (car (cdr (cdr (cdr x))))))
-	    ;(message "Submenu: %s" (car (cdr (cdr x))))
-	    (ergoemacs-preprocess-menu-keybindings (car (cdr (cdr (cdr x)))))
-	    )
-	  )
-	(cdr menu)
-	)
-  )
+  ;(message "Submenu: %s" (car (cdr (cdr x))))
+	    (ergoemacs-preprocess-menu-keybindings (car (cdr (cdr (cdr x)))))))
+	(cdr menu)))
 
 (ergoemacs-preprocess-menu-keybindings menu-bar-file-menu)
 (ergoemacs-preprocess-menu-keybindings menu-bar-edit-menu)
